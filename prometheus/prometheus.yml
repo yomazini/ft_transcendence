@@ -1,0 +1,14 @@
+#  Scrapes /metrics from every service every 15s. Owner: Hamza.
+global:
+  scrape_interval: 15s
+scrape_configs:
+  - job_name: "gateway-svc"
+    static_configs: [{ targets: ["gateway-svc:3001"] }]
+  - job_name: "auth-svc"
+    static_configs: [{ targets: ["auth-svc:3002"] }]
+  - job_name: "scraper-svc"
+    static_configs: [{ targets: ["scraper-svc:8000"] }]
+  - job_name: "analysis-svc"
+    static_configs: [{ targets: ["analysis-svc:8001"] }]
+  - job_name: "reporting-svc"
+    static_configs: [{ targets: ["reporting-svc:3003"] }]
