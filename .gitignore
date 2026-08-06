@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.env
+*.log
+__pycache__/
+.venv/
+.pytest_cache/
+.next/
+NOTE.md
+agent.md
+subject.txt
+eval_sheet.txt
+00-install-tools.sh
+01-bootstrap-repo.sh
+docs/
