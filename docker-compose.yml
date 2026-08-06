@@ -1,0 +1,3 @@
+# ft_transcendence — full stack, one command: docker compose up
+# 13 services. Internal ports are never exposed to the host except through
+# nginx (80) and the dashboards meant for direct viewing (grafana, prometheus).
