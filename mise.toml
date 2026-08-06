@@ -1,0 +1,6 @@
+# Pins exact runtime versions for everyone on the team — see 00-install-tools.sh
+# for what mise is and why. `cd` into this repo with mise activated and you get
+# these exact versions automatically, no manual switching.
+[tools]
+node = "lts"
+python = "3.12"
