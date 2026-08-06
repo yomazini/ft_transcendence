@@ -1,0 +1,32 @@
+# .github/dependabot.yml
+# Automated dependency update configuration for ft_transcendence
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "npm"
+    directory: "/gateway-svc"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "npm"
+    directory: "/auth-svc"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "npm"
+    directory: "/reporting-svc"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "pip"
+    directory: "/scraper-svc"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "pip"
+    directory: "/analysis-svc"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
