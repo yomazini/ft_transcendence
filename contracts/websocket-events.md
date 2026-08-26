@@ -13,7 +13,7 @@ const socket = io("wss://api.ft-transcendence.local", {
   path: "/socket.io",
   transports: ["websocket"],
   auth: {
-    token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." // JWT Bearer Token
+    token: "<JWT_BEARER_TOKEN>"
   }
 });
 ```
