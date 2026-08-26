@@ -7,14 +7,16 @@ __pycache__/
 .pytest_cache/
 .next/
 NOTE.md
+NOTEs.md
+agent.md
 subject.txt
 eval_sheet.txt
 00-install-tools.sh
 01-bootstrap-repo.sh
 docs/
 teach/
-*.mp4
 teach_me_folder/
+*.mp4
 
 # Local databases & configs
 *.db
@@ -23,6 +25,11 @@ teach_me_folder/
 app.ini
 docker-compose1.yml
 dockercompo.yml
+
+# AI & Indexing tools
+.gemini/
+.codegraph/
+
 # Editor & OS artifacts
 .DS_Store
 *.swp
