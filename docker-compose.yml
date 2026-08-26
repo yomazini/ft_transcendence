@@ -1,3 +1,153 @@
 # ft_transcendence — full stack, one command: docker compose up
 # 13 services. Internal ports are never exposed to the host except through
 # nginx (80) and the dashboards meant for direct viewing (grafana, prometheus).
+name: ft-transcendence
+
+networks:
+  ft_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  grafana_data:
+
+services:
+
+  # --- Entry point -----------------------------------------------------
+  nginx:
+    build: ./nginx
+    ports: ["80:80"]
+    depends_on: [gateway-svc, frontend]
+    networks: [ft_network]
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    expose: ["3000"]
+    depends_on: [gateway-svc]
+    networks: [ft_network]
+    restart: unless-stopped
+    # Owner: Hamza
+
+  # --- Application services ---------------------------------------------
+  gateway-svc:
+    build: ./gateway-svc
+    ports: ["3001:3001"]
+    expose: ["3001"]
+    env_file: .env
+    depends_on: [redis, postgres]
+    networks: [ft_network]
+    restart: unless-stopped
+    # Owner: Youssef
+
+  auth-svc:
+    build: ./auth-svc
+    expose: ["3002"]
+    env_file: .env
+    depends_on:
+      postgres: { condition: service_healthy }
+      vault: { condition: service_started }
+    networks: [ft_network]
+    restart: unless-stopped
+    # Owner: Mehdi
+
+  scraper-svc:
+    build: ./scraper-svc
+    expose: ["8000"]
+    env_file: .env
+    depends_on:
+      redis: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+    networks: [ft_network]
+    restart: unless-stopped
+    # Owner: Madani
+
+  analysis-svc:
+    build: ./analysis-svc
+    ports: ["8001:8001"]
+    expose: ["8001"]
+    env_file: .env
+    depends_on:
+      redis: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+    networks: [ft_network]
+    restart: unless-stopped
+    # Owner: Youssef
+
+  reporting-svc:
+    build: ./reporting-svc
+    expose: ["3003"]
+    env_file: .env
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks: [ft_network]
+    restart: unless-stopped
+    # Owner: Oussama
+
+  # --- Data stores --------------------------------------------------------
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [ft_network]
+    restart: unless-stopped
+    # Owner: Oussama (schema/migrations across all services)
+
+  redis:
+    image: redis:7-alpine
+    volumes: ["redis_data:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [ft_network]
+    restart: unless-stopped
+
+  # --- Security & secrets -----------------------------------------------
+  vault:
+    image: hashicorp/vault:1.15
+    cap_add: [IPC_LOCK]
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN_ID}
+    expose: ["8200"]
+    networks: [ft_network]
+    restart: unless-stopped
+    # Owner: Madani. Dev-mode Vault — fine for this project's scope; a real
+    # production Vault needs a proper unseal + storage backend.
+
+  # --- Observability -------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:latest
+    volumes: ["./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
+    ports: ["9090:9090"]
+    networks: [ft_network]
+    restart: unless-stopped
+    # Owner: Hamza
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+    volumes: ["grafana_data:/var/lib/grafana"]
+    ports: ["3030:3000"]
+    depends_on: [prometheus]
+    networks: [ft_network]
+    restart: unless-stopped
+    # Owner: Hamza
+
+  # --- Mocked payment ------------------------------------------------------
+  stripe-mock:
+    image: stripe/stripe-mock:latest
+    ports: ["12111:12111", "12112:12112"]
+    networks: [ft_network]
+    restart: unless-stopped
