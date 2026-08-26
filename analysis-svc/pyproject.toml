@@ -12,4 +12,9 @@ dependencies = [
     "asyncpg",
     "redis",
     "pydantic",
+    "pydantic-settings",
+    "httpx",
+    "pytest",
+    "pytest-asyncio",
+    "numpy",
 ]

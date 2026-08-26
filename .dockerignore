@@ -1,0 +1,16 @@
+node_modules
+dist
+.next
+.git
+.venv
+__pycache__
+*.log
+.DS_Store
+*.swp
+NOTE.md
+NOTEs.md
+docs
+teach
+teach_me_folder
+*.mp4
+pnpm-lock.yaml
