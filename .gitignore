@@ -7,9 +7,23 @@ __pycache__/
 .pytest_cache/
 .next/
 NOTE.md
-agent.md
 subject.txt
 eval_sheet.txt
 00-install-tools.sh
 01-bootstrap-repo.sh
 docs/
+teach/
+*.mp4
+teach_me_folder/
+
+# Local databases & configs
+*.db
+*.sqlite
+*.sqlite3
+app.ini
+docker-compose1.yml
+dockercompo.yml
+# Editor & OS artifacts
+.DS_Store
+*.swp
+*.swo
