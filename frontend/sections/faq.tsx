@@ -67,7 +67,7 @@ export function FAQSection() {
         {/* Accordion */}
 
         <Accordion
-          type="single"
+          // type="single"
           defaultValue={["item-0"]}
           className="mt-16"
         >

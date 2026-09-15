@@ -72,7 +72,7 @@ export function FAQSection() {
         {/* FAQ */}
 
         <Accordion
-          type="single"
+          // type="single"
           
           className="mt-16"
         >
