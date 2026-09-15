@@ -5,12 +5,12 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 COPY package.json ./
-RUN pnpm install
+RUN pnpm config set fetch-timeout 300000 && pnpm config set fetch-retries 5 && pnpm install --ignore-scripts --no-frozen-lockfile
 
 COPY . .
-RUN pnpm run build
+RUN ./node_modules/.bin/nest build
 
 EXPOSE 3003
 ENV PORT=3003
 
-CMD ["pnpm", "run", "start:prod"]
+CMD ["node", "dist/main.js"]
