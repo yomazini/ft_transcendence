@@ -1,10 +1,10 @@
 FROM node:20-alpine
 
-RUN corepack enable
-
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml ./
+RUN corepack enable && corepack prepare pnpm@12.4.1 --activate
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 RUN pnpm install --frozen-lockfile
 
