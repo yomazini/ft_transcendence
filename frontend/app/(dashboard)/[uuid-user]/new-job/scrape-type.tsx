@@ -68,7 +68,8 @@ export function ScrapeType()
 								bg-orange-500\
 								px-4 py-2\
 								text-sm\
-								text-white" : "\
+								text-white\
+								hover:cursor-pointer" : "\
 								flex-1\
 								rounded-lg\
 								border border-zinc-200\
@@ -77,7 +78,8 @@ export function ScrapeType()
 								text-sm\
 								text-zinc-600\
 								hover:bg-orange-500\
-								hover:text-white"
+								hover:text-white\
+								hover:cursor-pointer"
 							}
 							key={type.type}
 							type="button"

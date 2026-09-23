@@ -23,7 +23,8 @@ function StartJobButton()
 				px-4 py-2
 				font-medium
 				text-white
-				hover:bg-orange-600
+				hover:bg-orange-600\
+				hover:cursor-pointer
 			"
 			type="submit"
 		>
