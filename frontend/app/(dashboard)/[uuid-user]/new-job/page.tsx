@@ -1,71 +1,99 @@
 import { ReactNode } from "react";
+import { ScrapeType } from "./scrape-type";
 
-const scrapeTypes =[ 
-	{
-		type: "post",
-		value: "Post",
-		placeholder: "https://reddit.com/..."
-	},
-	{
-		type: "test",
-		value: "Test",
-		placeholder: "Search"
-	}
-]
+function LabelInput({label, children}:{label?: string,children?: ReactNode})
+{
+	return (
+		<div className="fex flex-col gap-1">
+			{label && <p className="text-sm font-medium text-zinc-900">{label}:</p>}
+			{children}
+		</div>
+	)
+}
 
 function StartJobButton()
 {
 	return (
-		<button>
+		<button
+			className="
+				w-1/3
+				self-end
+				rounded-lg
+				bg-orange-500
+				px-4 py-2
+				font-medium
+				text-white
+				hover:bg-orange-600
+			"
+			type="submit"
+		>
 			Create Job
 		</button>
-	)
-}
-
-function ScrapeInput({placeholder}:{placeholder?: string})
-{
-	return (
-		<input id="input" type="text" placeholder={placeholder} />
-	)
-}
-
-function ScrapeType()
-{
-	
-	return (
-		<div className="flex flex-col gap-3">
-			<div className="flex gap-5">
-				{ 
-					scrapeTypes.map( (type) => ( 
-								<button key={type.type} type="button" >
-									{type.value}
-								</button>
-						)
-					)
-				}
-			</div>
-			<ScrapeInput />
-		</div>
 	)
 }
 
 function JobContext()
 {
 	return (
-		<textarea placeholder="Context"/>
+		<LabelInput label="Context">
+			<textarea 
+				name="context"
+				placeholder="Context"
+				className="
+					w-full
+    				min-h-10
+    				max-h-40
+    				resize-none
+    				overflow-y-auto
+    				rounded-lg
+    				border border-zinc-200
+    				bg-white
+    				px-3 py-2
+    				text-zinc-900
+    				placeholder:text-zinc-400
+    				outline-none
+    				focus:border-zinc-500
+    				focus:ring-1
+    				focus:ring-zinc-500
+				"
+			/>
+		</LabelInput>
 	)
 }
 
-function JobName(  )
+function JobName()
 {
 	return (
-		<input id="name" type="text" name="JobName" placeholder="Job name"/>
+		<LabelInput label="Job name">
+			<input 
+				className="
+					w-full
+					min-h-10
+					rounded-lg
+					border
+					border-zinc-200
+					bg-white
+					px-3
+					py-2
+					text-zinc-900
+					placeholder:text-zinc-400
+					outline-none
+					focus:border-zinc-500
+					focus:ring-1
+					focus:ring-zinc-500
+				"
+				id="name"
+				type="text"
+				name="job-name"
+				placeholder="Job name"
+			/>
+		</LabelInput>
 	)
 }
 
 function NewScrapeForm(
 	{ 
-		className = "flex flex-col item-center justify-center gap-5",
+		className = "flex w-[80%] min-w-[320px] max-w-2xl flex-col gap-5 p-6",
 		children 
 	} : {
 		className?: string,
@@ -74,7 +102,7 @@ function NewScrapeForm(
 )
 {
 	return (
-		<form method="post" className={className}>
+		<form method="get" className={className}>
 			{children}
 		</form>
 	)
@@ -83,13 +111,23 @@ function NewScrapeForm(
 export default function NewPage()
 {
 	return (
-		<main className="flex item-center justify-center" >
+		<div className="flex h-full items-center justify-center" >
 			<NewScrapeForm  >
+				<h1
+					className="
+						text-center
+						text-5xl
+						font-semibold
+						text-zinc-900
+					"
+				>
+					New Job
+				</h1>
 				<JobName />
 				<JobContext />
 				<ScrapeType />
 				<StartJobButton />
 			</NewScrapeForm>
-		</main>
+		</div>
 	)
 }
