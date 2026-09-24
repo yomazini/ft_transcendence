@@ -27,10 +27,7 @@ export function ChatWidget({
       role: "assistant",
       content:
         "Hello! I am your ft_transcendence RAG Assistant. Ask me anything about the customer sentiment, competitor threats, or pricing feedback in this report.",
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
+      timestamp: "Just now",
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
