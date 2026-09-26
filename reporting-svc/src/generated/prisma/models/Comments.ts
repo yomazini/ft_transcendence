@@ -236,7 +236,7 @@ export type CommentsWhereInput = {
   upvotes?: Prisma.IntFilter<"Comments"> | number
   sentiment_score?: Prisma.FloatFilter<"Comments"> | number
   created_at?: Prisma.DateTimeFilter<"Comments"> | Date | string
-  job?: Prisma.XOR<Prisma.JobScalarRelationFilter, Prisma.JobWhereInput>
+  job?: Prisma.XOR<Prisma.JopScalarRelationFilter, Prisma.JopWhereInput>
 }
 
 export type CommentsOrderByWithRelationInput = {
@@ -247,7 +247,7 @@ export type CommentsOrderByWithRelationInput = {
   upvotes?: Prisma.SortOrder
   sentiment_score?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
-  job?: Prisma.JobOrderByWithRelationInput
+  job?: Prisma.JopOrderByWithRelationInput
 }
 
 export type CommentsWhereUniqueInput = Prisma.AtLeast<{
@@ -261,7 +261,7 @@ export type CommentsWhereUniqueInput = Prisma.AtLeast<{
   upvotes?: Prisma.IntFilter<"Comments"> | number
   sentiment_score?: Prisma.FloatFilter<"Comments"> | number
   created_at?: Prisma.DateTimeFilter<"Comments"> | Date | string
-  job?: Prisma.XOR<Prisma.JobScalarRelationFilter, Prisma.JobWhereInput>
+  job?: Prisma.XOR<Prisma.JopScalarRelationFilter, Prisma.JopWhereInput>
 }, "id">
 
 export type CommentsOrderByWithAggregationInput = {
@@ -299,7 +299,7 @@ export type CommentsCreateInput = {
   upvotes: number
   sentiment_score: number
   created_at?: Date | string
-  job: Prisma.JobCreateNestedOneWithoutCommentsInput
+  job: Prisma.JopCreateNestedOneWithoutCommentsInput
 }
 
 export type CommentsUncheckedCreateInput = {
@@ -319,7 +319,7 @@ export type CommentsUpdateInput = {
   upvotes?: Prisma.IntFieldUpdateOperationsInput | number
   sentiment_score?: Prisma.FloatFieldUpdateOperationsInput | number
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  job?: Prisma.JobUpdateOneRequiredWithoutCommentsNestedInput
+  job?: Prisma.JopUpdateOneRequiredWithoutCommentsNestedInput
 }
 
 export type CommentsUncheckedUpdateInput = {
@@ -572,7 +572,7 @@ export type CommentsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   upvotes?: boolean
   sentiment_score?: boolean
   created_at?: boolean
-  job?: boolean | Prisma.JobDefaultArgs<ExtArgs>
+  job?: boolean | Prisma.JopDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["comments"]>
 
 export type CommentsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -583,7 +583,7 @@ export type CommentsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   upvotes?: boolean
   sentiment_score?: boolean
   created_at?: boolean
-  job?: boolean | Prisma.JobDefaultArgs<ExtArgs>
+  job?: boolean | Prisma.JopDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["comments"]>
 
 export type CommentsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -594,7 +594,7 @@ export type CommentsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   upvotes?: boolean
   sentiment_score?: boolean
   created_at?: boolean
-  job?: boolean | Prisma.JobDefaultArgs<ExtArgs>
+  job?: boolean | Prisma.JopDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["comments"]>
 
 export type CommentsSelectScalar = {
@@ -609,19 +609,19 @@ export type CommentsSelectScalar = {
 
 export type CommentsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "job_id" | "text" | "author" | "upvotes" | "sentiment_score" | "created_at", ExtArgs["result"]["comments"]>
 export type CommentsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  job?: boolean | Prisma.JobDefaultArgs<ExtArgs>
+  job?: boolean | Prisma.JopDefaultArgs<ExtArgs>
 }
 export type CommentsIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  job?: boolean | Prisma.JobDefaultArgs<ExtArgs>
+  job?: boolean | Prisma.JopDefaultArgs<ExtArgs>
 }
 export type CommentsIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  job?: boolean | Prisma.JobDefaultArgs<ExtArgs>
+  job?: boolean | Prisma.JopDefaultArgs<ExtArgs>
 }
 
 export type $CommentsPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Comments"
   objects: {
-    job: Prisma.$JobPayload<ExtArgs>
+    job: Prisma.$JopPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1025,7 +1025,7 @@ readonly fields: CommentsFieldRefs;
  */
 export interface Prisma__CommentsClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  job<T extends Prisma.JobDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.JobDefaultArgs<ExtArgs>>): Prisma.Prisma__JobClient<runtime.Types.Result.GetResult<Prisma.$JobPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  job<T extends Prisma.JopDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.JopDefaultArgs<ExtArgs>>): Prisma.Prisma__JopClient<runtime.Types.Result.GetResult<Prisma.$JopPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.

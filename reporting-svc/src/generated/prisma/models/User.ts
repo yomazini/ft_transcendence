@@ -176,7 +176,7 @@ export type UserWhereInput = {
   created_at?: Prisma.DateTimeFilter<"User"> | Date | string
   user_roles_organization?: Prisma.Role_and_organizationListRelationFilter
   messages?: Prisma.MessagesListRelationFilter
-  jobs?: Prisma.JobListRelationFilter
+  jops?: Prisma.JopListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -186,7 +186,7 @@ export type UserOrderByWithRelationInput = {
   created_at?: Prisma.SortOrder
   user_roles_organization?: Prisma.role_and_organizationOrderByRelationAggregateInput
   messages?: Prisma.MessagesOrderByRelationAggregateInput
-  jobs?: Prisma.JobOrderByRelationAggregateInput
+  jops?: Prisma.JopOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -199,7 +199,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   created_at?: Prisma.DateTimeFilter<"User"> | Date | string
   user_roles_organization?: Prisma.Role_and_organizationListRelationFilter
   messages?: Prisma.MessagesListRelationFilter
-  jobs?: Prisma.JobListRelationFilter
+  jops?: Prisma.JopListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -229,7 +229,7 @@ export type UserCreateInput = {
   created_at?: Date | string
   user_roles_organization?: Prisma.role_and_organizationCreateNestedManyWithoutUserInput
   messages?: Prisma.MessagesCreateNestedManyWithoutUserInput
-  jobs?: Prisma.JobCreateNestedManyWithoutUserInput
+  jops?: Prisma.JopCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -239,7 +239,7 @@ export type UserUncheckedCreateInput = {
   created_at?: Date | string
   user_roles_organization?: Prisma.role_and_organizationUncheckedCreateNestedManyWithoutUserInput
   messages?: Prisma.MessagesUncheckedCreateNestedManyWithoutUserInput
-  jobs?: Prisma.JobUncheckedCreateNestedManyWithoutUserInput
+  jops?: Prisma.JopUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -249,7 +249,7 @@ export type UserUpdateInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_roles_organization?: Prisma.role_and_organizationUpdateManyWithoutUserNestedInput
   messages?: Prisma.MessagesUpdateManyWithoutUserNestedInput
-  jobs?: Prisma.JobUpdateManyWithoutUserNestedInput
+  jops?: Prisma.JopUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -259,7 +259,7 @@ export type UserUncheckedUpdateInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_roles_organization?: Prisma.role_and_organizationUncheckedUpdateManyWithoutUserNestedInput
   messages?: Prisma.MessagesUncheckedUpdateManyWithoutUserNestedInput
-  jobs?: Prisma.JobUncheckedUpdateManyWithoutUserNestedInput
+  jops?: Prisma.JopUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -323,18 +323,18 @@ export type UserUpdateOneRequiredWithoutUser_roles_organizationNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutUser_roles_organizationInput, Prisma.UserUpdateWithoutUser_roles_organizationInput>, Prisma.UserUncheckedUpdateWithoutUser_roles_organizationInput>
 }
 
-export type UserCreateNestedOneWithoutJobsInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutJobsInput, Prisma.UserUncheckedCreateWithoutJobsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutJobsInput
+export type UserCreateNestedOneWithoutJopsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutJopsInput, Prisma.UserUncheckedCreateWithoutJopsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutJopsInput
   connect?: Prisma.UserWhereUniqueInput
 }
 
-export type UserUpdateOneRequiredWithoutJobsNestedInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutJobsInput, Prisma.UserUncheckedCreateWithoutJobsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutJobsInput
-  upsert?: Prisma.UserUpsertWithoutJobsInput
+export type UserUpdateOneRequiredWithoutJopsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutJopsInput, Prisma.UserUncheckedCreateWithoutJopsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutJopsInput
+  upsert?: Prisma.UserUpsertWithoutJopsInput
   connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutJobsInput, Prisma.UserUpdateWithoutJobsInput>, Prisma.UserUncheckedUpdateWithoutJobsInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutJopsInput, Prisma.UserUpdateWithoutJopsInput>, Prisma.UserUncheckedUpdateWithoutJopsInput>
 }
 
 export type UserCreateNestedOneWithoutMessagesInput = {
@@ -357,7 +357,7 @@ export type UserCreateWithoutUser_roles_organizationInput = {
   password: string
   created_at?: Date | string
   messages?: Prisma.MessagesCreateNestedManyWithoutUserInput
-  jobs?: Prisma.JobCreateNestedManyWithoutUserInput
+  jops?: Prisma.JopCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutUser_roles_organizationInput = {
@@ -366,7 +366,7 @@ export type UserUncheckedCreateWithoutUser_roles_organizationInput = {
   password: string
   created_at?: Date | string
   messages?: Prisma.MessagesUncheckedCreateNestedManyWithoutUserInput
-  jobs?: Prisma.JobUncheckedCreateNestedManyWithoutUserInput
+  jops?: Prisma.JopUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutUser_roles_organizationInput = {
@@ -391,7 +391,7 @@ export type UserUpdateWithoutUser_roles_organizationInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.MessagesUpdateManyWithoutUserNestedInput
-  jobs?: Prisma.JobUpdateManyWithoutUserNestedInput
+  jops?: Prisma.JopUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutUser_roles_organizationInput = {
@@ -400,10 +400,10 @@ export type UserUncheckedUpdateWithoutUser_roles_organizationInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.MessagesUncheckedUpdateManyWithoutUserNestedInput
-  jobs?: Prisma.JobUncheckedUpdateManyWithoutUserNestedInput
+  jops?: Prisma.JopUncheckedUpdateManyWithoutUserNestedInput
 }
 
-export type UserCreateWithoutJobsInput = {
+export type UserCreateWithoutJopsInput = {
   id?: string
   email: string
   password: string
@@ -412,7 +412,7 @@ export type UserCreateWithoutJobsInput = {
   messages?: Prisma.MessagesCreateNestedManyWithoutUserInput
 }
 
-export type UserUncheckedCreateWithoutJobsInput = {
+export type UserUncheckedCreateWithoutJopsInput = {
   id?: string
   email: string
   password: string
@@ -421,23 +421,23 @@ export type UserUncheckedCreateWithoutJobsInput = {
   messages?: Prisma.MessagesUncheckedCreateNestedManyWithoutUserInput
 }
 
-export type UserCreateOrConnectWithoutJobsInput = {
+export type UserCreateOrConnectWithoutJopsInput = {
   where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutJobsInput, Prisma.UserUncheckedCreateWithoutJobsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutJopsInput, Prisma.UserUncheckedCreateWithoutJopsInput>
 }
 
-export type UserUpsertWithoutJobsInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutJobsInput, Prisma.UserUncheckedUpdateWithoutJobsInput>
-  create: Prisma.XOR<Prisma.UserCreateWithoutJobsInput, Prisma.UserUncheckedCreateWithoutJobsInput>
+export type UserUpsertWithoutJopsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutJopsInput, Prisma.UserUncheckedUpdateWithoutJopsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutJopsInput, Prisma.UserUncheckedCreateWithoutJopsInput>
   where?: Prisma.UserWhereInput
 }
 
-export type UserUpdateToOneWithWhereWithoutJobsInput = {
+export type UserUpdateToOneWithWhereWithoutJopsInput = {
   where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutJobsInput, Prisma.UserUncheckedUpdateWithoutJobsInput>
+  data: Prisma.XOR<Prisma.UserUpdateWithoutJopsInput, Prisma.UserUncheckedUpdateWithoutJopsInput>
 }
 
-export type UserUpdateWithoutJobsInput = {
+export type UserUpdateWithoutJopsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
@@ -446,7 +446,7 @@ export type UserUpdateWithoutJobsInput = {
   messages?: Prisma.MessagesUpdateManyWithoutUserNestedInput
 }
 
-export type UserUncheckedUpdateWithoutJobsInput = {
+export type UserUncheckedUpdateWithoutJopsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
@@ -461,7 +461,7 @@ export type UserCreateWithoutMessagesInput = {
   password: string
   created_at?: Date | string
   user_roles_organization?: Prisma.role_and_organizationCreateNestedManyWithoutUserInput
-  jobs?: Prisma.JobCreateNestedManyWithoutUserInput
+  jops?: Prisma.JopCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutMessagesInput = {
@@ -470,7 +470,7 @@ export type UserUncheckedCreateWithoutMessagesInput = {
   password: string
   created_at?: Date | string
   user_roles_organization?: Prisma.role_and_organizationUncheckedCreateNestedManyWithoutUserInput
-  jobs?: Prisma.JobUncheckedCreateNestedManyWithoutUserInput
+  jops?: Prisma.JopUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutMessagesInput = {
@@ -495,7 +495,7 @@ export type UserUpdateWithoutMessagesInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_roles_organization?: Prisma.role_and_organizationUpdateManyWithoutUserNestedInput
-  jobs?: Prisma.JobUpdateManyWithoutUserNestedInput
+  jops?: Prisma.JopUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutMessagesInput = {
@@ -504,7 +504,7 @@ export type UserUncheckedUpdateWithoutMessagesInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_roles_organization?: Prisma.role_and_organizationUncheckedUpdateManyWithoutUserNestedInput
-  jobs?: Prisma.JobUncheckedUpdateManyWithoutUserNestedInput
+  jops?: Prisma.JopUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -515,13 +515,13 @@ export type UserUncheckedUpdateWithoutMessagesInput = {
 export type UserCountOutputType = {
   user_roles_organization: number
   messages: number
-  jobs: number
+  jops: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user_roles_organization?: boolean | UserCountOutputTypeCountUser_roles_organizationArgs
   messages?: boolean | UserCountOutputTypeCountMessagesArgs
-  jobs?: boolean | UserCountOutputTypeCountJobsArgs
+  jops?: boolean | UserCountOutputTypeCountJopsArgs
 }
 
 /**
@@ -551,8 +551,8 @@ export type UserCountOutputTypeCountMessagesArgs<ExtArgs extends runtime.Types.E
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountJobsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.JobWhereInput
+export type UserCountOutputTypeCountJopsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.JopWhereInput
 }
 
 
@@ -563,7 +563,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   created_at?: boolean
   user_roles_organization?: boolean | Prisma.User$user_roles_organizationArgs<ExtArgs>
   messages?: boolean | Prisma.User$messagesArgs<ExtArgs>
-  jobs?: boolean | Prisma.User$jobsArgs<ExtArgs>
+  jops?: boolean | Prisma.User$jopsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -592,7 +592,7 @@ export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = run
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user_roles_organization?: boolean | Prisma.User$user_roles_organizationArgs<ExtArgs>
   messages?: boolean | Prisma.User$messagesArgs<ExtArgs>
-  jobs?: boolean | Prisma.User$jobsArgs<ExtArgs>
+  jops?: boolean | Prisma.User$jopsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -603,7 +603,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   objects: {
     user_roles_organization: Prisma.$role_and_organizationPayload<ExtArgs>[]
     messages: Prisma.$MessagesPayload<ExtArgs>[]
-    jobs: Prisma.$JobPayload<ExtArgs>[]
+    jops: Prisma.$JopPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1006,7 +1006,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   readonly [Symbol.toStringTag]: "PrismaPromise"
   user_roles_organization<T extends Prisma.User$user_roles_organizationArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$user_roles_organizationArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$role_and_organizationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   messages<T extends Prisma.User$messagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$messagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MessagesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  jobs<T extends Prisma.User$jobsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$jobsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$JobPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  jops<T extends Prisma.User$jopsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$jopsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$JopPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1481,27 +1481,27 @@ export type User$messagesArgs<ExtArgs extends runtime.Types.Extensions.InternalA
 }
 
 /**
- * User.jobs
+ * User.jops
  */
-export type User$jobsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type User$jopsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Job
+   * Select specific fields to fetch from the Jop
    */
-  select?: Prisma.JobSelect<ExtArgs> | null
+  select?: Prisma.JopSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Job
+   * Omit specific fields from the Jop
    */
-  omit?: Prisma.JobOmit<ExtArgs> | null
+  omit?: Prisma.JopOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.JobInclude<ExtArgs> | null
-  where?: Prisma.JobWhereInput
-  orderBy?: Prisma.JobOrderByWithRelationInput | Prisma.JobOrderByWithRelationInput[]
-  cursor?: Prisma.JobWhereUniqueInput
+  include?: Prisma.JopInclude<ExtArgs> | null
+  where?: Prisma.JopWhereInput
+  orderBy?: Prisma.JopOrderByWithRelationInput | Prisma.JopOrderByWithRelationInput[]
+  cursor?: Prisma.JopWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.JobScalarFieldEnum | Prisma.JobScalarFieldEnum[]
+  distinct?: Prisma.JopScalarFieldEnum | Prisma.JopScalarFieldEnum[]
 }
 
 /**

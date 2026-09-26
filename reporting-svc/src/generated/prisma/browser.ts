@@ -38,10 +38,10 @@ export type role_and_organization = Prisma.role_and_organizationModel
  */
 export type Comments = Prisma.CommentsModel
 /**
- * Model Job
+ * Model Jop
  * 
  */
-export type Job = Prisma.JobModel
+export type Jop = Prisma.JopModel
 /**
  * Model Report
  * 
