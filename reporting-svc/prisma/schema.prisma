@@ -4,8 +4,8 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-	provider = "prisma-client"
-	output   = "../src/generated/prisma"
+	provider = "prisma-client-js"
+	output   = "../generated/prisma"
 }
 
 datasource db {
@@ -15,7 +15,7 @@ datasource db {
 model	Organization {
 	id					String		@id @default(uuid())
 	name				String
-	script_jobs			Job[]
+	script_jobs			Jop[]
 	user_organization	role_and_organization[]
 	messages			Messages[]
 	description			String
@@ -34,22 +34,22 @@ model	User {
 	password					String
 	user_roles_organization		role_and_organization[]
 	messages					Messages[]
-	jobs						Job[]
+	jops						Jop[]
 	created_at					DateTime	@default(now())
 }
 
 model	role_and_organization {
 	id				String			@id @default(uuid())
-	user			User			@relation(fields: [user_id], references: [id], onDelete: Cascade)
+	user			User			@relation(fields: [user_id], references: [id])
 	user_id			String
-	organization	Organization	@relation(fields: [org_id], references: [id], onDelete: Cascade)
+	organization	Organization	@relation(fields: [org_id], references: [id])
 	org_id			String
 	role			Roles			@default(Viewer)
 }
 
 model	Comments {
 	id				String			@id @default(uuid())
-	job				Job	@relation(fields: [job_id], references: [id], onDelete: Cascade)
+	job				Jop	@relation(fields: [job_id], references: [id])
 	job_id			String
 	text			String
 	author			String
@@ -59,17 +59,17 @@ model	Comments {
 	created_at		DateTime		@default(now())
 }
 
-model	Job {
+model	Jop {
 	id				String			@id @default(uuid())
-	organization		Organization	@relation(fields: [org_id], references: [id], onDelete: Cascade)
+	organization		Organization	@relation(fields: [org_id], references: [id])
 	org_id				String
-	user				User?			@relation(fields: [created_by], references: [id], onDelete: SetNull)
-	created_by			String?
+	user				User			@relation(fields: [created_by], references: [id])
+	created_by			String
 	target				String
 	mode				JobModes		@default(Keyword)
 	status				JobStatuses	@default(Running)
 	customer_persona	Json
-	report				Report?
+	report				Report[]
 	comments			Comments[]
 	created_at			DateTime		@default(now())
 }
@@ -90,8 +90,8 @@ enum	JobStatuses {
 
 model	Report {
 	id				String			@id	@default(uuid())
-	job    Job    @relation(fields: [job_id], references: [id], onDelete: Cascade)
-	job_id String @unique
+	job				Jop	@relation(fields: [job_id], references: [id])
+	job_id			String
 	swot			Json
 	blue_ocean		Json
 	conclusion		String
@@ -124,9 +124,9 @@ enum	Roles {
 
 model	Messages {
 	id				String			@id	@default(uuid())
-	user			User 			@relation(fields: [user_id], references: [id], onDelete: Cascade)
+	user			User 			@relation(fields: [user_id], references: [id])
 	user_id			String
-	organization	Organization	@relation(fields: [org_id], references: [id], onDelete: Cascade)
+	organization	Organization	@relation(fields: [org_id], references: [id])
 	org_id			String
 	response		String
 	text			String
