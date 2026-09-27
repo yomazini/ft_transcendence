@@ -53,9 +53,6 @@ constructor(private readonly prisma: PrismaService) {}
 		const report = await this.prisma.report.findFirst({
 			where: {
 				job_id: id,
-				job: {
-					org_id: header['org-id'],
-				},
 			},
 			include: {
 				job: {
@@ -122,13 +119,23 @@ constructor(private readonly prisma: PrismaService) {}
 		if (!organization) {
 			throw new NotFoundException('there is no organization with this id');
 		}
-		this.prisma.report.delete({
-			where : {
+		const report = await this.prisma.report.findFirst({
+			where: {
 				id: id,
 				job: {
 					org_id: header['org-id'],
 				},
-			}
-		})
+			},
+		});
+
+		if (!report) {
+			throw new NotFoundException('Report not found');
+		}
+
+		await this.prisma.report.delete({
+			where: {
+				id: id,
+			},
+		});
 	}
 }
