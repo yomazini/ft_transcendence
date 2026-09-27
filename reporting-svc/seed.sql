@@ -56,7 +56,7 @@ ON CONFLICT (id) DO NOTHING;
 -- 4. JOB
 -- ============================================================
 
-INSERT INTO "Job" (
+INSERT INTO "Jop" (
     id,
     org_id,
     created_by,
@@ -80,54 +80,6 @@ INSERT INTO "Job" (
 )
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO "Job" (
-    id,
-    org_id,
-    created_by,
-    target,
-    mode,
-    status,
-    customer_persona,
-    created_at
-) VALUES (
-    'a18f2d90-3b41-4e2a-9f12-987654331abc',
-    '018f2d90-3b41-7e2a-9f12-111122223333',
-    '01111111-1111-7111-8111-111111111111',
-    'r/freelance',
-    'Subreddit',
-    'Done',
-    '{
-        "price_sensitivity": "budget",
-        "top_priority": "cost_saving"
-    }'::jsonb,
-    NOW()
-)
-ON CONFLICT (id) DO NOTHING;
-
-
-INSERT INTO "Job" (
-    id,
-    org_id,
-    created_by,
-    target,
-    mode,
-    status,
-    customer_persona,
-    created_at
-) VALUES (
-    'a18f2d90-3b41-4e2a-9f12-987654341abc',
-    '018f2d90-3b41-7e2a-9f12-111122223333',
-    '01111111-1111-7111-8111-111111111111',
-    'r/freelance',
-    'Subreddit',
-    'Done',
-    '{
-        "price_sensitivity": "budget",
-        "top_priority": "cost_saving"
-    }'::jsonb,
-    NOW()
-)
-ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================
 -- 5. COMMENTS
@@ -161,11 +113,6 @@ INSERT INTO "Comments" (
     NOW()
 )
 ON CONFLICT (id) DO NOTHING;
-
-
-
-
-
 
 
 -- ============================================================
@@ -219,105 +166,6 @@ INSERT INTO "Report" (
     NOW()
 )
 ON CONFLICT (id) DO NOTHING;
-
-
-
-INSERT INTO "Report" (
-    id,
-    job_id,
-    swot,
-    blue_ocean,
-    conclusion,
-    created_at
-) VALUES (
-    'c39e4a81-9b12-4f3e-8c3d-123456889abc',
-    'a18f2d90-3b41-4e2a-9f12-987654331abc',
-
-    '{
-        "strengths": [
-            "Fast capture speed",
-            "Reliable offline access"
-        ],
-        "weaknesses": [
-            "Mobile app feels bloated"
-        ],
-        "opportunities": [
-            "Automated topic auto-organization"
-        ],
-        "threats": [
-            "Users switching to markdown tools"
-        ]
-    }'::jsonb,
-
-    '{
-        "eliminate": [
-            "Complex database schemas"
-        ],
-        "reduce": [
-            "Plugin configurations"
-        ],
-        "raise": [
-            "Cross-device sync speed"
-        ],
-        "create": [
-            "AI-driven topic tagging"
-        ]
-    }'::jsonb,
-
-    'Users value fast synchronization and offline access, while the mobile experience and complexity remain areas for improvement.',
-
-    NOW()
-)
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO "Report" (
-    id,
-    job_id,
-    swot,
-    blue_ocean,
-    conclusion,
-    created_at
-) VALUES (
-    'c39e4a81-9b12-4f3e-8c3d-123456780abc',
-    'a18f2d90-3b41-4e2a-9f12-987654341abc',
-
-    '{
-        "strengths": [
-            "Fast capture speed",
-            "Reliable offline access"
-        ],
-        "weaknesses": [
-            "Mobile app feels bloated"
-        ],
-        "opportunities": [
-            "Automated topic auto-organization"
-        ],
-        "threats": [
-            "Users switching to markdown tools"
-        ]
-    }'::jsonb,
-
-    '{
-        "eliminate": [
-            "Complex database schemas"
-        ],
-        "reduce": [
-            "Plugin configurations"
-        ],
-        "raise": [
-            "Cross-device sync speed"
-        ],
-        "create": [
-            "AI-driven topic tagging"
-        ]
-    }'::jsonb,
-
-    'Users value fast synchronization and offline access, while the mobile experience and complexity remain areas for improvement.',
-
-    NOW()
-)
-ON CONFLICT (id) DO NOTHING;
-
 
 
 -- ============================================================
