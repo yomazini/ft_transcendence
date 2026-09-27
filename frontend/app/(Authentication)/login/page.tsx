@@ -1,29 +1,29 @@
-import Link from "next/link";
+import Link from "next/link"
 
-import { AuthCard } from "@/components/auth/auth-card";
-import { AuthFooter } from "@/components/auth/auth-footer";
-import { AuthHeader } from "@/components/auth/auth-header";
-import { AuthLayout } from "@/components/auth/auth-layout";
-import { SocialLogin } from "@/components/auth/social-login";
+import { AuthFooter } from "@/components/auth/auth-footer"
+import { AuthHeader } from "@/components/auth/auth-header"
+import { AuthLayout } from "@/components/auth/auth-layout"
+import { SocialLogin } from "@/components/auth/social-login"
 
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 export default function LoginPage() {
   return (
     <AuthLayout>
-      <AuthCard>
+
+      <div className="w-full max-w-md space-y-8">
+
         <AuthHeader
           title="Welcome Back"
-          description="Sign in to your InsightFlow account to continue."
+          description="Sign in to your account to continue."
         />
 
         <form className="space-y-6">
 
           {/* Email */}
-
           <div className="space-y-2">
             <Label htmlFor="email">
               Email Address
@@ -38,7 +38,6 @@ export default function LoginPage() {
           </div>
 
           {/* Password */}
-
           <div className="space-y-2">
 
             <div className="flex items-center justify-between">
@@ -66,7 +65,6 @@ export default function LoginPage() {
           </div>
 
           {/* Remember */}
-
           <div className="flex items-center space-x-2">
 
             <Checkbox id="remember" />
@@ -81,7 +79,6 @@ export default function LoginPage() {
           </div>
 
           {/* Submit */}
-
           <Button
             type="submit"
             className="w-full"
@@ -99,7 +96,9 @@ export default function LoginPage() {
           linkText="Create one"
           href="/register"
         />
-      </AuthCard>
+
+      </div>
+
     </AuthLayout>
-  );
+  )
 }

@@ -1,47 +1,122 @@
-import Link from "next/link";
-import { ReactNode } from "react";
+import { ReactNode } from "react"
 
 interface AuthLayoutProps {
-  children: ReactNode;
+  children: ReactNode
 }
 
 export function AuthLayout({
   children,
 }: AuthLayoutProps) {
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-6 py-12">
+    <main className="min-h-screen bg-background">
 
-      {/* Background decoration */}
+      <div className="grid min-h-screen lg:grid-cols-2">
 
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute left-1/2 top-0 h-[450px] w-[450px] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute bottom-0 right-0 h-[350px] w-[350px] rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute left-0 top-1/2 h-[300px] w-[300px] rounded-full bg-primary/5 blur-3xl" />
-      </div>
+        {/* LEFT SIDE */}
+        <div className="relative hidden w-[55%] overflow-hidden lg:flex">
 
-      <div className="flex w-full max-w-md flex-col items-center">
+          {/* Background image */}
+          <video
+    className="absolute inset-0 h-full w-full object-cover"
+    autoPlay
+    loop
+    muted
+    playsInline
+  >
+    <source
+      src="https://images.shadcnspace.com/assets/video/wave-video-loop.mp4"
+      type="video/mp4"
+    />
+  </video>
+          
 
-        {/* Logo */}
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-black/50" />
 
-        <Link
-          href="/"
-          className="mb-10 text-3xl font-bold tracking-tight"
-        >
-          InsightFlow
-        </Link>
+          {/* Content */}
+          <div className="relative z-10 flex flex-col justify-between p-12 text-white">
 
-        {/* Auth Card */}
+            {/* Logo */}
+            <div>
+              <h1 className="text-2xl font-bold">
+                InsightFlow
+              </h1>
+            </div>
 
-        {children}
+            {/* Main content */}
+            <div className="max-w-lg">
 
-        {/* Bottom */}
+              <h2 className="text-4xl font-semibold leading-tight">
+                Turn conversations into
+                <br />
+                actionable insights.
+              </h2>
 
-        <p className="mt-8 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} InsightFlow. All rights reserved.
-        </p>
+              <p className="mt-5 max-w-md text-base leading-7 text-white/75">
+                Understand what your community is saying,
+                discover trends, and transform Reddit
+                conversations into meaningful insights.
+              </p>
+
+            </div>
+
+            {/* Bottom */}
+            <p className="text-sm text-white/60">
+              Social intelligence powered by InsightFlow
+            </p>
+
+          </div>
+        </div>
+
+        {/* RIGHT SIDE */}
+        <div className="flex min-h-screen items-center justify-center px-6 py-12">
+
+          <div className="flex w-full max-w-md flex-col">
+
+            {children}
+
+            <p className="mt-8 text-center text-sm text-muted-foreground">
+              © {new Date().getFullYear()} InsightFlow. All rights reserved.
+            </p>
+
+          </div>
+
+        </div>
 
       </div>
 
     </main>
-  );
+  )
 }
+
+// import Link from "next/link";
+// import { ReactNode } from "react";
+
+// interface AuthLayoutProps {
+//   children: ReactNode;
+// }
+
+// export function AuthLayout({
+//   children,
+// }: AuthLayoutProps) {
+//   return (
+//     <main className="relative flex  min-h-screen items-center justify-center overflow-hidden bg-background px-6 py-12">
+
+      
+
+//       <div className="flex w-full max-w-md flex-col items-center">
+
+
+//         {children}
+
+//         {/* Bottom */}
+
+//         <p className="mt-8 text-center text-sm text-muted-foreground">
+//           © {new Date().getFullYear()} InsightFlow. All rights reserved.
+//         </p>
+
+//       </div>
+
+//     </main>
+//   );
+// }

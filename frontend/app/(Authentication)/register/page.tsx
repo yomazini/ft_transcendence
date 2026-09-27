@@ -1,10 +1,8 @@
 import Link from "next/link";
 
-import { AuthCard } from "@/components/auth/auth-card";
 import { AuthFooter } from "@/components/auth/auth-footer";
 import { AuthHeader } from "@/components/auth/auth-header";
 import { AuthLayout } from "@/components/auth/auth-layout";
-import { SocialLogin } from "@/components/auth/social-login";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,23 +12,19 @@ import { Label } from "@/components/ui/label";
 export default function RegisterPage() {
   return (
     <AuthLayout>
-      <AuthCard>
+      <div className="w-full max-w-md space-y-8">
+
         <AuthHeader
           title="Create Your Account"
-          description="Start transforming customer conversations into actionable insights."
+          description="Start transforming conversations into actionable insights."
         />
 
-        <form className="space-y-6">
+        <form className="space-y-5">
 
           {/* Name */}
-
-          <div className="grid gap-4 md:grid-cols-2">
-
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="firstName">
-                First Name
-              </Label>
-
+              <Label htmlFor="firstName">First Name</Label>
               <Input
                 id="firstName"
                 placeholder="John"
@@ -39,82 +33,55 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="lastName">
-                Last Name
-              </Label>
-
+              <Label htmlFor="lastName">Last Name</Label>
               <Input
                 id="lastName"
                 placeholder="Doe"
                 autoComplete="family-name"
               />
             </div>
-
           </div>
 
           {/* Email */}
-
           <div className="space-y-2">
-
-            <Label htmlFor="email">
-              Email Address
-            </Label>
-
+            <Label htmlFor="email">Email Address</Label>
             <Input
               id="email"
               type="email"
               placeholder="john@example.com"
               autoComplete="email"
             />
-
           </div>
 
           {/* Password */}
-
           <div className="space-y-2">
-
-            <Label htmlFor="password">
-              Password
-            </Label>
-
+            <Label htmlFor="password">Password</Label>
             <Input
               id="password"
               type="password"
               placeholder="••••••••"
               autoComplete="new-password"
             />
-
           </div>
 
           {/* Confirm Password */}
-
           <div className="space-y-2">
-
-            <Label htmlFor="confirmPassword">
-              Confirm Password
-            </Label>
-
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
             <Input
               id="confirmPassword"
               type="password"
               placeholder="••••••••"
               autoComplete="new-password"
             />
-
           </div>
 
           {/* Terms */}
-
-          <div className="flex items-start space-x-2">
-
-            <Checkbox
-              id="terms"
-              className="mt-1"
-            />
+          <div className="flex items-start gap-2">
+            <Checkbox id="terms" className="mt-1" />
 
             <Label
               htmlFor="terms"
-              className="font-normal leading-6"
+              className="font-normal leading-5 text-muted-foreground"
             >
               I agree to the{" "}
               <Link
@@ -132,29 +99,26 @@ export default function RegisterPage() {
               </Link>
               .
             </Label>
-
           </div>
 
           {/* Submit */}
-
           <Button
             type="submit"
-            className="w-full"
             size="lg"
+            className="w-full"
           >
             Create Account
           </Button>
 
         </form>
 
-        <SocialLogin />
-
         <AuthFooter
           text="Already have an account?"
           linkText="Sign in"
           href="/login"
         />
-      </AuthCard>
+
+      </div>
     </AuthLayout>
   );
 }
