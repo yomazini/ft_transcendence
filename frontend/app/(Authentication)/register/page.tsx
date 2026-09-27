@@ -1,4 +1,8 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { AuthCard } from "@/components/auth/auth-card";
 import { AuthFooter } from "@/components/auth/auth-footer";
@@ -10,151 +14,243 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+
+import {
+	MIN_PASSWORD_LENGTH,
+	isValidEmail,
+	register,
+	saveToken,
+} from "@/lib/auth";
+
+const MAX_ORG_DESCRIPTION_CHARS = 200;
 
 export default function RegisterPage() {
-  return (
-    <AuthLayout>
-      <AuthCard>
-        <AuthHeader
-          title="Create Your Account"
-          description="Start transforming customer conversations into actionable insights."
-        />
+	const router = useRouter();
 
-        <form className="space-y-6">
+	const [orgName, setOrgName] = useState<string>("");
+	const [orgDescription, setOrgDescription] = useState<string>("");
+	const [email, setEmail] = useState<string>("");
+	const [password, setPassword] = useState<string>("");
+	const [confirmPassword, setConfirmPassword] = useState<string>("");
+	const [terms, setTerms] = useState<boolean>(false);
+	const [error, setError] = useState<string>("");
+	const [loading, setLoading] = useState<boolean>(false);
 
-          {/* Name */}
+	function validate(): string {
+		if (!orgName.trim()) return "Enter your organization name.";
+		if (!orgDescription.trim()) return "Describe your organization.";
+		if (!isValidEmail(email.trim())) return "Enter a valid email address.";
+		if (password.length < MIN_PASSWORD_LENGTH) {
+			return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
+		}
+		if (password !== confirmPassword) return "Passwords do not match.";
+		if (!terms) return "You must accept the Terms of Service and Privacy Policy.";
+		return "";
+	}
 
-          <div className="grid gap-4 md:grid-cols-2">
+	async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+		e.preventDefault();
 
-            <div className="space-y-2">
-              <Label htmlFor="firstName">
-                First Name
-              </Label>
+		const problem = validate();
+		if (problem) {
+			setError(problem);
+			return;
+		}
 
-              <Input
-                id="firstName"
-                placeholder="John"
-                autoComplete="given-name"
-              />
-            </div>
+		setError("");
+		setLoading(true);
+		try {
+			const { access_token, user } = await register(
+				email.trim(),
+				password,
+				orgName.trim(),
+				orgDescription.trim()
+			);
+			saveToken(access_token, false);
+			router.push(`/${user.id}/dashboard`);
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Something went wrong.");
+		} finally {
+			setLoading(false);
+		}
+	}
 
-            <div className="space-y-2">
-              <Label htmlFor="lastName">
-                Last Name
-              </Label>
+	return (
+		<AuthLayout>
+			<AuthCard>
+				<AuthHeader
+					title="Create Your Account"
+					description="Start transforming customer conversations into actionable insights."
+				/>
 
-              <Input
-                id="lastName"
-                placeholder="Doe"
-                autoComplete="family-name"
-              />
-            </div>
+				<form className="space-y-6" onSubmit={handleSubmit} noValidate>
+					<div className="space-y-2">
 
-          </div>
+						<Label htmlFor="orgName">
+							Organization Name
+						</Label>
 
-          {/* Email */}
+						<Input
+							id="orgName"
+							name="orgName"
+							placeholder="Acme Inc."
+							autoComplete="organization"
+							value={orgName}
+							onChange={(e) => setOrgName(e.target.value)}
+							disabled={loading}
+							required
+						/>
+					</div>
+					<div className="space-y-2">
 
-          <div className="space-y-2">
+						<div className="flex items-center justify-between">
 
-            <Label htmlFor="email">
-              Email Address
-            </Label>
+							<Label htmlFor="orgDescription">
+								Organization Description
+							</Label>
+							<span aria-live="polite" className="text-xs font-medium text-muted-foreground">
+								{orgDescription.length}/{MAX_ORG_DESCRIPTION_CHARS}
+							</span>
 
-            <Input
-              id="email"
-              type="email"
-              placeholder="john@example.com"
-              autoComplete="email"
-            />
+						</div>
 
-          </div>
+						<Textarea
+							id="orgDescription"
+							name="orgDescription"
+							placeholder="e.g. We help small teams turn customer feedback into weekly action items..."
+							rows={10}
+							maxLength={MAX_ORG_DESCRIPTION_CHARS}
+							value={orgDescription}
+							onChange={(e) => setOrgDescription(e.target.value)}
+							disabled={loading}
+							required
+						/>
+					</div>
 
-          {/* Password */}
+					{/* Email */}
+					<div className="space-y-2">
 
-          <div className="space-y-2">
+						<Label htmlFor="email">
+							Email Address
+						</Label>
 
-            <Label htmlFor="password">
-              Password
-            </Label>
+						<Input
+							id="email"
+							name="email"
+							type="email"
+							placeholder="john@example.com"
+							autoComplete="email"
+							value={email}
+							onChange={(e) => setEmail(e.target.value)}
+							disabled={loading}
+							required
+						/>
+					</div>
 
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              autoComplete="new-password"
-            />
+					{/* Password */}
+					<div className="space-y-2">
 
-          </div>
+						<Label htmlFor="password">
+							Password
+						</Label>
 
-          {/* Confirm Password */}
+						<Input
+							id="password"
+							name="password"
+							type="password"
+							placeholder="••••••••"
+							autoComplete="new-password"
+							value={password}
+							onChange={(e) => setPassword(e.target.value)}
+							disabled={loading}
+							required
+						/>
+					</div>
 
-          <div className="space-y-2">
+					{/* Confirm Password */}
 
-            <Label htmlFor="confirmPassword">
-              Confirm Password
-            </Label>
+					<div className="space-y-2">
 
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="••••••••"
-              autoComplete="new-password"
-            />
+						<Label htmlFor="confirmPassword">
+							Confirm Password
+						</Label>
 
-          </div>
+						<Input
+							id="confirmPassword"
+							name="confirmPassword"
+							type="password"
+							placeholder="••••••••"
+							autoComplete="new-password"
+							value={confirmPassword}
+							onChange={(e) => setConfirmPassword(e.target.value)}
+							disabled={loading}
+							required
+						/>
 
-          {/* Terms */}
+					</div>
 
-          <div className="flex items-start space-x-2">
+					{/* Terms */}
+					<div className="flex items-start space-x-2">
+						<Checkbox
+							id="terms"
+							className="mt-1"
+							checked={terms}
+							onCheckedChange={(checked) => setTerms(checked)}
+							disabled={loading}
+						/>
+						<Label
+							htmlFor="terms"
+							className="block font-normal leading-6"
+						>
+							I agree to the{" "}
+							<Link
+								href="/terms"
+								className="text-primary hover:underline"
+							>
+								Terms of Service
+							</Link>{" "}
+							and{" "}
+							<Link
+								href="/privacy"
+								className="text-primary hover:underline"
+							>
+								Privacy Policy
+							</Link>
+							.
+						</Label>
 
-            <Checkbox
-              id="terms"
-              className="mt-1"
-            />
+					</div>
 
-            <Label
-              htmlFor="terms"
-              className="font-normal leading-6"
-            >
-              I agree to the{" "}
-              <Link
-                href="/terms"
-                className="text-primary hover:underline"
-              >
-                Terms of Service
-              </Link>{" "}
-              and{" "}
-              <Link
-                href="/privacy"
-                className="text-primary hover:underline"
-              >
-                Privacy Policy
-              </Link>
-              .
-            </Label>
+					{/* Error (only shown when there is one) */}
 
-          </div>
+					{error && (
+						<p role="alert" className="text-sm text-destructive">
+							{error}
+						</p>
+					)}
 
-          {/* Submit */}
+					{/* Submit */}
 
-          <Button
-            type="submit"
-            className="w-full"
-            size="lg"
-          >
-            Create Account
-          </Button>
+					<Button
+						type="submit"
+						className="w-full"
+						size="lg"
+						disabled={loading}
+					>
+						{loading ? "Creating account..." : "Create Account"}
+					</Button>
 
-        </form>
+				</form>
 
-        <SocialLogin />
+				<SocialLogin />
 
-        <AuthFooter
-          text="Already have an account?"
-          linkText="Sign in"
-          href="/login"
-        />
-      </AuthCard>
-    </AuthLayout>
-  );
+				<AuthFooter
+					text="Already have an account?"
+					linkText="Sign in"
+					href="/login"
+				/>
+			</AuthCard>
+		</AuthLayout>
+	);
 }
