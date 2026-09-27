@@ -3,7 +3,7 @@ import { ReportingService } from './reporting.service';
 import { UpdateReportingDto } from './dto/update-reporting.dto';
 import { ReportingHeadersDto } from './dto/headers/reporting-headers.dto';
 
-@Controller('dashboard')
+@Controller('reporting')
 export class ReportingController {
 	constructor(private readonly reportingService: ReportingService) {}
 
