@@ -5,6 +5,7 @@ import {
   House,
   Sparkles,
   GraduationCap,
+  CreditCard,
   HeartPulse,
   Settings,
   Users,
@@ -35,20 +36,20 @@ const dashboardItems = [
     url: "/33/management",
     icon: ShoppingCart,
   },
-  // {
-  //   title: "Modern",
-  //   url: "/dashboard/modern",
-  //   icon: House,
-  // },
   {
     title: "Chats",
     url: "/33/chats",
     icon: Sparkles,
   },
   {
+    title: "Billing",
+    url: "/33/billing",
+    icon: CreditCard,
+  },
+  {
     title: "Setting",
     url: "/33/setting",
-    icon: HeartPulse,
+    icon: Settings,
   },
 ]
 
