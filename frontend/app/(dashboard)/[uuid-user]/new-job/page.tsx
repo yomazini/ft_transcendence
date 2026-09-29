@@ -1,20 +1,13 @@
 import { ReactNode } from "react";
+import { Button } from "@/components/ui/button";
 import { ScrapeType } from "./scrape-type";
+import { LabelInput } from "./label-input";
 
-function LabelInput({label, children}:{label?: string,children?: ReactNode})
-{
-	return (
-		<div className="fex flex-col gap-1">
-			{label && <p className="text-sm font-medium text-zinc-900">{label}:</p>}
-			{children}
-		</div>
-	)
-}
 
 function StartJobButton()
 {
 	return (
-		<button
+		<Button
 			className="
 				w-1/3
 				self-end
@@ -23,13 +16,13 @@ function StartJobButton()
 				px-4 py-2
 				font-medium
 				text-white
-				hover:bg-orange-600\
+				hover:bg-orange-600
 				hover:cursor-pointer
 			"
 			type="submit"
 		>
 			Create Job
-		</button>
+		</Button>
 	)
 }
 
@@ -62,35 +55,35 @@ function JobContext()
 	)
 }
 
-function JobName()
-{
-	return (
-		<LabelInput label="Job name">
-			<input 
-				className="
-					w-full
-					min-h-10
-					rounded-lg
-					border
-					border-zinc-200
-					bg-white
-					px-3
-					py-2
-					text-zinc-900
-					placeholder:text-zinc-400
-					outline-none
-					focus:border-zinc-500
-					focus:ring-1
-					focus:ring-zinc-500
-				"
-				id="name"
-				type="text"
-				name="job-name"
-				placeholder="Job name"
-			/>
-		</LabelInput>
-	)
-}
+// function JobName()
+// {
+// 	return (
+// 		<LabelInput label="Job name">
+// 			<input 
+// 				className="
+// 					w-full
+// 					min-h-10
+// 					rounded-lg
+// 					border
+// 					border-zinc-200
+// 					bg-white
+// 					px-3
+// 					py-2
+// 					text-zinc-900
+// 					placeholder:text-zinc-400
+// 					outline-none
+// 					focus:border-zinc-500
+// 					focus:ring-1
+// 					focus:ring-zinc-500
+// 				"
+// 				id="name"
+// 				type="text"
+// 				name="job-name"
+// 				placeholder="Job name"
+// 			/>
+// 		</LabelInput>
+// 	)
+// }
 
 function NewScrapeForm(
 	{ 
@@ -124,8 +117,6 @@ export default function NewPage()
 				>
 					New Job
 				</h1>
-				<JobName />
-				<JobContext />
 				<ScrapeType />
 				<StartJobButton />
 			</NewScrapeForm>
