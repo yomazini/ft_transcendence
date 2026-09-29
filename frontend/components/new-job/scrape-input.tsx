@@ -1,7 +1,9 @@
 import { ComponentProps } from "react"
 import { cn } from "cn"
 
-export function ScrapeInput(props: ComponentProps<"input">)
+export type InputProps = ComponentProps<"input"> 
+
+export function ScrapeInput(props: InputProps)
 {
 	return (
 		<input

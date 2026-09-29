@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ScrapeInput } from "./scrape-input";
-import { LabelInput } from "./label-input";
+import { ScrapeInput } from "@/components/new-job/scrape-input";
+import { LabelInput } from "@/components/new-job/label-input";
 
 
 const scrapeTypes =[ 
@@ -26,10 +26,10 @@ function ScrapeSearch()
 	return (
 		<div className="flex flex-col gap-5">
 			<LabelInput label="Subreddit">
-				<ScrapeInput type="text" name="subbredit" placeholder="Subreddit"/>
+				<ScrapeInput required type="text" name="subbredit" placeholder="Subreddit"/>
 			</LabelInput>
 			<LabelInput label="Key word">
-				<ScrapeInput type="text" name="keyword" placeholder="Key word"/>
+				<ScrapeInput  type="text" name="keyword" placeholder="Key word"/>
 			</LabelInput>
 			<LabelInput label="Limit">
 				<ScrapeInput min={0} max={100} type="number" name="limit" placeholder="Limit"/>
@@ -44,6 +44,7 @@ export function ScrapeType()
 
 	return (
 		<div className="flex flex-col gap-3">
+			<input type="hidden" name="mode" value={selectedType.type}/>
 			<div className="flex gap-2">
 				{
 					scrapeTypes.map( (type) => {
@@ -77,8 +78,6 @@ export function ScrapeType()
 								hover:text-white\
 								hover:cursor-pointer"
 							}
-							name={isSelected ? "mode" : ""}
-							value={isSelected ? type.type : ""}
 							key={type.type}
 							type="button"
 							onClick={() => setSelectedType(type)}
