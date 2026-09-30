@@ -401,7 +401,7 @@ export const ModelName = {
   User: 'User',
   role_and_organization: 'role_and_organization',
   Comments: 'Comments',
-  Jop: 'Jop',
+  Job: 'Job',
   Report: 'Report',
   Backups: 'Backups',
   Messages: 'Messages'
@@ -420,7 +420,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "organization" | "user" | "role_and_organization" | "comments" | "jop" | "report" | "backups" | "messages"
+    modelProps: "organization" | "user" | "role_and_organization" | "comments" | "job" | "report" | "backups" | "messages"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -720,77 +720,77 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    Jop: {
-      payload: Prisma.$JopPayload<ExtArgs>
-      fields: Prisma.JopFieldRefs
+    Job: {
+      payload: Prisma.$JobPayload<ExtArgs>
+      fields: Prisma.JobFieldRefs
       operations: {
         findUnique: {
-          args: Prisma.JopFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$JopPayload> | null
+          args: Prisma.JobFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JobPayload> | null
         }
         findUniqueOrThrow: {
-          args: Prisma.JopFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$JopPayload>
+          args: Prisma.JobFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JobPayload>
         }
         findFirst: {
-          args: Prisma.JopFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$JopPayload> | null
+          args: Prisma.JobFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JobPayload> | null
         }
         findFirstOrThrow: {
-          args: Prisma.JopFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$JopPayload>
+          args: Prisma.JobFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JobPayload>
         }
         findMany: {
-          args: Prisma.JopFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$JopPayload>[]
+          args: Prisma.JobFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JobPayload>[]
         }
         create: {
-          args: Prisma.JopCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$JopPayload>
+          args: Prisma.JobCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JobPayload>
         }
         createMany: {
-          args: Prisma.JopCreateManyArgs<ExtArgs>
+          args: Prisma.JobCreateManyArgs<ExtArgs>
           result: BatchPayload
         }
         createManyAndReturn: {
-          args: Prisma.JopCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$JopPayload>[]
+          args: Prisma.JobCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JobPayload>[]
         }
         delete: {
-          args: Prisma.JopDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$JopPayload>
+          args: Prisma.JobDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JobPayload>
         }
         update: {
-          args: Prisma.JopUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$JopPayload>
+          args: Prisma.JobUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JobPayload>
         }
         deleteMany: {
-          args: Prisma.JopDeleteManyArgs<ExtArgs>
+          args: Prisma.JobDeleteManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateMany: {
-          args: Prisma.JopUpdateManyArgs<ExtArgs>
+          args: Prisma.JobUpdateManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateManyAndReturn: {
-          args: Prisma.JopUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$JopPayload>[]
+          args: Prisma.JobUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JobPayload>[]
         }
         upsert: {
-          args: Prisma.JopUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$JopPayload>
+          args: Prisma.JobUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$JobPayload>
         }
         aggregate: {
-          args: Prisma.JopAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateJop>
+          args: Prisma.JobAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateJob>
         }
         groupBy: {
-          args: Prisma.JopGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.JopGroupByOutputType>[]
+          args: Prisma.JobGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.JobGroupByOutputType>[]
         }
         count: {
-          args: Prisma.JopCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.JopCountAggregateOutputType> | number
+          args: Prisma.JobCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.JobCountAggregateOutputType> | number
         }
       }
     }
@@ -1098,7 +1098,7 @@ export const CommentsScalarFieldEnum = {
 export type CommentsScalarFieldEnum = (typeof CommentsScalarFieldEnum)[keyof typeof CommentsScalarFieldEnum]
 
 
-export const JopScalarFieldEnum = {
+export const JobScalarFieldEnum = {
   id: 'id',
   org_id: 'org_id',
   created_by: 'created_by',
@@ -1109,7 +1109,7 @@ export const JopScalarFieldEnum = {
   created_at: 'created_at'
 } as const
 
-export type JopScalarFieldEnum = (typeof JopScalarFieldEnum)[keyof typeof JopScalarFieldEnum]
+export type JobScalarFieldEnum = (typeof JobScalarFieldEnum)[keyof typeof JobScalarFieldEnum]
 
 
 export const ReportScalarFieldEnum = {
@@ -1484,7 +1484,7 @@ export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
   role_and_organization?: Prisma.role_and_organizationOmit
   comments?: Prisma.CommentsOmit
-  jop?: Prisma.JopOmit
+  job?: Prisma.JobOmit
   report?: Prisma.ReportOmit
   backups?: Prisma.BackupsOmit
   messages?: Prisma.MessagesOmit

@@ -15,7 +15,7 @@ datasource db {
 model	Organization {
 	id					String		@id @default(uuid())
 	name				String
-	script_jobs			Jop[]
+	script_jobs			Job[]
 	user_organization	role_and_organization[]
 	messages			Messages[]
 	description			String
@@ -34,22 +34,22 @@ model	User {
 	password					String
 	user_roles_organization		role_and_organization[]
 	messages					Messages[]
-	jops						Jop[]
+	jobs						Job[]
 	created_at					DateTime	@default(now())
 }
 
 model	role_and_organization {
 	id				String			@id @default(uuid())
-	user			User			@relation(fields: [user_id], references: [id])
+	user			User			@relation(fields: [user_id], references: [id], onDelete: Cascade)
 	user_id			String
-	organization	Organization	@relation(fields: [org_id], references: [id])
+	organization	Organization	@relation(fields: [org_id], references: [id], onDelete: Cascade)
 	org_id			String
 	role			Roles			@default(Viewer)
 }
 
 model	Comments {
 	id				String			@id @default(uuid())
-	job				Jop	@relation(fields: [job_id], references: [id])
+	job				Job	@relation(fields: [job_id], references: [id], onDelete: Cascade)
 	job_id			String
 	text			String
 	author			String
@@ -59,17 +59,17 @@ model	Comments {
 	created_at		DateTime		@default(now())
 }
 
-model	Jop {
+model	Job {
 	id				String			@id @default(uuid())
-	organization		Organization	@relation(fields: [org_id], references: [id])
+	organization		Organization	@relation(fields: [org_id], references: [id], onDelete: Cascade)
 	org_id				String
-	user				User			@relation(fields: [created_by], references: [id])
-	created_by			String
+	user				User?			@relation(fields: [created_by], references: [id], onDelete: SetNull)
+	created_by			String?
 	target				String
 	mode				JobModes		@default(Keyword)
 	status				JobStatuses	@default(Running)
 	customer_persona	Json
-	report				Report[]
+	report				Report?
 	comments			Comments[]
 	created_at			DateTime		@default(now())
 }
@@ -90,8 +90,8 @@ enum	JobStatuses {
 
 model	Report {
 	id				String			@id	@default(uuid())
-	job				Jop	@relation(fields: [job_id], references: [id])
-	job_id			String
+	job    Job    @relation(fields: [job_id], references: [id], onDelete: Cascade)
+	job_id String @unique
 	swot			Json
 	blue_ocean		Json
 	conclusion		String
@@ -124,9 +124,9 @@ enum	Roles {
 
 model	Messages {
 	id				String			@id	@default(uuid())
-	user			User 			@relation(fields: [user_id], references: [id])
+	user			User 			@relation(fields: [user_id], references: [id], onDelete: Cascade)
 	user_id			String
-	organization	Organization	@relation(fields: [org_id], references: [id])
+	organization	Organization	@relation(fields: [org_id], references: [id], onDelete: Cascade)
 	org_id			String
 	response		String
 	text			String
