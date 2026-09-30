@@ -26,8 +26,7 @@ export class ReportingController {
 			throw new BadRequestException('format must be JSON, CSV or XLSX');
 		}
 
-		const data = await this.reportingService.exportReport(id, header, format);
-		console.log(data);
+		const data = await this.reportingService.exportReport(id, header);
 		switch (fmt) {
 			case 'JSON':
 				res.set({

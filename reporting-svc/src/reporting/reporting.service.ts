@@ -223,7 +223,7 @@ export class ReportingService {
 		});
 	}
 
-	async exportReport(id: string, header: ReportingHeadersDto, format: string) {
+	async exportReport(id: string, header: ReportingHeadersDto) {
 		if (!header['org-id']) {
 			throw new BadRequestException('org-id header is required');
 		}
