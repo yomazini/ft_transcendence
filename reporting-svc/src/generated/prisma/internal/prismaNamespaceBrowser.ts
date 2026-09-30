@@ -55,7 +55,7 @@ export const ModelName = {
   User: 'User',
   role_and_organization: 'role_and_organization',
   Comments: 'Comments',
-  Jop: 'Jop',
+  Job: 'Job',
   Report: 'Report',
   Backups: 'Backups',
   Messages: 'Messages'
@@ -120,7 +120,7 @@ export const CommentsScalarFieldEnum = {
 export type CommentsScalarFieldEnum = (typeof CommentsScalarFieldEnum)[keyof typeof CommentsScalarFieldEnum]
 
 
-export const JopScalarFieldEnum = {
+export const JobScalarFieldEnum = {
   id: 'id',
   org_id: 'org_id',
   created_by: 'created_by',
@@ -131,7 +131,7 @@ export const JopScalarFieldEnum = {
   created_at: 'created_at'
 } as const
 
-export type JopScalarFieldEnum = (typeof JopScalarFieldEnum)[keyof typeof JopScalarFieldEnum]
+export type JobScalarFieldEnum = (typeof JobScalarFieldEnum)[keyof typeof JobScalarFieldEnum]
 
 
 export const ReportScalarFieldEnum = {

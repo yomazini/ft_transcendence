@@ -182,7 +182,7 @@ export type ReportWhereInput = {
   blue_ocean?: Prisma.JsonFilter<"Report">
   conclusion?: Prisma.StringFilter<"Report"> | string
   created_at?: Prisma.DateTimeFilter<"Report"> | Date | string
-  job?: Prisma.XOR<Prisma.JopScalarRelationFilter, Prisma.JopWhereInput>
+  job?: Prisma.XOR<Prisma.JobScalarRelationFilter, Prisma.JobWhereInput>
 }
 
 export type ReportOrderByWithRelationInput = {
@@ -192,21 +192,21 @@ export type ReportOrderByWithRelationInput = {
   blue_ocean?: Prisma.SortOrder
   conclusion?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
-  job?: Prisma.JopOrderByWithRelationInput
+  job?: Prisma.JobOrderByWithRelationInput
 }
 
 export type ReportWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  job_id?: string
   AND?: Prisma.ReportWhereInput | Prisma.ReportWhereInput[]
   OR?: Prisma.ReportWhereInput[]
   NOT?: Prisma.ReportWhereInput | Prisma.ReportWhereInput[]
-  job_id?: Prisma.StringFilter<"Report"> | string
   swot?: Prisma.JsonFilter<"Report">
   blue_ocean?: Prisma.JsonFilter<"Report">
   conclusion?: Prisma.StringFilter<"Report"> | string
   created_at?: Prisma.DateTimeFilter<"Report"> | Date | string
-  job?: Prisma.XOR<Prisma.JopScalarRelationFilter, Prisma.JopWhereInput>
-}, "id">
+  job?: Prisma.XOR<Prisma.JobScalarRelationFilter, Prisma.JobWhereInput>
+}, "id" | "job_id">
 
 export type ReportOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -238,7 +238,7 @@ export type ReportCreateInput = {
   blue_ocean: Prisma.JsonNullValueInput | runtime.InputJsonValue
   conclusion: string
   created_at?: Date | string
-  job: Prisma.JopCreateNestedOneWithoutReportInput
+  job: Prisma.JobCreateNestedOneWithoutReportInput
 }
 
 export type ReportUncheckedCreateInput = {
@@ -256,7 +256,7 @@ export type ReportUpdateInput = {
   blue_ocean?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   conclusion?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  job?: Prisma.JopUpdateOneRequiredWithoutReportNestedInput
+  job?: Prisma.JobUpdateOneRequiredWithoutReportNestedInput
 }
 
 export type ReportUncheckedUpdateInput = {
@@ -294,14 +294,9 @@ export type ReportUncheckedUpdateManyInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type ReportListRelationFilter = {
-  every?: Prisma.ReportWhereInput
-  some?: Prisma.ReportWhereInput
-  none?: Prisma.ReportWhereInput
-}
-
-export type ReportOrderByRelationAggregateInput = {
-  _count?: Prisma.SortOrder
+export type ReportNullableScalarRelationFilter = {
+  is?: Prisma.ReportWhereInput | null
+  isNot?: Prisma.ReportWhereInput | null
 }
 
 export type ReportCountOrderByAggregateInput = {
@@ -327,46 +322,36 @@ export type ReportMinOrderByAggregateInput = {
   created_at?: Prisma.SortOrder
 }
 
-export type ReportCreateNestedManyWithoutJobInput = {
-  create?: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput> | Prisma.ReportCreateWithoutJobInput[] | Prisma.ReportUncheckedCreateWithoutJobInput[]
-  connectOrCreate?: Prisma.ReportCreateOrConnectWithoutJobInput | Prisma.ReportCreateOrConnectWithoutJobInput[]
-  createMany?: Prisma.ReportCreateManyJobInputEnvelope
-  connect?: Prisma.ReportWhereUniqueInput | Prisma.ReportWhereUniqueInput[]
+export type ReportCreateNestedOneWithoutJobInput = {
+  create?: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput>
+  connectOrCreate?: Prisma.ReportCreateOrConnectWithoutJobInput
+  connect?: Prisma.ReportWhereUniqueInput
 }
 
-export type ReportUncheckedCreateNestedManyWithoutJobInput = {
-  create?: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput> | Prisma.ReportCreateWithoutJobInput[] | Prisma.ReportUncheckedCreateWithoutJobInput[]
-  connectOrCreate?: Prisma.ReportCreateOrConnectWithoutJobInput | Prisma.ReportCreateOrConnectWithoutJobInput[]
-  createMany?: Prisma.ReportCreateManyJobInputEnvelope
-  connect?: Prisma.ReportWhereUniqueInput | Prisma.ReportWhereUniqueInput[]
+export type ReportUncheckedCreateNestedOneWithoutJobInput = {
+  create?: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput>
+  connectOrCreate?: Prisma.ReportCreateOrConnectWithoutJobInput
+  connect?: Prisma.ReportWhereUniqueInput
 }
 
-export type ReportUpdateManyWithoutJobNestedInput = {
-  create?: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput> | Prisma.ReportCreateWithoutJobInput[] | Prisma.ReportUncheckedCreateWithoutJobInput[]
-  connectOrCreate?: Prisma.ReportCreateOrConnectWithoutJobInput | Prisma.ReportCreateOrConnectWithoutJobInput[]
-  upsert?: Prisma.ReportUpsertWithWhereUniqueWithoutJobInput | Prisma.ReportUpsertWithWhereUniqueWithoutJobInput[]
-  createMany?: Prisma.ReportCreateManyJobInputEnvelope
-  set?: Prisma.ReportWhereUniqueInput | Prisma.ReportWhereUniqueInput[]
-  disconnect?: Prisma.ReportWhereUniqueInput | Prisma.ReportWhereUniqueInput[]
-  delete?: Prisma.ReportWhereUniqueInput | Prisma.ReportWhereUniqueInput[]
-  connect?: Prisma.ReportWhereUniqueInput | Prisma.ReportWhereUniqueInput[]
-  update?: Prisma.ReportUpdateWithWhereUniqueWithoutJobInput | Prisma.ReportUpdateWithWhereUniqueWithoutJobInput[]
-  updateMany?: Prisma.ReportUpdateManyWithWhereWithoutJobInput | Prisma.ReportUpdateManyWithWhereWithoutJobInput[]
-  deleteMany?: Prisma.ReportScalarWhereInput | Prisma.ReportScalarWhereInput[]
+export type ReportUpdateOneWithoutJobNestedInput = {
+  create?: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput>
+  connectOrCreate?: Prisma.ReportCreateOrConnectWithoutJobInput
+  upsert?: Prisma.ReportUpsertWithoutJobInput
+  disconnect?: Prisma.ReportWhereInput | boolean
+  delete?: Prisma.ReportWhereInput | boolean
+  connect?: Prisma.ReportWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ReportUpdateToOneWithWhereWithoutJobInput, Prisma.ReportUpdateWithoutJobInput>, Prisma.ReportUncheckedUpdateWithoutJobInput>
 }
 
-export type ReportUncheckedUpdateManyWithoutJobNestedInput = {
-  create?: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput> | Prisma.ReportCreateWithoutJobInput[] | Prisma.ReportUncheckedCreateWithoutJobInput[]
-  connectOrCreate?: Prisma.ReportCreateOrConnectWithoutJobInput | Prisma.ReportCreateOrConnectWithoutJobInput[]
-  upsert?: Prisma.ReportUpsertWithWhereUniqueWithoutJobInput | Prisma.ReportUpsertWithWhereUniqueWithoutJobInput[]
-  createMany?: Prisma.ReportCreateManyJobInputEnvelope
-  set?: Prisma.ReportWhereUniqueInput | Prisma.ReportWhereUniqueInput[]
-  disconnect?: Prisma.ReportWhereUniqueInput | Prisma.ReportWhereUniqueInput[]
-  delete?: Prisma.ReportWhereUniqueInput | Prisma.ReportWhereUniqueInput[]
-  connect?: Prisma.ReportWhereUniqueInput | Prisma.ReportWhereUniqueInput[]
-  update?: Prisma.ReportUpdateWithWhereUniqueWithoutJobInput | Prisma.ReportUpdateWithWhereUniqueWithoutJobInput[]
-  updateMany?: Prisma.ReportUpdateManyWithWhereWithoutJobInput | Prisma.ReportUpdateManyWithWhereWithoutJobInput[]
-  deleteMany?: Prisma.ReportScalarWhereInput | Prisma.ReportScalarWhereInput[]
+export type ReportUncheckedUpdateOneWithoutJobNestedInput = {
+  create?: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput>
+  connectOrCreate?: Prisma.ReportCreateOrConnectWithoutJobInput
+  upsert?: Prisma.ReportUpsertWithoutJobInput
+  disconnect?: Prisma.ReportWhereInput | boolean
+  delete?: Prisma.ReportWhereInput | boolean
+  connect?: Prisma.ReportWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ReportUpdateToOneWithWhereWithoutJobInput, Prisma.ReportUpdateWithoutJobInput>, Prisma.ReportUncheckedUpdateWithoutJobInput>
 }
 
 export type ReportCreateWithoutJobInput = {
@@ -390,45 +375,15 @@ export type ReportCreateOrConnectWithoutJobInput = {
   create: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput>
 }
 
-export type ReportCreateManyJobInputEnvelope = {
-  data: Prisma.ReportCreateManyJobInput | Prisma.ReportCreateManyJobInput[]
-  skipDuplicates?: boolean
-}
-
-export type ReportUpsertWithWhereUniqueWithoutJobInput = {
-  where: Prisma.ReportWhereUniqueInput
+export type ReportUpsertWithoutJobInput = {
   update: Prisma.XOR<Prisma.ReportUpdateWithoutJobInput, Prisma.ReportUncheckedUpdateWithoutJobInput>
   create: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput>
+  where?: Prisma.ReportWhereInput
 }
 
-export type ReportUpdateWithWhereUniqueWithoutJobInput = {
-  where: Prisma.ReportWhereUniqueInput
+export type ReportUpdateToOneWithWhereWithoutJobInput = {
+  where?: Prisma.ReportWhereInput
   data: Prisma.XOR<Prisma.ReportUpdateWithoutJobInput, Prisma.ReportUncheckedUpdateWithoutJobInput>
-}
-
-export type ReportUpdateManyWithWhereWithoutJobInput = {
-  where: Prisma.ReportScalarWhereInput
-  data: Prisma.XOR<Prisma.ReportUpdateManyMutationInput, Prisma.ReportUncheckedUpdateManyWithoutJobInput>
-}
-
-export type ReportScalarWhereInput = {
-  AND?: Prisma.ReportScalarWhereInput | Prisma.ReportScalarWhereInput[]
-  OR?: Prisma.ReportScalarWhereInput[]
-  NOT?: Prisma.ReportScalarWhereInput | Prisma.ReportScalarWhereInput[]
-  id?: Prisma.StringFilter<"Report"> | string
-  job_id?: Prisma.StringFilter<"Report"> | string
-  swot?: Prisma.JsonFilter<"Report">
-  blue_ocean?: Prisma.JsonFilter<"Report">
-  conclusion?: Prisma.StringFilter<"Report"> | string
-  created_at?: Prisma.DateTimeFilter<"Report"> | Date | string
-}
-
-export type ReportCreateManyJobInput = {
-  id?: string
-  swot: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  blue_ocean: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  conclusion: string
-  created_at?: Date | string
 }
 
 export type ReportUpdateWithoutJobInput = {
@@ -447,14 +402,6 @@ export type ReportUncheckedUpdateWithoutJobInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type ReportUncheckedUpdateManyWithoutJobInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  swot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  blue_ocean?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  conclusion?: Prisma.StringFieldUpdateOperationsInput | string
-  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-}
-
 
 
 export type ReportSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -464,7 +411,7 @@ export type ReportSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   blue_ocean?: boolean
   conclusion?: boolean
   created_at?: boolean
-  job?: boolean | Prisma.JopDefaultArgs<ExtArgs>
+  job?: boolean | Prisma.JobDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["report"]>
 
 export type ReportSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -474,7 +421,7 @@ export type ReportSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   blue_ocean?: boolean
   conclusion?: boolean
   created_at?: boolean
-  job?: boolean | Prisma.JopDefaultArgs<ExtArgs>
+  job?: boolean | Prisma.JobDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["report"]>
 
 export type ReportSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -484,7 +431,7 @@ export type ReportSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   blue_ocean?: boolean
   conclusion?: boolean
   created_at?: boolean
-  job?: boolean | Prisma.JopDefaultArgs<ExtArgs>
+  job?: boolean | Prisma.JobDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["report"]>
 
 export type ReportSelectScalar = {
@@ -498,19 +445,19 @@ export type ReportSelectScalar = {
 
 export type ReportOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "job_id" | "swot" | "blue_ocean" | "conclusion" | "created_at", ExtArgs["result"]["report"]>
 export type ReportInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  job?: boolean | Prisma.JopDefaultArgs<ExtArgs>
+  job?: boolean | Prisma.JobDefaultArgs<ExtArgs>
 }
 export type ReportIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  job?: boolean | Prisma.JopDefaultArgs<ExtArgs>
+  job?: boolean | Prisma.JobDefaultArgs<ExtArgs>
 }
 export type ReportIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  job?: boolean | Prisma.JopDefaultArgs<ExtArgs>
+  job?: boolean | Prisma.JobDefaultArgs<ExtArgs>
 }
 
 export type $ReportPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Report"
   objects: {
-    job: Prisma.$JopPayload<ExtArgs>
+    job: Prisma.$JobPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -913,7 +860,7 @@ readonly fields: ReportFieldRefs;
  */
 export interface Prisma__ReportClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  job<T extends Prisma.JopDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.JopDefaultArgs<ExtArgs>>): Prisma.Prisma__JopClient<runtime.Types.Result.GetResult<Prisma.$JopPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  job<T extends Prisma.JobDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.JobDefaultArgs<ExtArgs>>): Prisma.Prisma__JobClient<runtime.Types.Result.GetResult<Prisma.$JobPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
