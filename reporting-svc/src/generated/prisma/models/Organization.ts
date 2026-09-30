@@ -174,7 +174,7 @@ export type OrganizationWhereInput = {
   name?: Prisma.StringFilter<"Organization"> | string
   description?: Prisma.StringFilter<"Organization"> | string
   created_at?: Prisma.DateTimeFilter<"Organization"> | Date | string
-  script_jobs?: Prisma.JopListRelationFilter
+  script_jobs?: Prisma.JobListRelationFilter
   user_organization?: Prisma.Role_and_organizationListRelationFilter
   messages?: Prisma.MessagesListRelationFilter
 }
@@ -184,7 +184,7 @@ export type OrganizationOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
-  script_jobs?: Prisma.JopOrderByRelationAggregateInput
+  script_jobs?: Prisma.JobOrderByRelationAggregateInput
   user_organization?: Prisma.role_and_organizationOrderByRelationAggregateInput
   messages?: Prisma.MessagesOrderByRelationAggregateInput
 }
@@ -197,7 +197,7 @@ export type OrganizationWhereUniqueInput = Prisma.AtLeast<{
   name?: Prisma.StringFilter<"Organization"> | string
   description?: Prisma.StringFilter<"Organization"> | string
   created_at?: Prisma.DateTimeFilter<"Organization"> | Date | string
-  script_jobs?: Prisma.JopListRelationFilter
+  script_jobs?: Prisma.JobListRelationFilter
   user_organization?: Prisma.Role_and_organizationListRelationFilter
   messages?: Prisma.MessagesListRelationFilter
 }, "id">
@@ -227,7 +227,7 @@ export type OrganizationCreateInput = {
   name: string
   description: string
   created_at?: Date | string
-  script_jobs?: Prisma.JopCreateNestedManyWithoutOrganizationInput
+  script_jobs?: Prisma.JobCreateNestedManyWithoutOrganizationInput
   user_organization?: Prisma.role_and_organizationCreateNestedManyWithoutOrganizationInput
   messages?: Prisma.MessagesCreateNestedManyWithoutOrganizationInput
 }
@@ -237,7 +237,7 @@ export type OrganizationUncheckedCreateInput = {
   name: string
   description: string
   created_at?: Date | string
-  script_jobs?: Prisma.JopUncheckedCreateNestedManyWithoutOrganizationInput
+  script_jobs?: Prisma.JobUncheckedCreateNestedManyWithoutOrganizationInput
   user_organization?: Prisma.role_and_organizationUncheckedCreateNestedManyWithoutOrganizationInput
   messages?: Prisma.MessagesUncheckedCreateNestedManyWithoutOrganizationInput
 }
@@ -247,7 +247,7 @@ export type OrganizationUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  script_jobs?: Prisma.JopUpdateManyWithoutOrganizationNestedInput
+  script_jobs?: Prisma.JobUpdateManyWithoutOrganizationNestedInput
   user_organization?: Prisma.role_and_organizationUpdateManyWithoutOrganizationNestedInput
   messages?: Prisma.MessagesUpdateManyWithoutOrganizationNestedInput
 }
@@ -257,7 +257,7 @@ export type OrganizationUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  script_jobs?: Prisma.JopUncheckedUpdateManyWithoutOrganizationNestedInput
+  script_jobs?: Prisma.JobUncheckedUpdateManyWithoutOrganizationNestedInput
   user_organization?: Prisma.role_and_organizationUncheckedUpdateManyWithoutOrganizationNestedInput
   messages?: Prisma.MessagesUncheckedUpdateManyWithoutOrganizationNestedInput
 }
@@ -364,7 +364,7 @@ export type OrganizationCreateWithoutUser_organizationInput = {
   name: string
   description: string
   created_at?: Date | string
-  script_jobs?: Prisma.JopCreateNestedManyWithoutOrganizationInput
+  script_jobs?: Prisma.JobCreateNestedManyWithoutOrganizationInput
   messages?: Prisma.MessagesCreateNestedManyWithoutOrganizationInput
 }
 
@@ -373,7 +373,7 @@ export type OrganizationUncheckedCreateWithoutUser_organizationInput = {
   name: string
   description: string
   created_at?: Date | string
-  script_jobs?: Prisma.JopUncheckedCreateNestedManyWithoutOrganizationInput
+  script_jobs?: Prisma.JobUncheckedCreateNestedManyWithoutOrganizationInput
   messages?: Prisma.MessagesUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
@@ -398,7 +398,7 @@ export type OrganizationUpdateWithoutUser_organizationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  script_jobs?: Prisma.JopUpdateManyWithoutOrganizationNestedInput
+  script_jobs?: Prisma.JobUpdateManyWithoutOrganizationNestedInput
   messages?: Prisma.MessagesUpdateManyWithoutOrganizationNestedInput
 }
 
@@ -407,7 +407,7 @@ export type OrganizationUncheckedUpdateWithoutUser_organizationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  script_jobs?: Prisma.JopUncheckedUpdateManyWithoutOrganizationNestedInput
+  script_jobs?: Prisma.JobUncheckedUpdateManyWithoutOrganizationNestedInput
   messages?: Prisma.MessagesUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
@@ -468,7 +468,7 @@ export type OrganizationCreateWithoutMessagesInput = {
   name: string
   description: string
   created_at?: Date | string
-  script_jobs?: Prisma.JopCreateNestedManyWithoutOrganizationInput
+  script_jobs?: Prisma.JobCreateNestedManyWithoutOrganizationInput
   user_organization?: Prisma.role_and_organizationCreateNestedManyWithoutOrganizationInput
 }
 
@@ -477,7 +477,7 @@ export type OrganizationUncheckedCreateWithoutMessagesInput = {
   name: string
   description: string
   created_at?: Date | string
-  script_jobs?: Prisma.JopUncheckedCreateNestedManyWithoutOrganizationInput
+  script_jobs?: Prisma.JobUncheckedCreateNestedManyWithoutOrganizationInput
   user_organization?: Prisma.role_and_organizationUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
@@ -502,7 +502,7 @@ export type OrganizationUpdateWithoutMessagesInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  script_jobs?: Prisma.JopUpdateManyWithoutOrganizationNestedInput
+  script_jobs?: Prisma.JobUpdateManyWithoutOrganizationNestedInput
   user_organization?: Prisma.role_and_organizationUpdateManyWithoutOrganizationNestedInput
 }
 
@@ -511,7 +511,7 @@ export type OrganizationUncheckedUpdateWithoutMessagesInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  script_jobs?: Prisma.JopUncheckedUpdateManyWithoutOrganizationNestedInput
+  script_jobs?: Prisma.JobUncheckedUpdateManyWithoutOrganizationNestedInput
   user_organization?: Prisma.role_and_organizationUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
@@ -546,7 +546,7 @@ export type OrganizationCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types
  * OrganizationCountOutputType without action
  */
 export type OrganizationCountOutputTypeCountScript_jobsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.JopWhereInput
+  where?: Prisma.JobWhereInput
 }
 
 /**
@@ -609,7 +609,7 @@ export type OrganizationIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types
 export type $OrganizationPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Organization"
   objects: {
-    script_jobs: Prisma.$JopPayload<ExtArgs>[]
+    script_jobs: Prisma.$JobPayload<ExtArgs>[]
     user_organization: Prisma.$role_and_organizationPayload<ExtArgs>[]
     messages: Prisma.$MessagesPayload<ExtArgs>[]
   }
@@ -1012,7 +1012,7 @@ readonly fields: OrganizationFieldRefs;
  */
 export interface Prisma__OrganizationClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  script_jobs<T extends Prisma.Organization$script_jobsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$script_jobsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$JopPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  script_jobs<T extends Prisma.Organization$script_jobsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$script_jobsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$JobPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   user_organization<T extends Prisma.Organization$user_organizationArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$user_organizationArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$role_and_organizationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   messages<T extends Prisma.Organization$messagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$messagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MessagesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -1445,23 +1445,23 @@ export type OrganizationDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.
  */
 export type Organization$script_jobsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Jop
+   * Select specific fields to fetch from the Job
    */
-  select?: Prisma.JopSelect<ExtArgs> | null
+  select?: Prisma.JobSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Jop
+   * Omit specific fields from the Job
    */
-  omit?: Prisma.JopOmit<ExtArgs> | null
+  omit?: Prisma.JobOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.JopInclude<ExtArgs> | null
-  where?: Prisma.JopWhereInput
-  orderBy?: Prisma.JopOrderByWithRelationInput | Prisma.JopOrderByWithRelationInput[]
-  cursor?: Prisma.JopWhereUniqueInput
+  include?: Prisma.JobInclude<ExtArgs> | null
+  where?: Prisma.JobWhereInput
+  orderBy?: Prisma.JobOrderByWithRelationInput | Prisma.JobOrderByWithRelationInput[]
+  cursor?: Prisma.JobWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.JopScalarFieldEnum | Prisma.JopScalarFieldEnum[]
+  distinct?: Prisma.JobScalarFieldEnum | Prisma.JobScalarFieldEnum[]
 }
 
 /**
