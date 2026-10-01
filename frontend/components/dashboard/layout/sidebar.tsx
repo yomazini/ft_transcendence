@@ -1,17 +1,13 @@
 "use client";
 import Link from "next/link"
 import {
-  BarChart3,
   ShoppingCart,
   House,
   Sparkles,
-  GraduationCap,
   CreditCard,
-  HeartPulse,
   Settings,
   Users,
   FileText,
-  ChevronDown,
   MoreHorizontal,
   Trash2,
   ChevronRight,
@@ -20,7 +16,6 @@ import {
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -38,6 +33,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import { useRouter } from "next/navigation";
 
 const dashboardItems = [
   {
@@ -81,34 +77,47 @@ const appItems = [
 ]
 
 export function AppSidebar() {
+	const router = useRouter();
 	const { reports, loading, error } = useReports();
-	const { report, loadingDelete, errorDelete, deleteReport} = useDeleteRepById();
+	const deleteReport = useDeleteRepById();
+
+	const handleDelete = async (id: string) => {
+		try {
+			await deleteReport.mutateAsync(id);
+			router.push("/33/billing");
+		} catch (err) {
+			console.log("error", err);
+		}
+	};
+
 	return (
 		<Sidebar
-		variant="sidebar"
-		collapsible="icon"
-		className="border bg-white"
+			variant="sidebar"
+			collapsible="icon"
+			className="border bg-white"
 		>
 		{/* Logo */}
 		<SidebarHeader className="border-b">
 			<div className="flex h-14 items-center gap-3 px-3">
-			<div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-black text-white">
-				<span className="text-lg font-bold">I</span>
-			</div>
+				<div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-black text-white">
+					<span className="text-lg font-bold">
+						I
+					</span>
+				</div>
 
-			<div className="flex flex-1 flex-col">
-				<span className="text-sm font-semibold">
-				InsightFlow
+				<div className="flex flex-1 flex-col">
+					<span className="text-sm font-semibold">
+						InsightFlow
+					</span>
+
+					<span className="text-[11px] text-muted-foreground">
+						Dashboard
+					</span>
+				</div>
+
+				<span className="rounded border px-1.5 py-0.5 text-[10px] font-medium">
+					V1.0
 				</span>
-
-				<span className="text-[11px] text-muted-foreground">
-				Dashboard
-				</span>
-			</div>
-
-			<span className="rounded border px-1.5 py-0.5 text-[10px] font-medium">
-				V1.0
-			</span>
 			</div>
 		</SidebarHeader>
 
@@ -162,17 +171,14 @@ export function AppSidebar() {
 												key={report.id}
 												className="group relative"
 											>
-												<SidebarMenuButton
-													className="report-menu-button"
-													render={
-														<a href={`/${report.id}/dashboard`} />
-													}
-												>
-													<span className="report-dot" />
-													<span className="truncate">
-														{report.id}
-													</span>
-												</SidebarMenuButton>
+
+											<SidebarMenuButton
+											className="report-menu-button"
+											render={<Link href={`/${report.id}/dashboard`} />}
+											>
+											<span className="report-dot" />
+											<span className="truncate">{report.id}</span>
+											</SidebarMenuButton>
 
 												<DropdownMenu>
 													<DropdownMenuTrigger
@@ -192,9 +198,7 @@ export function AppSidebar() {
 													>
 														<DropdownMenuItem
 															className="text-red-500 focus:text-red-500"
-															onClick={() =>
-																deleteReport(report.id)
-															}
+															onClick={() => handleDelete(report.id)}
 														>
 															<Trash2 className="mr-2 h-4 w-4" />
 															Delete

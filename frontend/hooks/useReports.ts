@@ -1,26 +1,13 @@
 "use client";
 
 import { getReports } from "@/lib/api/organizationReports";
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 export function useReports() {
-	const [reports, setReports] = useState([]);
-	const [loading, setloading] = useState(true);
-	const [error, setError] = useState<Error | null>(null);
+	const { data, isLoading, error } = useQuery({
+		queryKey: ["reports"],
+		queryFn: getReports,
+	});
 
-	useEffect(() => {
-		getReports()
-			.then((data) => {
-				setReports(data);
-			})
-			.catch((error) => {
-				setError(error);
-			})
-			.finally(() => setloading(false));
-	}, []);
-	return {
-		reports,
-		loading,
-		error
-	};
+	return { reports: data ?? [], loading: isLoading, error };
 }

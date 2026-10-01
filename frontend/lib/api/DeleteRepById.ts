@@ -1,5 +1,4 @@
-export async function DeleteReportById( id : string ) {
-
+export async function DeleteReportById(id: string) {
 	const response = await fetch(`http://localhost:3003/reporting/${id}`, {
 		method: "DELETE",
 		headers: {
@@ -8,8 +7,6 @@ export async function DeleteReportById( id : string ) {
 	});
 
 	if (!response.ok) {
-		throw new Error("Failed to Delet reports");
+		throw new Error(`Failed to delete report (${response.status})`);
 	}
-	
-	return (response.json());
 }
