@@ -1,0 +1,18 @@
+meta {
+  name: 05 Unauthorized Test
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{gateway_url}}/api/jobs
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "mode": "subreddit",
+    "target": "r/freelance"
+  }
+}
