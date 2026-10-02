@@ -5,15 +5,15 @@ interface AuthLayoutProps {
 }
 
 export function AuthLayout({
-  children,
+	children,
 }: AuthLayoutProps) {
   return (
     <main className="min-h-screen bg-background">
 
-      <div className="grid min-h-screen lg:grid-cols-2">
+      <div className="flex min-h-screen ">
 
         {/* LEFT SIDE */}
-        <div className="relative hidden w-[55%] overflow-hidden lg:flex">
+        <div className="relative hidden w-[45%] overflow-hidden lg:flex">
 
           {/* Background image */}
           <video
@@ -69,7 +69,7 @@ export function AuthLayout({
         </div>
 
         {/* RIGHT SIDE */}
-        <div className="flex min-h-screen items-center justify-center px-6 py-12">
+        <div className="flex min-h-screen items-center justify-center px-6 py-12  w-full">
 
           <div className="flex w-full max-w-md flex-col">
 
@@ -83,40 +83,8 @@ export function AuthLayout({
 
         </div>
 
-      </div>
+			</div>
 
     </main>
   )
 }
-
-// import Link from "next/link";
-// import { ReactNode } from "react";
-
-// interface AuthLayoutProps {
-//   children: ReactNode;
-// }
-
-// export function AuthLayout({
-//   children,
-// }: AuthLayoutProps) {
-//   return (
-//     <main className="relative flex  min-h-screen items-center justify-center overflow-hidden bg-background px-6 py-12">
-
-      
-
-//       <div className="flex w-full max-w-md flex-col items-center">
-
-
-//         {children}
-
-//         {/* Bottom */}
-
-//         <p className="mt-8 text-center text-sm text-muted-foreground">
-//           © {new Date().getFullYear()} InsightFlow. All rights reserved.
-//         </p>
-
-//       </div>
-
-//     </main>
-//   );
-// }
