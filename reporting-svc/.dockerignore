@@ -1,0 +1,7 @@
+.env
+Dockerfile
+seed.sql
+node_modules
+.postgres.env
+*.md
+.git
