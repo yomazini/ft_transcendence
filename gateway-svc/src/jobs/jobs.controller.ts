@@ -9,7 +9,12 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import { JobsService } from './jobs.service';
 import { CreateJobDto } from './dto/create-job.dto';
@@ -36,8 +41,14 @@ export class JobsController {
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: 'Submit a new Social Intelligence extraction job' })
   @ApiResponse({ status: 201, description: 'Job enqueued successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized — missing Bearer token' })
-  @ApiResponse({ status: 429, description: 'Too Many Requests — Rate limit exceeded' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized — missing Bearer token',
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too Many Requests — Rate limit exceeded',
+  })
   createJob(@Body() body: CreateJobDto, @Req() req: any) {
     return this.jobsService.createJob(body, req.user);
   }
@@ -53,7 +64,9 @@ export class JobsController {
 
   @Get('reports/:id')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Fetch synthesized SWOT & Blue Ocean Strategy Report' })
+  @ApiOperation({
+    summary: 'Fetch synthesized SWOT & Blue Ocean Strategy Report',
+  })
   @ApiResponse({ status: 200, description: 'Report retrieved' })
   @ApiResponse({ status: 404, description: 'Report not found' })
   getReport(@Param('id') id: string, @Req() req: any) {

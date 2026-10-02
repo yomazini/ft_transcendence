@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsOptional, IsIn, IsObject } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsIn,
+  IsObject,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CustomerPersonaDto {
@@ -7,7 +13,10 @@ export class CustomerPersonaDto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ enum: ['budget', 'mid-market', 'premium'], example: 'budget' })
+  @ApiPropertyOptional({
+    enum: ['budget', 'mid-market', 'premium'],
+    example: 'budget',
+  })
   @IsOptional()
   @IsIn(['budget', 'mid-market', 'premium', 'midMarket'])
   price_sensitivity?: string;
@@ -26,7 +35,16 @@ export class CreateJobDto {
   })
   @IsNotEmpty()
   @IsString()
-  @IsIn(['keyword', 'subreddit', 'post', 'user', 'Keyword', 'Subreddit', 'Post', 'User'])
+  @IsIn([
+    'keyword',
+    'subreddit',
+    'post',
+    'user',
+    'Keyword',
+    'Subreddit',
+    'Post',
+    'User',
+  ])
   mode: string;
 
   @ApiProperty({

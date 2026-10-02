@@ -1,8 +1,18 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { randomUUID } from 'crypto';
 import { CreateJobDto } from './dto/create-job.dto';
-import { DatabaseService, JobRecord, ReportRecord } from '../database/database.service';
+import {
+  DatabaseService,
+  JobRecord,
+  ReportRecord,
+} from '../database/database.service';
 import { EventsGateway } from '../events/events.gateway';
 import { AuthenticatedUser } from '../auth/jwt-auth.guard';
 
@@ -29,9 +39,13 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
           connectTimeout: 3000,
         },
       });
-      this.logger.log(`Connected BullMQ to Redis at ${host}:${port} on queue [scrape-job]`);
+      this.logger.log(
+        `Connected BullMQ to Redis at ${host}:${port} on queue [scrape-job]`,
+      );
     } catch (err: any) {
-      this.logger.warn(`Redis connection failed: ${err.message}. Using resilient fallback queue.`);
+      this.logger.warn(
+        `Redis connection failed: ${err.message}. Using resilient fallback queue.`,
+      );
     }
   }
 
@@ -86,7 +100,9 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
         );
         this.logger.log(`Enqueued job ${jobId} to BullMQ queue [scrape-job]`);
       } catch (err: any) {
-        this.logger.warn(`Failed to push job ${jobId} to BullMQ: ${err.message}. Safe fallback active.`);
+        this.logger.warn(
+          `Failed to push job ${jobId} to BullMQ: ${err.message}. Safe fallback active.`,
+        );
       }
     }
 
@@ -118,7 +134,10 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     return job;
   }
 
-  async getReportByJobId(id: string, user: AuthenticatedUser): Promise<ReportRecord> {
+  async getReportByJobId(
+    id: string,
+    user: AuthenticatedUser,
+  ): Promise<ReportRecord> {
     const report = await this.databaseService.findReportByJobId(id);
     if (!report) {
       throw new NotFoundException(`No report found for job ID ${id}`);

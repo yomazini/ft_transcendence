@@ -1,4 +1,9 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
 import { Pool, QueryResult } from 'pg';
 
 export interface JobRecord {
@@ -95,7 +100,9 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
         ]);
         this.logger.log(`Persisted Job ${job.id} to PostgreSQL`);
       } catch (err: any) {
-        this.logger.warn(`Failed to persist Job to DB: ${err.message}. Retained in in-memory store.`);
+        this.logger.warn(
+          `Failed to persist Job to DB: ${err.message}. Retained in in-memory store.`,
+        );
       }
     }
   }
@@ -117,11 +124,16 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
             mode: row.mode,
             status: String(row.status).toLowerCase(),
             customer_persona: row.customer_persona,
-            created_at: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
+            created_at:
+              row.created_at instanceof Date
+                ? row.created_at.toISOString()
+                : String(row.created_at),
           };
         }
       } catch (err: any) {
-        this.logger.warn(`Postgres lookup failed: ${err.message}. Falling back to in-memory store.`);
+        this.logger.warn(
+          `Postgres lookup failed: ${err.message}. Falling back to in-memory store.`,
+        );
       }
     }
 
@@ -143,7 +155,10 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
             swot: row.swot,
             blue_ocean: row.blue_ocean,
             conclusion: row.conclusion,
-            created_at: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
+            created_at:
+              row.created_at instanceof Date
+                ? row.created_at.toISOString()
+                : String(row.created_at),
           };
         }
       } catch (err: any) {
@@ -200,10 +215,22 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
         ],
       },
       blue_ocean: {
-        eliminate: ['Complex manual database setups', 'Bloated multi-tier onboarding forms'],
-        reduce: ['Report generation latency', 'Cost per analyzed Reddit thread'],
-        raise: ['Actionable customer sentiment resolution', 'Traceability to original comments'],
-        create: ['One-click executive SWOT synthesis', 'Interactive pgvector semantic chat'],
+        eliminate: [
+          'Complex manual database setups',
+          'Bloated multi-tier onboarding forms',
+        ],
+        reduce: [
+          'Report generation latency',
+          'Cost per analyzed Reddit thread',
+        ],
+        raise: [
+          'Actionable customer sentiment resolution',
+          'Traceability to original comments',
+        ],
+        create: [
+          'One-click executive SWOT synthesis',
+          'Interactive pgvector semantic chat',
+        ],
       },
       conclusion:
         'Users value fast synchronization and clear support, but express dissatisfaction regarding opaque auto-renewals. Strong market opportunity exists for an automated social intelligence dashboard.',
@@ -211,7 +238,10 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     };
 
     this.inMemoryReports.set(defaultJobId, defaultReport);
-    this.inMemoryReports.set(seedJobId, { ...defaultReport, job_id: seedJobId });
+    this.inMemoryReports.set(seedJobId, {
+      ...defaultReport,
+      job_id: seedJobId,
+    });
     this.inMemoryReports.set(defaultReport.id, defaultReport);
   }
 }

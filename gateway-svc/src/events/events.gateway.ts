@@ -53,8 +53,10 @@ export class EventsGateway
     };
 
     const eventName = `job:${status}`;
-    this.logger.log(`Emitting WebSocket event [${eventName}]: ${JSON.stringify(payload)}`);
-    
+    this.logger.log(
+      `Emitting WebSocket event [${eventName}]: ${JSON.stringify(payload)}`,
+    );
+
     if (this.server) {
       this.server.emit(eventName, payload);
       // Also emit a generic job:update event for convenience

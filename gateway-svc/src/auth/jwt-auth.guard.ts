@@ -53,7 +53,8 @@ export class JwtAuthGuard implements CanActivate {
           Buffer.from(parts[1], 'base64').toString('utf-8'),
         );
         request.user = {
-          id: payload.sub || payload.id || '01111111-1111-7111-8111-111111111111',
+          id:
+            payload.sub || payload.id || '01111111-1111-7111-8111-111111111111',
           org_id: payload.org_id || '018f2d90-3b41-7e2a-9f12-111122223333',
           email: payload.email || 'test@acme.com',
           role: payload.role || 'Admin',
