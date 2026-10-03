@@ -37,6 +37,7 @@
     "class-validator": "^0.15.1",
     "exceljs": "^4.4.0",
     "mime-types": "^3.0.2",
+    "minio": "^8.0.7",
     "pg": "^8.23.0",
     "pg-connection-string": "^2.14.0",
     "reflect-metadata": "^0.2.2",
