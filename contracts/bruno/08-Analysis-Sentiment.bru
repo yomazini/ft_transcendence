@@ -1,0 +1,21 @@
+meta {
+  name: 08 Analysis Sentiment
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{analysis_url}}/analyze/sentiment
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "comments": [
+      "I love this product, it works seamlessly!",
+      "The service was terrible and slow.",
+      "It is an average tool for the price."
+    ]
+  }
+}
