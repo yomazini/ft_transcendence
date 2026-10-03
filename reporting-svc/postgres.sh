@@ -1,5 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 
-export $(cat /app/.env | xargs)
+pnpm exec dotenv -e .env.example -- prisma migrate dev
 
-exec docker-entrypoint.sh postgres
+pnpm exec prisma migrate deploy
+
+exec pnpm start:dev
