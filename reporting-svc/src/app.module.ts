@@ -7,11 +7,15 @@ import { S3Module } from './s3/s3.module';
 import awsConfig from './s3/aws.config';
 
 @Module({
-	imports: [ConfigModule.forRoot({ isGlobal: true }), ReportingModule, S3Module, 
-				ConfigModule.forRoot({
-				load: [awsConfig],
-				isGlobal: true,
-				}),],
+	imports: [
+		ConfigModule.forRoot({
+			isGlobal: true,
+			load: [awsConfig],
+			envFilePath: '.env.example',
+		}),
+		ReportingModule,
+		S3Module,
+	],
 	controllers: [AppController],
 	providers: [AppService],
 })
