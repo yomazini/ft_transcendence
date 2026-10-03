@@ -30,3 +30,13 @@ services:
     networks: [ft_network]
     restart: unless-stopped
     # Owner: Oussama (schema/migrations across all services)
+  # --- MinIo -------------------------------------------------------------
+  minio:
+    image: soldevelo/minio:2026.7.17
+    restart: unless-stopped
+    env_file: .env.example
+    command: server /bitnami/minio/data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
