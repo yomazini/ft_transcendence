@@ -1,27 +1,59 @@
-import { Injectable } from '@nestjs/common';
-import { CreateMinioDto } from './dto/create-minio.dto';
-import { UpdateMinioDto } from './dto/update-minio.dto';
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import * as Minio from 'minio'
+import { ConfigService } from '@nestjs/config';
+import { basename, join } from 'path';
+import { createReadStream, existsSync, statSync } from 'fs';
 
 @Injectable()
-export class MinioService {
-	create(createMinioDto: CreateMinioDto) {
-		return 'This action adds a new minio';
+export class MinioService implements OnModuleInit  {
+	private minioClient: Minio.Client
+	private bucketName: string
+	constructor(private readonly configService: ConfigService) {
+		this.minioClient = new Minio.Client({
+			endPoint: this.configService.get('MINIO_ENDPOINT') as string,
+			port: Number(this.configService.get('MINIO_PORT')),
+			useSSL: this.configService.get('MINIO_USE_SSL') === 'true',
+			accessKey: this.configService.get('MINIO_ACCESS_KEY'),
+			secretKey: this.configService.get('MINIO_SECRET_KEY')
+		});
+		this.bucketName = this.configService.get('MINIO_BUCKET_NAME') as string;
 	}
 
-	findAll() {
-		return `This action returns all minio`;
+	async createBucketIfNotExists() {
+		const bucketExists = await this.minioClient.bucketExists(this.bucketName);
+		if (!bucketExists) {
+			await this.minioClient.makeBucket(this.bucketName, 'eu-west-1');
+		}
 	}
 
-	findOne(id: number) {
-		return `This action returns a #${id} minio`;
+	async onModuleInit() {
+		await this.createBucketIfNotExists();
 	}
 
-	update(id: number, updateMinioDto: UpdateMinioDto) {
-		return `This action updates a #${id} minio`;
+	async uploadFromDisk(fileName: string): Promise<string> {
+		const dir = "/home/osouadi/goinfre/downloads";
+		const filePath = join(dir, basename(fileName));
+		if (!existsSync(filePath)) {
+			throw new NotFoundException('File not found');
+		}
+		const stream = createReadStream(filePath);
+		const { size } = statSync(filePath);
+		await this.minioClient.putObject(
+			this.bucketName,
+			fileName,
+			stream,
+			size,
+		)
+		return (fileName);
 	}
 
-	remove(id: number) {
-		return `This action removes a #${id} minio`;
+	async downloadToDisk(fileName: string): Promise<string> {
+		const dir = "/home/osouadi/goinfre/downloads";
+		const destPath = join(dir, basename(fileName));
+
+		await this.minioClient.fGetObject(this.bucketName, fileName, destPath);
+
+		return destPath;
 	}
+
 }

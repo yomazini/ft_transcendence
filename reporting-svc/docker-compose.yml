@@ -13,6 +13,9 @@ services:
       - "3003:3003"
     depends_on:
       postgres: { condition: service_healthy }
+      minio: { condition: service_healthy }
+    volumes:
+      - /home/osouadi/goinfre/downloads:/home/osouadi/goinfre/downloads
     networks: [ft_network]
     restart: unless-stopped
     # Owner: Oussama
@@ -36,6 +39,15 @@ services:
     restart: unless-stopped
     env_file: .env.example
     command: server /bitnami/minio/data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    volumes:
+      - /home/osouadi/goinfre/downloads:/home/osouadi/goinfre/downloads
+    networks: [ft_network]
     ports:
       - "9000:9000"
       - "9001:9001"

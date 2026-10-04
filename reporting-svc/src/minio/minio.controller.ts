@@ -1,34 +1,18 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Param} from '@nestjs/common';
 import { MinioService } from './minio.service';
-import { CreateMinioDto } from './dto/create-minio.dto';
-import { UpdateMinioDto } from './dto/update-minio.dto';
 
 @Controller('minio')
 export class MinioController {
-  constructor(private readonly minioService: MinioService) {}
+	constructor(private readonly minioService: MinioService) {}
 
-  @Post()
-  create(@Body() createMinioDto: CreateMinioDto) {
-    return this.minioService.create(createMinioDto);
-  }
+	@Post(':fileName')
+	uploadFromDisk(@Param('fileName') fileName: string) {
+		return this.minioService.uploadFromDisk(fileName);
+	}
 
-  @Get()
-  findAll() {
-    return this.minioService.findAll();
-  }
+	@Get(':fileName')
+	downloadToDisk(@Param('fileName') fileName: string) {
+		return this.minioService.downloadToDisk(fileName);
+	}
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.minioService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMinioDto: UpdateMinioDto) {
-    return this.minioService.update(+id, updateMinioDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.minioService.remove(+id);
-  }
 }
