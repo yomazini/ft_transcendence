@@ -5,14 +5,14 @@ import * as fs from 'fs';
 import { getDbConfig } from './backup.config';
 import { spawn } from 'child_process';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { S3Service } from 'src/s3/s3.service';
 import { BackupStatus } from 'src/generated/prisma/enums';
+import { MinioService } from 'src/minio/minio.service';
 
 @Injectable()
 export class BackupsService {
 	private readonly logger = new Logger(BackupsService.name);
-	private readonly backupDir = path.resolve(__dirname, '../../../../backups');
-	constructor(private readonly prisma: PrismaService, private readonly s3Service: S3Service) {
+	private readonly backupDir = "/home/osouadi/goinfre/downloads";
+	constructor(private readonly prisma: PrismaService, private readonly minioService: MinioService) {
 		if (!fs.existsSync(this.backupDir)) {
 			fs.mkdirSync(this.backupDir, { recursive: true });
 		}
@@ -23,12 +23,12 @@ export class BackupsService {
 		const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 		const fileName = `${database}_${timestamp}.dump`;
 		const filePath = path.join(this.backupDir, `${database}_${timestamp}.dump`);
-
+		
 		const backupRecord = await this.prisma.backups.create({
 			data: {
 				fileName: fileName,
 				filePath: filePath,
-				status: BackupStatus.SUCCESS,
+				status: BackupStatus.IN_PROGRESS,
 			},
 		});
 
@@ -85,19 +85,21 @@ export class BackupsService {
 			});
 		});
 
-		const key = await this.s3Service.uploadFile(filePath, "backup");
+		const key = await this.minioService.uploadFromDisk(fileName);
+		const { size } = fs.statSync(filePath);
 
 		await this.prisma.backups.update({
 			where: {
 				id: backupRecord.id,
 			},
 			data: {
-				status: BackupStatus.SUCCESS,
 				s3Key: key,
+				fileSize: size,
+				status: BackupStatus.SUCCESS,
 			},
 		});
 
-		await fs.promises.unlink(filePath).catch(() => {});
+		// await fs.promises.unlink(filePath).catch(() => {});
 
 		return backup;
 	}
@@ -112,7 +114,7 @@ export class BackupsService {
 		if (!record.s3Key) {
 			throw new BadRequestException('This backup has no file in S3 and cannot be restored');
 		}
-		const tempfile = await this.s3Service.downloadToPath(record.s3Key);
+		const tempfile = await this.minioService.downloadToDisk(record.s3Key);
 
 		const { host, port, database, user, password } = getDbConfig();
 
@@ -182,7 +184,7 @@ export class BackupsService {
 			});
 		});
 
-		await fs.promises.unlink(tempfile).catch(() => {});
+		// await fs.promises.unlink(tempfile).catch(() => {});
 
 		return restore;
 	}
@@ -191,7 +193,7 @@ export class BackupsService {
 		return this.prisma.backups.findMany({ orderBy: { created_at: 'desc' } });
 	}
 
-	@Cron(CronExpression.EVERY_DAY_AT_2AM)
+	@Cron(CronExpression.EVERY_10_SECONDS)
 	async handleScheduledBackup() {
 		try {
 			await this.createBackup();
