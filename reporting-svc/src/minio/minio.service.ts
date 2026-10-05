@@ -31,7 +31,7 @@ export class MinioService implements OnModuleInit  {
 	}
 
 	async uploadFromDisk(fileName: string): Promise<string> {
-		const dir = "/home/osouadi/goinfre/downloads";
+		const dir = this.configService.getOrThrow<string>("BACKUP_DIR", "/home/osouadi/goinfre/downloads");
 		const filePath = join(dir, basename(fileName));
 		if (!existsSync(filePath)) {
 			throw new NotFoundException('File not found');
@@ -48,7 +48,7 @@ export class MinioService implements OnModuleInit  {
 	}
 
 	async downloadToDisk(fileName: string): Promise<string> {
-		const dir = "/home/osouadi/goinfre/downloads";
+		const dir = this.configService.getOrThrow<string>("BACKUP_DIR", "/home/osouadi/goinfre/downloads");
 		const destPath = join(dir, basename(fileName));
 
 		await this.minioClient.fGetObject(this.bucketName, fileName, destPath);

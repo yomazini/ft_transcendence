@@ -99,22 +99,22 @@ export class BackupsService {
 			},
 		});
 
-		// await fs.promises.unlink(filePath).catch(() => {});
+		await fs.promises.unlink(filePath).catch(() => {});
 
 		return backup;
 	}
 
 	async restoreBackup(backupId: string): Promise<void> {
-		const record = await this.prisma.backups.findUniqueOrThrow({
-			where: {
-				id: backupId
-			},
-		});
+		// const record = await this.prisma.backups.findUniqueOrThrow({
+		// 	where: {
+		// 		id: backupId
+		// 	},
+		// });
 
-		if (!record.s3Key) {
-			throw new BadRequestException('This backup has no file in S3 and cannot be restored');
-		}
-		const tempfile = await this.minioService.downloadToDisk(record.s3Key);
+		// if (!record.s3Key) {
+		// 	throw new BadRequestException('This backup has no file in S3 and cannot be restored');
+		// }
+		const tempfile = await this.minioService.downloadToDisk(backupId);
 
 		const { host, port, database, user, password } = getDbConfig();
 
@@ -134,15 +134,15 @@ export class BackupsService {
 			proc.stderr.on('data', (data) => (stderr += data.toString()));
 
 			proc.on('error', async (err) => {
-				await this.prisma.backups.update({
-					where: {
-						id: backupId,
-					},
-					data: {
-						status: BackupStatus.FAILED,
-						errorMessage: `Failed to start pg_restore: ${err.message}`,
-					}
-				});
+				// await this.prisma.backups.update({
+				// 	where: {
+				// 		id: backupId,
+				// 	},
+				// 	data: {
+				// 		status: BackupStatus.FAILED,
+				// 		errorMessage: `Failed to start pg_restore: ${err.message}`,
+				// 	}
+				// });
 				this.logger.error(`Failed to start pg_restore: ${err.message}`);
 				reject(err);
 			});
@@ -150,34 +150,34 @@ export class BackupsService {
 			proc.on('close', async (code) => {
 				if (code === 0) {
 				try {
-					await this.prisma.backups.update({
-						where: { id: backupId },
-						data: { status: BackupStatus.RESTORED },
-					});
-					this.logger.log(`Restore completed from: ${record.filePath}`);
+					// await this.prisma.backups.update({
+					// 	where: { id: backupId },
+					// 	data: { status: BackupStatus.RESTORED },
+					// });
+					// this.logger.log(`Restore completed from: ${record.filePath}`);
 					resolve();
 				} catch (err) {
-					await this.prisma.backups.update({
-						where: {
-							id: backupId,
-						},
-						data: {
-							status: BackupStatus.FAILED,
-							errorMessage: `Failed to start pg_restore: ${err}`,
-						}
-					});
+					// await this.prisma.backups.update({
+					// 	where: {
+					// 		id: backupId,
+					// 	},
+					// 	data: {
+					// 		status: BackupStatus.FAILED,
+					// 		errorMessage: `Failed to start pg_restore: ${err}`,
+					// 	}
+					// });
 					reject(err);
 				}
 				} else {
-					await this.prisma.backups.update({
-						where: {
-							id: backupId,
-						},
-						data: {
-							status: BackupStatus.FAILED,
-							errorMessage: `pg_restore failed: ${stderr}`,
-						}
-					});
+					// await this.prisma.backups.update({
+					// 	where: {
+					// 		id: backupId,
+					// 	},
+					// 	data: {
+					// 		status: BackupStatus.FAILED,
+					// 		errorMessage: `pg_restore failed: ${stderr}`,
+					// 	}
+					// });
 					this.logger.error(`pg_restore failed: ${stderr}`);
 					reject(new Error(`pg_restore exited with code ${code}: ${stderr}`));
 				}
