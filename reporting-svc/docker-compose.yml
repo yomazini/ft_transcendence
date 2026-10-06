@@ -15,7 +15,7 @@ services:
       postgres: { condition: service_healthy }
       minio: { condition: service_healthy }
     volumes:
-      - /home/osouadi/goinfre/downloads:/home/osouadi/goinfre/downloads
+      - /home/ossama/Desktop/Downloads:/home/ossama/Desktop/Downloads
     networks: [ft_network]
     restart: unless-stopped
     # Owner: Oussama
@@ -46,7 +46,7 @@ services:
       retries: 10
       start_period: 10s
     volumes:
-      - /home/osouadi/goinfre/downloads:/home/osouadi/goinfre/downloads
+      - /home/ossama/Desktop/Downloads:/home/ossama/Desktop/Downloads
     networks: [ft_network]
     ports:
       - "9000:9000"

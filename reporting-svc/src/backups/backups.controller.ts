@@ -11,14 +11,4 @@ export class BackupsController {
 		return { message: 'Backup created', filePath };
 	}
 
-	@Post('restore/:id')
-	async restore(@Param('id') id: string) {
-	await this.backupsService.restoreBackup(id);
-		return { message: 'Restore complete' };
-	}
-
-	@Get()
-	async list() {
-		return this.backupsService.listBackups();
-	}
 }
