@@ -10,9 +10,4 @@ export class MinioController {
 		return this.minioService.uploadFromDisk(fileName);
 	}
 
-	@Get(':fileName')
-	downloadToDisk(@Param('fileName') fileName: string) {
-		return this.minioService.downloadToDisk(fileName);
-	}
-
 }
