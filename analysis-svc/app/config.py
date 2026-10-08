@@ -10,6 +10,8 @@ class Settings(BaseSettings):
 
     redis_host: str = "redis"
     redis_port: int = 6379
+    queue_name: str = "scrape-job"
+    events_channel: str = "job-events"
 
     @property
     def database_url(self) -> str:
