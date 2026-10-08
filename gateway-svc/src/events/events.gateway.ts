@@ -5,8 +5,9 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
+import { Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
+import Redis from 'ioredis';
 
 @WebSocketGateway({
   cors: {
@@ -14,12 +15,57 @@ import { Server, Socket } from 'socket.io';
   },
 })
 export class EventsGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+  implements
+    OnGatewayInit,
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    OnModuleInit,
+    OnModuleDestroy
 {
   @WebSocketServer()
   server: Server;
 
   private readonly logger = new Logger(EventsGateway.name);
+  private subscriber: Redis | null = null;
+
+  async onModuleInit() {
+    if (process.env.NODE_ENV === 'test') {
+      return;
+    }
+    const host = process.env.REDIS_HOST || 'redis';
+    const port = parseInt(process.env.REDIS_PORT || '6379', 10);
+
+    this.subscriber = new Redis({ host, port, lazyConnect: true });
+    this.subscriber.on('error', (err) => {
+      this.logger.warn(`Redis subscriber error: ${err.message}`);
+    });
+
+    try {
+      await this.subscriber.connect();
+      await this.subscriber.subscribe('job-events');
+      this.subscriber.on('message', (channel, message) => {
+        if (channel !== 'job-events') return;
+        try {
+          const data = JSON.parse(message);
+          const { job_id, status, ...extra } = data;
+          if (job_id && status) {
+            this.broadcastJobStatus(job_id, status, extra);
+          }
+        } catch {
+          this.logger.warn(`Invalid job-events payload: ${message}`);
+        }
+      });
+    } catch (err: any) {
+      this.logger.warn(`Could not subscribe to job-events: ${err.message}`);
+    }
+  }
+
+  async onModuleDestroy() {
+    if (this.subscriber) {
+      await this.subscriber.quit();
+      this.subscriber = null;
+    }
+  }
 
   afterInit() {
     this.logger.log('WebSocket Gateway initialized');
@@ -33,14 +79,6 @@ export class EventsGateway
     this.logger.log(`Client disconnected: ${client.id}`);
   }
 
-  /**
-   * Broadcasts real-time job status lifecycle events to all connected clients.
-   * Events conform to the Groundswell WebSocket Event Contract:
-   *  - job:queued  -> { "job_id": "UUID", "status": "queued" }
-   *  - job:running -> { "job_id": "UUID", "status": "running" }
-   *  - job:done    -> { "job_id": "UUID", "status": "done", "report_id": "UUID" }
-   *  - job:failed  -> { "job_id": "UUID", "status": "failed" }
-   */
   broadcastJobStatus(
     jobId: string,
     status: 'queued' | 'running' | 'done' | 'failed',
@@ -59,7 +97,6 @@ export class EventsGateway
 
     if (this.server) {
       this.server.emit(eventName, payload);
-      // Also emit a generic job:update event for convenience
       this.server.emit('job:update', payload);
     }
   }
