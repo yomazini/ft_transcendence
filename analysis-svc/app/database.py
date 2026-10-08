@@ -1,5 +1,7 @@
 import json
+
 import asyncpg
+
 from .config import settings
 
 _pool: asyncpg.Pool | None = None
@@ -31,7 +33,8 @@ async def update_job_status(job_id: str, status: str):
     pool = await get_pool()
     await pool.execute(
         'UPDATE "Job" SET status = $1 WHERE id = $2',
-        status, job_id,
+        status,
+        job_id,
     )
 
 
@@ -52,7 +55,32 @@ async def insert_comment(
         VALUES ($1, $2, $3, $4, $5, $6, $7::vector)
         ON CONFLICT (id) DO NOTHING
         """,
-        comment_id, job_id, text, author, upvotes, sentiment_score, embedding_str,
+        comment_id,
+        job_id,
+        text,
+        author,
+        upvotes,
+        sentiment_score,
+        embedding_str,
+    )
+
+
+async def update_comment_analysis(
+    comment_id: str,
+    sentiment_score: float,
+    embedding: list[float],
+):
+    pool = await get_pool()
+    embedding_str = "[" + ",".join(str(v) for v in embedding) + "]"
+    await pool.execute(
+        """
+        UPDATE "Comments"
+        SET sentiment_score = $1, embedding = $2::vector
+        WHERE id = $3
+        """,
+        sentiment_score,
+        embedding_str,
+        comment_id,
     )
 
 
@@ -72,7 +100,11 @@ async def insert_report(
         SET swot = EXCLUDED.swot, blue_ocean = EXCLUDED.blue_ocean,
             conclusion = EXCLUDED.conclusion
         """,
-        report_id, job_id, json.dumps(swot), json.dumps(blue_ocean), conclusion,
+        report_id,
+        job_id,
+        json.dumps(swot),
+        json.dumps(blue_ocean),
+        conclusion,
     )
 
 

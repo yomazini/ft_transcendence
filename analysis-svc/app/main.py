@@ -17,6 +17,7 @@ from .database import (
     update_job_status,
 )
 from .embeddings import generate_embedding
+from .events import close_redis, publish_job_event
 from .fixtures import get_fixture_comments
 from .sentiment import compute_sentiment_summary, score_comments
 from .synthesis import generate_conclusion, synthesize_blue_ocean, synthesize_swot
@@ -34,6 +35,7 @@ async def lifespan(app: FastAPI):
         logger.warning("BullMQ worker failed to start: %s", e)
     yield
     await stop_worker()
+    await close_redis()
     await close_pool()
 
 
@@ -103,6 +105,7 @@ async def trigger_analysis(job_id: str):
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
 
     await update_job_status(job_id, "Running")
+    await publish_job_event(job_id, "running")
 
     comments = get_fixture_comments()
     scored = score_comments(comments)
@@ -134,6 +137,7 @@ async def trigger_analysis(job_id: str):
     )
 
     await update_job_status(job_id, "Done")
+    await publish_job_event(job_id, "done", {"report_id": report_id})
 
     return {
         "job_id": job_id,
@@ -162,7 +166,9 @@ async def get_job_status(job_id: str):
 async def get_job_comments(job_id: str):
     comments = await get_comments_by_job(job_id)
     if not comments:
-        raise HTTPException(status_code=404, detail=f"No comments found for job {job_id}")
+        raise HTTPException(
+            status_code=404, detail=f"No comments found for job {job_id}"
+        )
     return {"job_id": job_id, "count": len(comments), "comments": comments}
 
 

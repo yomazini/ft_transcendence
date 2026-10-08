@@ -1,14 +1,22 @@
 import logging
 import uuid
+from typing import Any, cast
 
 from bullmq import Worker
 
 from .config import settings
-from .database import update_job_status, insert_comment, insert_report
-from .fixtures import get_fixture_comments
-from .sentiment import score_comments, compute_sentiment_summary
+from .database import (
+    get_comments_by_job,
+    insert_comment,
+    insert_report,
+    update_comment_analysis,
+    update_job_status,
+)
 from .embeddings import generate_embedding
-from .synthesis import synthesize_swot, synthesize_blue_ocean, generate_conclusion
+from .events import publish_job_event
+from .fixtures import get_fixture_comments
+from .sentiment import compute_sentiment_summary, score_comments
+from .synthesis import generate_conclusion, synthesize_blue_ocean, synthesize_swot
 
 logger = logging.getLogger("analysis-worker")
 logger.setLevel(logging.INFO)
@@ -26,22 +34,50 @@ async def process_job(job, token):
 
     try:
         await update_job_status(job_id, "Running")
+        await publish_job_event(job_id, "running")
 
-        comments = get_fixture_comments()
+        existing_db_comments = await get_comments_by_job(job_id)
+        payload_comments = job.data.get("comments") if job.data else None
+
+        if existing_db_comments:
+            comments = existing_db_comments
+            from_db = True
+        elif payload_comments:
+            comments = [
+                {
+                    "id": c.get("id") or str(uuid.uuid4()),
+                    "text": c["text"],
+                    "author": c.get("author", "reddit_user"),
+                    "upvotes": int(c.get("upvotes", 0)),
+                }
+                for c in payload_comments
+            ]
+            from_db = False
+        else:
+            comments = get_fixture_comments()
+            from_db = False
+
         scored = score_comments(comments)
         summary = compute_sentiment_summary(scored)
 
         for comment in scored:
             embedding = generate_embedding(comment["text"])
-            await insert_comment(
-                comment_id=comment["id"],
-                job_id=job_id,
-                text=comment["text"],
-                author=comment["author"],
-                upvotes=comment["upvotes"],
-                sentiment_score=comment["compound"],
-                embedding=embedding,
-            )
+            if from_db:
+                await update_comment_analysis(
+                    comment_id=comment["id"],
+                    sentiment_score=comment["compound"],
+                    embedding=embedding,
+                )
+            else:
+                await insert_comment(
+                    comment_id=comment["id"],
+                    job_id=job_id,
+                    text=comment["text"],
+                    author=comment["author"],
+                    upvotes=comment["upvotes"],
+                    sentiment_score=comment["compound"],
+                    embedding=embedding,
+                )
 
         swot = synthesize_swot(summary, scored)
         blue_ocean = synthesize_blue_ocean(summary, scored)
@@ -57,6 +93,7 @@ async def process_job(job, token):
         )
 
         await update_job_status(job_id, "Done")
+        await publish_job_event(job_id, "done", {"report_id": report_id})
         logger.info("Job %s completed", job_id)
 
         return {
@@ -70,6 +107,7 @@ async def process_job(job, token):
         logger.exception("Job %s failed: %s", job_id, e)
         try:
             await update_job_status(job_id, "Failed")
+            await publish_job_event(job_id, "failed", {"error": str(e)})
         except Exception:
             logger.exception("Could not update job status to Failed")
         raise
@@ -81,13 +119,13 @@ async def start_worker():
         return
 
     _worker = Worker(
-        "scrape-job",
-        process_job,
+        settings.queue_name,
+        cast(Any, process_job),
         {
             "connection": f"redis://{settings.redis_host}:{settings.redis_port}",
         },
     )
-    logger.info("BullMQ worker started on queue scrape-job")
+    logger.info("BullMQ worker started on queue %s", settings.queue_name)
 
 
 async def stop_worker():
