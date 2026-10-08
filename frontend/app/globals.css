@@ -132,35 +132,38 @@
 
 @layer components {
 	.job-status-card {
-		@apply flex max-h-10 min-w-0 shrink items-center gap-2 px-3 py-2 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-md hover:shadow-orange-500/10 sm:w-[120px];
+		@apply flex min-w-0 items-center gap-2 bg-white opacity-100 px-5 py-2 duration-200 ;
 	}
 
 	.job-status-icon-box {
-		@apply flex min-w-0 items-center justify-center rounded-lg transition-colors duration-200;
+		@apply flex min-w-0 items-center transition-colors;
 	}
 
 	.job-status-label {
-		@apply min-w-0 hidden sm:inline leading-none sm:flex;
+		@apply min-w-0 sm:inline leading-none sm:flex;
 	}
 
 	.job-status-label-text {
-		@apply truncate text-[10px] font-medium uppercase tracking-wide text-slate-400;
+		@apply truncate text-sm font-medium uppercase tracking-wide text-slate-400;
 	}
 
 	.job-status-value {
-		@apply mt-1 truncate text-sm font-bold text-slate-800;
+		@apply mt-2 truncate text-xl font-bold text-slate-800;
 	}
 
 	.border-rounded {
-		@apply rounded-xl border border-slate-200;
+		@apply rounded-sm border border-slate-200;
 	}
 
-	.btn-primary {
-		@apply min-w-0! h-10! text-sm! hover:bg-orange-600! sm:px-5!;
-	}
+.btn-primary {
+	@apply min-w-0! h-8! px-3! text-xs!
+		inline-flex items-center justify-center gap-1
+		rounded-md
+		bg-black text-white;
+}
 
 	.btn-secondary {
-		@apply relative! flex! items-center! gap-2! rounded-lg! border! border-slate-200! px-5! py-2! text-sm! font-semibold! shadow-sm! transition-all! duration-200! hover:border-orange-300! hover:bg-orange-50! hover:text-orange-600! hover:shadow-md!;
+		@apply relative! flex! items-center! gap-2! rounded-lg! border! border-slate-200! px-5! py-2! text-sm! font-semibold! shadow-sm! transition-all! duration-200! hover:border-gray-300! hover:bg-gray-50! hover:text-gray-600! hover:shadow-md!;
 	}
 
 	.sidebar-hover-lift {
@@ -176,30 +179,30 @@
 	}
 
 	.job-menu-button {
-		@apply relative! h-10! rounded-lg! border! border-transparent! bg-white! px-3! text-sm! font-medium! text-slate-700! shadow-sm! transition-all! duration-200! hover:border-orange-200! hover:bg-orange-50! hover:text-slate-900! hover:shadow-md!;
+		@apply relative! h-10! rounded-lg! border! border-transparent! bg-white! px-3! text-sm! font-medium! text-slate-700! shadow-sm! transition-all! duration-200! hover:border-gray-200! hover:bg-gray-50! hover:text-slate-900! hover:shadow-md!;
 	}
 
 	.job-dot {
-		@apply h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300 transition-all duration-200 group-hover:scale-125 group-hover:bg-orange-500;
+		@apply h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300 transition-all duration-200 group-hover:scale-125 group-hover:bg-gray-500;
 	}
 
 	.stat-card {
-		@apply relative h-full w-full min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-lg hover:shadow-orange-500/10;
+		@apply h-full w-full min-w-0;
 	}
 
 	.stat-card-glow {
-		@apply pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-orange-400/5 blur-3xl transition-all duration-300 group-hover:bg-orange-400/10;
+		@apply pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gray-400/5 blur-3xl transition-all;
 	}
 
 	.stat-card-icon-box {
-		@apply flex h-9 w-9 items-center justify-center rounded-lg border border-orange-200 bg-orange-50;
+		@apply flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-gray-50;
 	}
 
 	.stat-list-item {
-		@apply flex items-center gap-3 rounded-lg border border-transparent px-3 py-2 text-sm font-medium text-slate-700 transition-all duration-200 hover:border-orange-200 hover:bg-orange-50 hover:text-slate-900;
+		@apply flex items-center gap-3 rounded-lg border border-transparent px-3 py-2 text-sm font-medium text-slate-700 transition-all duration-200 hover:border-gray-200 hover:bg-gray-50 hover:text-slate-900;
 	}
 
 	.stat-list-dot {
-		@apply h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400 transition-all duration-200 group-hover:scale-100 group-hover:bg-orange-100;
+		@apply h-1.5 w-1.5 shrink-0 rounded-full bg-gray-400 transition-all duration-200 group-hover:scale-100 group-hover:bg-gray-100;
 	}
 }

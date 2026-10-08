@@ -10,8 +10,8 @@ DropdownMenuItem,
 DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-
-export function DashboardNavbar() {
+export function DashboardNavbar({ uuid } :  {uuid : string}) {
+	const { expReport, expLoading, expError , exportRep} = useExportReport();
 	return (
 		<nav className="sticky top-0 z-5 w-full p-2">
 			<div
@@ -97,9 +97,9 @@ export function DashboardNavbar() {
 						/>
 
 						<DropdownMenuContent align="end">
-							<DropdownMenuItem>Export as CSV</DropdownMenuItem>
-							<DropdownMenuItem>Export as Excel</DropdownMenuItem>
-							<DropdownMenuItem>Export as JSON</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => exportRep(uuid, "CSV")}>Export as CSV</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => exportRep(uuid, "XLSX")}>Export as XLSX</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => exportRep(uuid, "JSON")}>Export as JSON</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
 				</div>
