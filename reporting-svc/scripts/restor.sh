@@ -1,14 +1,14 @@
 #!/bin/sh
 set -e
 
-BACKUP_PATH="/home/ossama/Desktop/Downloads/"
+BACKUP_PATH="/home/osouadi/goinfre/Downloads"
 SVCS="reporting-svc"
 MINIO=ft-transcendence-minio-1
 
-cd "/home/$USER/Desktop/ft_transcendence/reporting-svc"
+cd "/home/$USER/goinfre/ft_transcendence/reporting-svc"
 
 set -a
-. /home/ossama/Desktop/ft_transcendence/reporting-svc/.env.example
+. /home/osouadi/goinfre/ft_transcendence/reporting-svc/.env.example
 set +a
 
 echo "Getting backup file name..."
