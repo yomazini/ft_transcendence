@@ -1,11 +1,14 @@
-// auth-svc — NestJS. Users, orgs, RBAC, OAuth (42), 2FA, JWT issuing.
-// Depends on: @nestjs/core, @nestjs/jwt, passport, passport-42, bcrypt,
-// otplib (2FA), class-validator.
+import { config } from 'dotenv';
+config({ path: '.env.example' });
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
 
+/** @note this is just NestJS's naming convention for "the function that starts everything,"  */
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(new ValidationPipe());
   await app.listen(process.env.PORT ?? 3002);
 }
 bootstrap();
