@@ -2,12 +2,15 @@
 
 import { Cards } from "@/components/dashboard/swot-cards";
 import { VisualizerCard } from "@/components/dashboard/visualizer-card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { SelectContent, SelectTrigger } from "@/components/ui/select";
 import { useExportReport } from "@/hooks/use-exportReport";
 import { useReportById } from "@/hooks/useReportById";
-import { Button } from "@base-ui/react";
-import { Download, Link, MinusCircle, PlusCircle, ShieldCheck, Trash2, TrendingUp, Zap } from "lucide-react";
+import { Button, Select, SelectValue } from "@base-ui/react";
+import { ActivityIcon, CalendarDays, CheckCircle2, Clock3, Compass, Download, Link, Loader2, MinusCircle, PlusCircle, RefreshCcw, ShieldCheck, Target, Trash2, TrendingUp, Waves, Zap } from "lucide-react";
 import { use, useState } from "react";
+import { Status } from "@/components/dashboard/projects-status"
 
 
 export default function DashboardPage({ params }: { params: Promise<{ "uuid-user": string }>})
@@ -22,77 +25,146 @@ export default function DashboardPage({ params }: { params: Promise<{ "uuid-user
 		(card === 1 ? setActiveCard(2) : setActiveCard(1))
 	}
 	const swot = [
-		{items: report?.swot.strengths, icon: ShieldCheck, title: 'STRENGTHS', description: 'Internal advantages'},
-		{items: report?.swot.weaknesses, icon: Link, title: 'WEAKNESSES', description: 'Internal limitations'},
-		{items: report?.swot.opportunities, icon: TrendingUp, title: 'OPPORTUNITIES', description: 'External possibilities'},
-		{items: report?.swot.threats, icon: ShieldCheck, title: 'THREATS', description: 'Potential external risks'},
+		{items: report?.swot.strengths, icon: ShieldCheck, title: 'STRENGTHS', description: 'Internal advantages', iconColor: 'text-green-500'},
+		{items: report?.swot.weaknesses, icon: Link, title: 'WEAKNESSES', description: 'Internal limitations', iconColor: 'text-orange-500'},
+		{items: report?.swot.opportunities, icon: TrendingUp, title: 'OPPORTUNITIES', description: 'External possibilities', iconColor: 'text-indigo-500'},
+		{items: report?.swot.threats, icon: ShieldCheck, title: 'THREATS', description: 'Potential external risks', iconColor: 'text-red-500'},
 	]
 	
 	const errc = [
-		{items: report?.blue_ocean.eliminate, icon: Trash2, title: 'ELIMINATE', description: 'Remove unnecessary factors'},
-		{items: report?.blue_ocean.reduce, icon: MinusCircle, title: 'REDUCE', description: 'Lower factors below the standard'},
-		{items: report?.blue_ocean.raise, icon: TrendingUp, title: 'RAISE', description: 'Improve factors above the standard'},
-		{items: report?.blue_ocean.create, icon: PlusCircle, title: 'CREATE', description: 'Introduce new factors'},
+		{items: report?.blue_ocean.eliminate, icon: Trash2, title: 'ELIMINATE', description: 'Remove unnecessary factors', iconColor: 'text-red-500'},
+		{items: report?.blue_ocean.reduce, icon: MinusCircle, title: 'REDUCE', description: 'Lower factors below the standard', iconColor: 'text-purple-800'},
+		{items: report?.blue_ocean.raise, icon: TrendingUp, title: 'RAISE', description: 'Improve factors above the standard', iconColor: 'text-green-500'},
+		{items: report?.blue_ocean.create, icon: PlusCircle, title: 'CREATE', description: 'Introduce new factors', iconColor: 'text-indigo-600'},
 	]
+
+	const jobStatus = [
+		{status: "Runing", icon: Loader2, iconColor: 'text-orange-500', number: 10},
+		{status: "Done", icon: CheckCircle2, iconColor: 'text-green-500', number: 20},
+		{status: "Queued", icon: Clock3, iconColor: 'text-purple-500', number: 40},
+	]
+
 	return (
-		<div className="space-y-6 h-screen w-scree">
-			<div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-4 max-h-screen h-full">
-				{
-					loading ? (
-						<div>Report Loading...</div>
-					) : error ? (
-						<div>ERROR {error.message}</div>
-					) :  (
-						<>
-							<div className="w-full" >
-								<VisualizerCard report={report}/>
+		<div className="justify-center flex">
+			<div className="flex flex-col h-full bg-[radial-gradient(#d4d4d4_1px,transparent_1px)] [background-size:16px_16px] border w-full  w-[100%] min-[2000px]:w-[45%]">
+				<div className="flex justify-end py-2 px-5">
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							render={
+								<Button
+									className="btn-primary"
+								>
+									<Download className="h-4 w-4 shrink-0" />
+									<span className="hidden sm:inline">Export data</span>
+								</Button>
+							}
+						/>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem onClick={() => exportRep(id, "CSV")}>Export as CSV</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => exportRep(id, "XLSX")}>Export as XLSX</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => exportRep(id, "JSON")}>Export as JSON</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
 
-							</div>
+				<div className="gflex w-full flex-col gap-4 md:flex-row">
+					{/* <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-4 max-h-screen h-full"> */}
+						
+								{/* loading ? (
+									<div>Report Loading...</div>
+								) : error ? (
+									<div>ERROR {error.message}</div>
+								) :  ( */}
+								<>
+									<div>
+										<VisualizerCard report={report}/>
+									</div>
 
-							<div className="w-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-300 hover:shadow-lg hover:shadow-orange-500/10">
-								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-									{activeCard === 1 ? (
-										swot.map((item, i) => (
-										<Cards key={i} items={item.items} icon={item.icon} title={item.title} description={item.description} />
-										))
-									) : (
-										errc.map((item, i) => (
-										<Cards key={i} items={item.items} icon={item.icon} title={item.title} description={item.description} />
-										))
-									)}
-								</div>
+									<div className="flex flex-col lg:flex-row lg:h-[160px] w-full min-w-0 py-5">
+										{jobStatus.map((item, i) => (
+											<Status
+												key={i}
+												icon={item.icon}
+												action={item.status}
+												iconColor={item.iconColor}
+												num={item.number}
+											/>
+										))}
+									</div>
+									<div className="flex ">
+										<Card className="w-full lg:w-1/2 h-auto lg:h-[550px] min-w-0 rounded-none">
+											<CardHeader className="border-b px-6">
+												<CardTitle className="flex text-sm font-medium text-slate-800 grid-cols-2 gap-2">
+													<ActivityIcon className="size-4 shrink-0 text-purple-500" />
+													Strategic Analysis
+												</CardTitle>
+											</CardHeader>
 
-								<div className="mt-4 flex justify-end">
-									<button
-										onClick={() => switchCard(activeCard)}
-										className="group btn-secondary"
-									>
-										<span className="h-2 w-2 rounded-full bg-orange-500 transition-transform duration-200 group-hover:scale-125" />
-										{activeCard === 1 ? "SWOT" : "ERRC"}
-									</button>
-									<DropdownMenu>
-										<DropdownMenuTrigger
-											render={
-												<Button
-													className="btn-primary"
-												>
-													<Download className="h-4 w-4 shrink-0" />
-													<span className="hidden sm:inline">Export data</span>
-												</Button>
-											}
-										/>
+											<CardContent >
 
-										<DropdownMenuContent align="end">
-											<DropdownMenuItem onClick={() => exportRep(id, "CSV")}>Export as CSV</DropdownMenuItem>
-											<DropdownMenuItem onClick={() => exportRep(id, "XLSX")}>Export as XLSX</DropdownMenuItem>
-											<DropdownMenuItem onClick={() => exportRep(id, "JSON")}>Export as JSON</DropdownMenuItem>
-										</DropdownMenuContent>
-									</DropdownMenu>
-								</div>
-							</div>
-						</>
-					)
-				}
+												<div className="flex w-full min-w-0 justify-center">
+													<div className="grid w-full min-w-0 max-w-[40%] grid-cols-2 gap-2 rounded-lg bg-slate-100 px-4 py-1">
+														<button
+															type="button"
+															onClick={() => setActiveCard(1)}
+															className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:gap-2 sm:text-sm ${
+																activeCard === 1
+																? "bg-white text-black shadow-sm"
+																: "text-slate-500 hover:text-slate-800"
+															}`}
+														>
+															<Target className="size-4 shrink-0" />
+															<span className="min-w-0 truncate">SWOT</span>
+														</button>
+
+														<button
+															type="button"
+															onClick={() => setActiveCard(2)}
+															className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:gap-2 sm:text-sm ${
+																activeCard === 2
+																? "bg-white text-black shadow-sm"
+																: "text-slate-500 hover:text-slate-800"
+															}`}
+														>
+															<Waves className="size-4 shrink-0" />
+															<span className="min-w-0 truncate">Blue Ocean</span>
+														</button>
+													</div>
+												</div>
+
+												<div className="grid w-full min-w-0 grid-cols-1 gap-4 py-4 lg:grid-cols-2">
+													{activeCard === 1
+														? swot.map((item, i) => (
+																<Cards
+																	key={i}
+																	items={item.items}
+																	icon={item.icon}
+																	title={item.title}
+																	description={item.description}
+																	iconColor={item.iconColor}
+																/>
+														))
+														: errc.map((item, i) => (
+																<Cards
+																	key={i}
+																	items={item.items}
+																	icon={item.icon}
+																	title={item.title}
+																	description={item.description}
+																	iconColor={item.iconColor}
+																/>
+														))}
+												</div>
+
+											</CardContent>
+										</Card>
+										
+									</div>
+								</>
+								{/* ) */}
+						
+					{/* </div> */}
+				</div>
 			</div>
 		</div>
 	)

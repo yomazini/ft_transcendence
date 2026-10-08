@@ -21,6 +21,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { TrendingUp } from "lucide-react";
 
 const chartConfig = {
   sentiment: {
@@ -64,26 +65,30 @@ export function VisualizerCard({ report }) {
 	const currentSentiment =
 		[...chartData].reverse().find((d) => d.sentiment !== null)?.sentiment ?? 0;
 
+	const isPositive = currentSentiment > 0;
+	const isNegative = currentSentiment < 0;
+
+	const color = isPositive
+	? "text-green-500"
+	: isNegative
+		? "text-red-500"
+		: "text-orange-400";
+
+	const arrow = isPositive ? "↗" : isNegative ? "↘" : "→";
+
+	const hasPoints = chartData.some(
+		(d) => typeof d.sentiment === "number" && !Number.isNaN(d.sentiment)
+	);
 
 	return (
-			<Card
-				className="
-					stat-card
-					group
-				"
-			>
-
-				{/* Subtle orange glow */}
-				<div className="stat-card-glow" />
-
-				{/* Subtle gray glow */}
+			<Card className="w-full min-w-0 shrink-0 h-[550px] rounded-none">
 				<div className="pointer-events-none absolute -bottom-20 -left-20 max-h-[48px] rounded-full bg-slate-400/5 blur-3xl" />
 
-				{/* Header */}
-				<CardHeader className="relative flex flex-row items-start justify-between pb-2">
+				<CardHeader className="relative flex flex-row items-start border-b justify-between">
 
 					<div>
-						<CardTitle className="text-base font-semibold text-slate-800">
+						<CardTitle className="grid-cols-2 gap-2 gap text-base font-semibold text-slate-800 flex">
+							<TrendingUp className="size-5 text-green-500" />
 							VADER Sentiment Trend
 						</CardTitle>
 
@@ -92,16 +97,15 @@ export function VisualizerCard({ report }) {
 						</p>
 					</div>
 
-					{/* Current value */}
 					<div className="text-right">
-						<p className="text-lg font-bold text-orange-500">
-							{currentSentiment > 0 ? "+" : ""}
-							{currentSentiment.toFixed(2)} ↗
+						<p className={`text-lg font-bold ${color}`}>
+							{isPositive ? "+" : ""}
+							{currentSentiment.toFixed(2)} {arrow}
 						</p>
 
 						<p className="text-xs text-slate-400">
 							Current Sentiment:{" "}
-							<span className="font-medium text-orange-500">
+							<span className="font-medium text-garay-500">
 								Positive
 							</span>
 						</p>
@@ -109,29 +113,39 @@ export function VisualizerCard({ report }) {
 
 				</CardHeader>
 
-				{/* Chart */}
 				<CardContent className="relative h-full pt-2">
+					{!hasPoints && (
+						<div className="pointer-events-none absolute inset-x-0 top-2 z-10 flex h-[320px] flex-col items-center justify-center gap-2">
+							<div className="flex size-12 items-center justify-center rounded-full bg-slate-100">
+								<TrendingUp className="size-6 text-slate-400" />
+							</div>
+							<p className="text-sm font-medium text-slate-600">
+								No sentiment data yet
+							</p>
+							<p className="text-xs text-slate-400">
+								Points will appear here as messages are analyzed
+							</p>
+						</div>
+					)}
 
 					<div className="w-full overflow-x-auto">
 						<ChartContainer
 							config={chartConfig}
-							className="h-[240px]"
-							style={{ width: Math.max(daysInMonth * 40, 600) }}
+							className="h-[400px] lg:h-[430px] w-full aspect-auto"
+							style={{ minWidth: Math.max(daysInMonth * 40, 600) }}
 						>
 							<AreaChart
 								accessibilityLayer
 								data={chartData}
 								margin={{
 									top: 10,
-									right: 12,
+									right: 0,
 									left: 0,
 									bottom: 0,
 								}}
 							>
 
 								<defs>
-
-									{/* Area gradient */}
 									<linearGradient
 										id="sentiment-area"
 										x1="0"
@@ -151,7 +165,6 @@ export function VisualizerCard({ report }) {
 										/>
 									</linearGradient>
 
-									{/* Line gradient */}
 									<linearGradient
 										id="sentiment-line"
 										x1="0"
@@ -166,36 +179,34 @@ export function VisualizerCard({ report }) {
 
 										<stop
 											offset="50%"
-											stopColor="#fdab71"
+											stopColor="#938e8a"
 										/>
 
 										<stop
 											offset="100%"
-											stopColor="#fc5a03"
+											stopColor="#434140"
 										/>
 									</linearGradient>
 
 								</defs>
 
-								{/* Grid */}
 								<CartesianGrid
 									vertical={false}
 									strokeDasharray="3 3"
 									className="opacity-10"
 								/>
 
-								{/* X axis */}
 								<XAxis
 									dataKey="day"
 									tickLine={false}
 									axisLine={false}
 									tickMargin={8}
 									interval={0}
-									tick={{ fontSize: 10, fill: "#8e9195" }}
+									padding={{ left: 20, right: 20 }}
+									tick={{ fontSize: 10, fill: "#545658" }}
 									tickFormatter={(day) => `${monthShort} ${day}`}
 								/>
 
-								{/* Y axis */}
 								<YAxis
 									domain={[-1, 1]}
 									ticks={[-1, -0.5, 0, 0.5, 1]}
@@ -211,7 +222,6 @@ export function VisualizerCard({ report }) {
 									}
 								/>
 
-								{/* Tooltip */}
 								<ChartTooltip
 									cursor={false}
 									content={
@@ -225,16 +235,15 @@ export function VisualizerCard({ report }) {
 									}
 								/>
 
-								{/* Area */}
 								<Area
 									type="natural"
 									dataKey="sentiment"
-									connectNulls            // draw the line across days with no data
+									connectNulls
 									stroke="url(#sentiment-line)"
 									strokeWidth={2.5}
 									fill="url(#sentiment-area)"
-									dot={{ r: 4, fill: "#f97316", stroke: "#ffffff", strokeWidth: 2 }}
-									activeDot={{ r: 6, fill: "#f97316", stroke: "#ffffff", strokeWidth: 2 }}
+									dot={{ r: 4, fill: "#0e0d0d", stroke: "#ffffff", strokeWidth: 2 }}
+									activeDot={{ r: 6, fill: "#1f1e1e", stroke: "#ffffff", strokeWidth: 2 }}
 								/>
 
 							</AreaChart>
