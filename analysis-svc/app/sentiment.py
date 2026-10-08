@@ -1,3 +1,4 @@
+from typing import Any
 from textblob import TextBlob
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
@@ -7,7 +8,8 @@ _analyzer = SentimentIntensityAnalyzer()
 def score_comments(comments: list[dict]) -> list[dict]:
     for comment in comments:
         scores = _analyzer.polarity_scores(comment["text"])
-        subj = round(TextBlob(comment["text"]).sentiment.subjectivity, 4)
+        blob_sentiment: Any = TextBlob(comment["text"]).sentiment
+        subj = round(float(blob_sentiment.subjectivity), 4)
         comment["compound"] = scores["compound"]
         comment["pos"] = scores["pos"]
         comment["neg"] = scores["neg"]
@@ -35,7 +37,9 @@ def compute_sentiment_summary(scored_comments: list[dict]) -> dict:
     neutral = total - positive - negative
     avg_compound = sum(c["compound"] for c in scored_comments) / total
     avg_subj = sum(c.get("subjectivity", 0.0) for c in scored_comments) / total
-    fact_count = sum(1 for c in scored_comments if c.get("subjectivity_label") == "fact")
+    fact_count = sum(
+        1 for c in scored_comments if c.get("subjectivity_label") == "fact"
+    )
     opinion_count = total - fact_count
 
     return {

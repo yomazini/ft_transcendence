@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 with patch("app.database.get_pool", new_callable=AsyncMock), \
      patch("app.worker.start_worker", new_callable=AsyncMock), \
      patch("app.worker.stop_worker", new_callable=AsyncMock), \
+     patch("app.events.close_redis", new_callable=AsyncMock), \
      patch("app.database.close_pool", new_callable=AsyncMock):
     from app.main import app
 
@@ -58,7 +59,7 @@ def test_sentiment_endpoint():
 
 
 def test_vader_and_textblob_scoring():
-    from app.sentiment import score_comments, compute_sentiment_summary
+    from app.sentiment import compute_sentiment_summary, score_comments
 
     comments = [
         {"text": "This is amazing!", "author": "user1", "upvotes": 10},
@@ -104,14 +105,36 @@ def test_swot_synthesis():
     from app.synthesis import synthesize_swot
 
     summary = {
-        "positive_count": 3, "negative_count": 2, "neutral_count": 1,
-        "positive_ratio": 0.5, "negative_ratio": 0.33, "neutral_ratio": 0.17,
-        "avg_compound": 0.15, "avg_subjectivity": 0.55,
-        "fact_count": 2, "opinion_count": 4,
+        "positive_count": 3,
+        "negative_count": 2,
+        "neutral_count": 1,
+        "positive_ratio": 0.5,
+        "negative_ratio": 0.33,
+        "neutral_ratio": 0.17,
+        "avg_compound": 0.15,
+        "avg_subjectivity": 0.55,
+        "fact_count": 2,
+        "opinion_count": 4,
     }
     comments = [
-        {"text": "Great product!", "compound": 0.8, "pos": 0.5, "neg": 0, "neu": 0.5, "subjectivity": 0.75, "subjectivity_label": "opinion"},
-        {"text": "Terrible support.", "compound": -0.7, "pos": 0, "neg": 0.5, "neu": 0.5, "subjectivity": 1.0, "subjectivity_label": "opinion"},
+        {
+            "text": "Great product!",
+            "compound": 0.8,
+            "pos": 0.5,
+            "neg": 0,
+            "neu": 0.5,
+            "subjectivity": 0.75,
+            "subjectivity_label": "opinion",
+        },
+        {
+            "text": "Terrible support.",
+            "compound": -0.7,
+            "pos": 0,
+            "neg": 0.5,
+            "neu": 0.5,
+            "subjectivity": 1.0,
+            "subjectivity_label": "opinion",
+        },
     ]
     swot = synthesize_swot(summary, comments)
     assert "strengths" in swot
@@ -124,9 +147,20 @@ def test_swot_synthesis():
 def test_blue_ocean_synthesis():
     from app.synthesis import synthesize_blue_ocean
 
-    summary = {"positive_ratio": 0.5, "negative_ratio": 0.3, "neutral_ratio": 0.2, "avg_compound": 0.1}
+    summary = {
+        "positive_ratio": 0.5,
+        "negative_ratio": 0.3,
+        "neutral_ratio": 0.2,
+        "avg_compound": 0.1,
+    }
     comments = [
-        {"text": "The pricing is too high", "compound": -0.5, "pos": 0, "neg": 0.5, "neu": 0.5},
+        {
+            "text": "The pricing is too high",
+            "compound": -0.5,
+            "pos": 0,
+            "neg": 0.5,
+            "neu": 0.5,
+        },
     ]
     result = synthesize_blue_ocean(summary, comments)
     assert "factors" in result
@@ -140,3 +174,17 @@ def test_fixture_comments():
     comments = get_fixture_comments()
     assert len(comments) == 10
     assert all("id" in c and "text" in c and "author" in c for c in comments)
+
+
+def test_publish_job_event():
+    import asyncio
+    from app.events import publish_job_event
+
+    mock_redis = AsyncMock()
+    with patch("app.events.get_redis", return_value=mock_redis):
+        asyncio.run(publish_job_event("job-1", "done", {"report_id": "rep-1"}))
+        mock_redis.publish.assert_called_once()
+        channel, message = mock_redis.publish.call_args[0]
+        assert channel == "job-events"
+        assert '"status": "done"' in message
+        assert '"report_id": "rep-1"' in message

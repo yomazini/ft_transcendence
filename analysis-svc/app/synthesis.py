@@ -36,9 +36,7 @@ def synthesize_swot(sentiment_summary: dict, scored_comments: list[dict]) -> dic
         threats.append(
             f"Negative sentiment at {sentiment_summary['negative_ratio']:.0%} — risk of churn."
         )
-    threats.append(
-        "Open-source alternatives mentioned — price competition is real."
-    )
+    threats.append("Open-source alternatives mentioned — price competition is real.")
 
     return {
         "strengths": strengths or ["No strong positive signals detected."],
@@ -54,13 +52,13 @@ def synthesize_swot(sentiment_summary: dict, scored_comments: list[dict]) -> dic
 
 
 def synthesize_blue_ocean(sentiment_summary: dict, scored_comments: list[dict]) -> dict:
-    factors = {
-        "price": {"importance": 0, "satisfaction": 0},
-        "support": {"importance": 0, "satisfaction": 0},
-        "features": {"importance": 0, "satisfaction": 0},
-        "reliability": {"importance": 0, "satisfaction": 0},
-        "privacy": {"importance": 0, "satisfaction": 0},
-        "ux_design": {"importance": 0, "satisfaction": 0},
+    factors: dict[str, dict[str, float]] = {
+        "price": {"importance": 0, "satisfaction": 0.0},
+        "support": {"importance": 0, "satisfaction": 0.0},
+        "features": {"importance": 0, "satisfaction": 0.0},
+        "reliability": {"importance": 0, "satisfaction": 0.0},
+        "privacy": {"importance": 0, "satisfaction": 0.0},
+        "ux_design": {"importance": 0, "satisfaction": 0.0},
     }
 
     keywords = {
@@ -93,7 +91,9 @@ def synthesize_blue_ocean(sentiment_summary: dict, scored_comments: list[dict]) 
 
     for factor, data in factors.items():
         if data["importance"] > 0 and data["satisfaction"] < -0.2:
-            raise_factors.append(f"Improve {factor} (satisfaction: {data['satisfaction']})")
+            raise_factors.append(
+                f"Improve {factor} (satisfaction: {data['satisfaction']})"
+            )
         elif data["importance"] == 0:
             create.append(f"Explore {factor} — not mentioned, potential white space")
         elif data["satisfaction"] > 0.5:
