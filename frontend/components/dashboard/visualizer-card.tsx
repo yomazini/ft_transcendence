@@ -39,20 +39,31 @@ export function VisualizerCard({ report }) {
 	const monthLabel = now.toLocaleString("en-US", { month: "long", year: "numeric" });
 
 	const sentimentByDay = new Map();
+	const MONTHS = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+
 	report?.result?.forEach((item) => {
-		let dayNum;
+		let dayNum: number;
 
 		if (typeof item.day === "number") {
 			dayNum = item.day;
 		} else {
-			const iso = String(item.day).match(/^(\d{4})-(\d{2})-(\d{2})/);
+			const str = String(item.day).trim();
+			const iso = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+			const short = str.match(/^([A-Za-z]{3,})\.?\s+(\d{1,2})$/);
+
 			if (iso) {
-				if (Number(iso[1]) !== year || Number(iso[2]) - 1 !== month) return;
+			if (Number(iso[1]) !== year || Number(iso[2]) - 1 !== month) return;
 				dayNum = Number(iso[3]);
+			} else if (short) {
+			const m = MONTHS.indexOf(short[1].slice(0, 3).toLowerCase());
+			if (m !== month) return; // skip other months
+				dayNum = Number(short[2]);
 			} else {
-				dayNum = new Date(item.day).getDate();
+				dayNum = new Date(str).getDate();
 			}
 		}
+
+		if (Number.isNaN(dayNum)) return;
 
 		sentimentByDay.set(dayNum, item.sentiment_score);
 	});
@@ -61,6 +72,7 @@ export function VisualizerCard({ report }) {
 		day: i + 1,
 		sentiment: sentimentByDay.get(i + 1) ?? null,
 	}));
+
 
 	const currentSentiment =
 		[...chartData].reverse().find((d) => d.sentiment !== null)?.sentiment ?? 0;
@@ -146,46 +158,19 @@ export function VisualizerCard({ report }) {
 							>
 
 								<defs>
-									<linearGradient
-										id="sentiment-area"
-										x1="0"
-										y1="0"
-										x2="0"
-										y2="1"
-									>
-										<stop
-											offset="0%"
-											stopColor="#706a66"
-											stopOpacity={0.16}
-										/>
-
-										<stop
-											offset="100%"
-											stopOpacity={0}
-										/>
+									<linearGradient id="sentiment-area" x1="0" y1="0" x2="0" y2="1">
+										<stop offset="0%"   stopColor="#ff8725" stopOpacity={0.45} />
+										<stop offset="35%"  stopColor="#fc964d" stopOpacity={0.22} />
+										<stop offset="70%"  stopColor="#fdba74" stopOpacity={0.08} />
+										<stop offset="100%" stopColor="#ffe9c9" stopOpacity={0} />
 									</linearGradient>
 
-									<linearGradient
-										id="sentiment-line"
-										x1="0"
-										y1="0"
-										x2="1"
-										y2="0"
-									>
-										<stop
-											offset="0%"
-											stopColor="#f6d4b9"
-										/>
-
-										<stop
-											offset="50%"
-											stopColor="#938e8a"
-										/>
-
-										<stop
-											offset="100%"
-											stopColor="#434140"
-										/>
+									<linearGradient id="sentiment-line" x1="0" y1="0" x2="1" y2="0">
+										<stop offset="0%"   stopColor="#fde68a" />
+										<stop offset="25%"  stopColor="#fbbf24" />
+										<stop offset="55%"  stopColor="#ffaa3b" />
+										<stop offset="80%"  stopColor="#fc8b1a" />
+										<stop offset="100%" stopColor="#dd7d00" />
 									</linearGradient>
 
 								</defs>
@@ -203,7 +188,7 @@ export function VisualizerCard({ report }) {
 									tickMargin={8}
 									interval={0}
 									padding={{ left: 20, right: 20 }}
-									tick={{ fontSize: 10, fill: "#545658" }}
+									tick={{ fontSize: 10, fill: "#585755" }}
 									tickFormatter={(day) => `${monthShort} ${day}`}
 								/>
 
@@ -215,7 +200,7 @@ export function VisualizerCard({ report }) {
 									tickMargin={8}
 									tick={{
 										fontSize: 10,
-										fill: "#94a3b8",
+										fill: "#585755",
 									}}
 									tickFormatter={(value) =>
 										value > 0 ? `+${value}` : value
@@ -240,10 +225,13 @@ export function VisualizerCard({ report }) {
 									dataKey="sentiment"
 									connectNulls
 									stroke="url(#sentiment-line)"
-									strokeWidth={2.5}
+									strokeWidth={3}
+									strokeLinecap="round"
+									strokeLinejoin="round"
 									fill="url(#sentiment-area)"
-									dot={{ r: 4, fill: "#0e0d0d", stroke: "#ffffff", strokeWidth: 2 }}
-									activeDot={{ r: 6, fill: "#1f1e1e", stroke: "#ffffff", strokeWidth: 2 }}
+									style={{ filter: "url(#line-glow)" }}
+									dot={{ r: 4, fill: "#ff951c", stroke: "#ffc392", strokeWidth: 2 }}
+									activeDot={{ r: 7, fill: "#ffffff", stroke: "#ea8a0c", strokeWidth: 2 }}
 								/>
 
 							</AreaChart>

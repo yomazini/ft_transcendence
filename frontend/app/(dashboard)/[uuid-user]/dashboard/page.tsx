@@ -39,9 +39,9 @@ export default function DashboardPage({ params }: { params: Promise<{ "uuid-user
 	]
 
 	const jobStatus = [
-		{status: "Runing", icon: Loader2, iconColor: 'text-orange-500', number: 10},
-		{status: "Done", icon: CheckCircle2, iconColor: 'text-green-500', number: 20},
-		{status: "Queued", icon: Clock3, iconColor: 'text-purple-500', number: 40},
+		{status: "Runing", icon: Loader2, iconColor: 'text-black', number: 10},
+		{status: "Done", icon: CheckCircle2, iconColor: 'text-black', number: 20},
+		{status: "Queued", icon: Clock3, iconColor: 'text-black', number: 40},
 	]
 
 	return (
@@ -68,102 +68,98 @@ export default function DashboardPage({ params }: { params: Promise<{ "uuid-user
 				</div>
 
 				<div className="gflex w-full flex-col gap-4 md:flex-row">
-					{/* <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-4 max-h-screen h-full"> */}
-						
-								{/* loading ? (
-									<div>Report Loading...</div>
-								) : error ? (
-									<div>ERROR {error.message}</div>
-								) :  ( */}
-								<>
-									<div>
-										<VisualizerCard report={report}/>
+					{loading ? (
+						<div>Report Loading...</div>
+					) : error ? (
+						<div>ERROR {error.message}</div>
+					) :  (
+					<>
+						<div>
+							<VisualizerCard report={report}/>
+						</div>
+
+						<div className="flex flex-col lg:flex-row lg:h-[160px] w-full min-w-0 py-5">
+							{jobStatus.map((item, i) => (
+								<Status
+									key={i}
+									icon={item.icon}
+									action={item.status}
+									iconColor={item.iconColor}
+									num={item.number}
+								/>
+							))}
+						</div>
+						<div className="flex ">
+							<Card className="w-full lg:w-1/2 h-auto lg:h-[550px] min-w-0 rounded-none">
+								<CardHeader className="border-b px-6">
+									<CardTitle className="flex text-sm font-medium text-slate-800 grid-cols-2 gap-2">
+										<ActivityIcon className="size-4 shrink-0 text-purple-500" />
+										Strategic Analysis
+									</CardTitle>
+								</CardHeader>
+
+								<CardContent >
+
+									<div className="flex w-full min-w-0 justify-center">
+										<div className="grid w-full min-w-0 max-w-[40%] grid-cols-2 gap-2 rounded-lg bg-slate-100 px-4 py-1">
+											<button
+												type="button"
+												onClick={() => setActiveCard(1)}
+												className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:gap-2 sm:text-sm ${
+													activeCard === 1
+													? "bg-white text-black shadow-sm"
+													: "text-slate-500 hover:text-slate-800"
+												}`}
+											>
+												<Target className="size-4 shrink-0" />
+												<span className="min-w-0 truncate">SWOT</span>
+											</button>
+
+											<button
+												type="button"
+												onClick={() => setActiveCard(2)}
+												className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:gap-2 sm:text-sm ${
+													activeCard === 2
+													? "bg-white text-black shadow-sm"
+													: "text-slate-500 hover:text-slate-800"
+												}`}
+											>
+												<Waves className="size-4 shrink-0" />
+												<span className="min-w-0 truncate">Blue Ocean</span>
+											</button>
+										</div>
 									</div>
 
-									<div className="flex flex-col lg:flex-row lg:h-[160px] w-full min-w-0 py-5">
-										{jobStatus.map((item, i) => (
-											<Status
-												key={i}
-												icon={item.icon}
-												action={item.status}
-												iconColor={item.iconColor}
-												num={item.number}
-											/>
-										))}
+									<div className="grid w-full min-w-0 grid-cols-1 gap-4 py-4 lg:grid-cols-2">
+										{activeCard === 1
+											? swot.map((item, i) => (
+													<Cards
+														key={i}
+														items={item.items}
+														icon={item.icon}
+														title={item.title}
+														description={item.description}
+														iconColor={item.iconColor}
+													/>
+											))
+											: errc.map((item, i) => (
+													<Cards
+														key={i}
+														items={item.items}
+														icon={item.icon}
+														title={item.title}
+														description={item.description}
+														iconColor={item.iconColor}
+													/>
+											))}
 									</div>
-									<div className="flex ">
-										<Card className="w-full lg:w-1/2 h-auto lg:h-[550px] min-w-0 rounded-none">
-											<CardHeader className="border-b px-6">
-												<CardTitle className="flex text-sm font-medium text-slate-800 grid-cols-2 gap-2">
-													<ActivityIcon className="size-4 shrink-0 text-purple-500" />
-													Strategic Analysis
-												</CardTitle>
-											</CardHeader>
 
-											<CardContent >
-
-												<div className="flex w-full min-w-0 justify-center">
-													<div className="grid w-full min-w-0 max-w-[40%] grid-cols-2 gap-2 rounded-lg bg-slate-100 px-4 py-1">
-														<button
-															type="button"
-															onClick={() => setActiveCard(1)}
-															className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:gap-2 sm:text-sm ${
-																activeCard === 1
-																? "bg-white text-black shadow-sm"
-																: "text-slate-500 hover:text-slate-800"
-															}`}
-														>
-															<Target className="size-4 shrink-0" />
-															<span className="min-w-0 truncate">SWOT</span>
-														</button>
-
-														<button
-															type="button"
-															onClick={() => setActiveCard(2)}
-															className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:gap-2 sm:text-sm ${
-																activeCard === 2
-																? "bg-white text-black shadow-sm"
-																: "text-slate-500 hover:text-slate-800"
-															}`}
-														>
-															<Waves className="size-4 shrink-0" />
-															<span className="min-w-0 truncate">Blue Ocean</span>
-														</button>
-													</div>
-												</div>
-
-												<div className="grid w-full min-w-0 grid-cols-1 gap-4 py-4 lg:grid-cols-2">
-													{activeCard === 1
-														? swot.map((item, i) => (
-																<Cards
-																	key={i}
-																	items={item.items}
-																	icon={item.icon}
-																	title={item.title}
-																	description={item.description}
-																	iconColor={item.iconColor}
-																/>
-														))
-														: errc.map((item, i) => (
-																<Cards
-																	key={i}
-																	items={item.items}
-																	icon={item.icon}
-																	title={item.title}
-																	description={item.description}
-																	iconColor={item.iconColor}
-																/>
-														))}
-												</div>
-
-											</CardContent>
-										</Card>
-										
-									</div>
-								</>
-								{/* ) */}
-						
-					{/* </div> */}
+								</CardContent>
+							</Card>
+							
+						</div>
+					</>
+					)}
 				</div>
 			</div>
 		</div>

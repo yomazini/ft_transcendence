@@ -173,11 +173,11 @@ export function AppSidebar() {
 											>
 
 											<SidebarMenuButton
-											className="report-menu-button"
-											render={<Link href={`/${report.id}/dashboard`} />}
+												className="report-menu-button"
+												render={<Link href={`/${report.id}/dashboard`} />}
 											>
-											<span className="report-dot" />
-											<span className="truncate">{report.id}</span>
+												<span className="report-dot" />
+												<span className="truncate">{report.id}</span>
 											</SidebarMenuButton>
 
 												<DropdownMenu>
