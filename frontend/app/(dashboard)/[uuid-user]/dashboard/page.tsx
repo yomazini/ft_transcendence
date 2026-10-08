@@ -45,124 +45,126 @@ export default function DashboardPage({ params }: { params: Promise<{ "uuid-user
 	]
 
 	return (
-		<div className="bg-[radial-gradient(#d4d4d4_1px,transparent_1px)] [background-size:16px_16px]">
-			<div className="flex justify-end py-2 px-5">
-				<DropdownMenu>
-					<DropdownMenuTrigger
-						render={
-							<Button
-								className="btn-primary"
-							>
-								<Download className="h-4 w-4 shrink-0" />
-								<span className="hidden sm:inline">Export data</span>
-							</Button>
-						}
-					/>
-					<DropdownMenuContent align="end">
-						<DropdownMenuItem onClick={() => exportRep(id, "CSV")}>Export as CSV</DropdownMenuItem>
-						<DropdownMenuItem onClick={() => exportRep(id, "XLSX")}>Export as XLSX</DropdownMenuItem>
-						<DropdownMenuItem onClick={() => exportRep(id, "JSON")}>Export as JSON</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			</div>
-			<div className="grid-cols-2 h-[140px] md:grid-cols-4 gap-4 flex grid-cols-8 gap-8 py-5">
-				{jobStatus.map((item, i) => (
-					<Status
-						key={i}
-						icon={item.icon}
-						action={item.status}
-						iconColor={item.iconColor}
-						num={item.number}
-					/>
-				))}
-			</div>
+		<div className="justify-center flex">
+			<div className="flex flex-col h-full bg-[radial-gradient(#d4d4d4_1px,transparent_1px)] [background-size:16px_16px] border w-full  w-[100%] min-[2000px]:w-[45%]">
+				<div className="flex justify-end py-2 px-5">
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							render={
+								<Button
+									className="btn-primary"
+								>
+									<Download className="h-4 w-4 shrink-0" />
+									<span className="hidden sm:inline">Export data</span>
+								</Button>
+							}
+						/>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem onClick={() => exportRep(id, "CSV")}>Export as CSV</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => exportRep(id, "XLSX")}>Export as XLSX</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => exportRep(id, "JSON")}>Export as JSON</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
 
-			<div className="gflex w-full flex-col gap-4 md:flex-row">
-				{/* <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-4 max-h-screen h-full"> */}
-					
-							{/* loading ? (
-								<div>Report Loading...</div>
-							) : error ? (
-								<div>ERROR {error.message}</div>
-							) :  ( */}
-							<>
-								<div>
-									<VisualizerCard report={report}/>
-								</div>
+				<div className="gflex w-full flex-col gap-4 md:flex-row">
+					{/* <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-4 max-h-screen h-full"> */}
+						
+								{/* loading ? (
+									<div>Report Loading...</div>
+								) : error ? (
+									<div>ERROR {error.message}</div>
+								) :  ( */}
+								<>
+									<div>
+										<VisualizerCard report={report}/>
+									</div>
 
-								<div className="py-5">
-									<Card className="w-full lg:w-[50%] lg:h-[450px] min-w-0 shrink-0">
+									<div className="flex flex-col lg:flex-row lg:h-[160px] w-full min-w-0 py-5">
+										{jobStatus.map((item, i) => (
+											<Status
+												key={i}
+												icon={item.icon}
+												action={item.status}
+												iconColor={item.iconColor}
+												num={item.number}
+											/>
+										))}
+									</div>
+									<div className="flex ">
+										<Card className="w-full lg:w-1/2 h-auto lg:h-[550px] min-w-0 rounded-none">
+											<CardHeader className="border-b px-6">
+												<CardTitle className="flex text-sm font-medium text-slate-800 grid-cols-2 gap-2">
+													<ActivityIcon className="size-4 shrink-0 text-purple-500" />
+													Strategic Analysis
+												</CardTitle>
+											</CardHeader>
 
-										<CardHeader className="border-b px-6">
-											<CardTitle className="flex text-sm font-medium text-slate-800 grid-cols-2 gap-2">
-												<ActivityIcon className="size-4 shrink-0 text-purple-500" />
-												Strategic Analysis
-											</CardTitle>
-										</CardHeader>
+											<CardContent >
 
-										<CardContent >
+												<div className="flex w-full min-w-0 justify-center">
+													<div className="grid w-full min-w-0 max-w-[40%] grid-cols-2 gap-2 rounded-lg bg-slate-100 px-4 py-1">
+														<button
+															type="button"
+															onClick={() => setActiveCard(1)}
+															className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:gap-2 sm:text-sm ${
+																activeCard === 1
+																? "bg-white text-black shadow-sm"
+																: "text-slate-500 hover:text-slate-800"
+															}`}
+														>
+															<Target className="size-4 shrink-0" />
+															<span className="min-w-0 truncate">SWOT</span>
+														</button>
 
-											<div className="flex w-full min-w-0 justify-center">
-												<div className="grid w-full min-w-0 max-w-[40%] grid-cols-2 gap-2 rounded-lg bg-slate-100 px-4 py-1">
-													<button
-													type="button"
-													onClick={() => setActiveCard(1)}
-													className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:gap-2 sm:text-sm ${
-														activeCard === 1
-														? "bg-white text-black shadow-sm"
-														: "text-slate-500 hover:text-slate-800"
-													}`}
-													>
-														<Target className="size-4 shrink-0" />
-														<span className="min-w-0 truncate">SWOT</span>
-													</button>
-
-													<button
-													type="button"
-													onClick={() => setActiveCard(2)}
-													className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:gap-2 sm:text-sm ${
-														activeCard === 2
-														? "bg-white text-black shadow-sm"
-														: "text-slate-500 hover:text-slate-800"
-													}`}
-													>
-														<Waves className="size-4 shrink-0" />
-														<span className="min-w-0 truncate">Blue Ocean</span>
-													</button>
+														<button
+															type="button"
+															onClick={() => setActiveCard(2)}
+															className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:gap-2 sm:text-sm ${
+																activeCard === 2
+																? "bg-white text-black shadow-sm"
+																: "text-slate-500 hover:text-slate-800"
+															}`}
+														>
+															<Waves className="size-4 shrink-0" />
+															<span className="min-w-0 truncate">Blue Ocean</span>
+														</button>
+													</div>
 												</div>
-											</div>
 
-											<div className="grid w-full min-w-0 grid-cols-1 gap-4 py-4 sm:grid-cols-2">
-												{activeCard === 1
-													? swot.map((item, i) => (
-															<Cards
-																key={i}
-																items={item.items}
-																icon={item.icon}
-																title={item.title}
-																description={item.description}
-																iconColor={item.iconColor}
-															/>
-													))
-													: errc.map((item, i) => (
-															<Cards
-																key={i}
-																items={item.items}
-																icon={item.icon}
-																title={item.title}
-																description={item.description}
-																iconColor={item.iconColor}
-															/>
-													))}
-											</div>
+												<div className="grid w-full min-w-0 grid-cols-1 gap-4 py-4 lg:grid-cols-2">
+													{activeCard === 1
+														? swot.map((item, i) => (
+																<Cards
+																	key={i}
+																	items={item.items}
+																	icon={item.icon}
+																	title={item.title}
+																	description={item.description}
+																	iconColor={item.iconColor}
+																/>
+														))
+														: errc.map((item, i) => (
+																<Cards
+																	key={i}
+																	items={item.items}
+																	icon={item.icon}
+																	title={item.title}
+																	description={item.description}
+																	iconColor={item.iconColor}
+																/>
+														))}
+												</div>
 
-										</CardContent>
-									</Card>
-								</div>
-							</>
-							{/* ) */}
-					
-				{/* </div> */}
+											</CardContent>
+										</Card>
+										
+									</div>
+								</>
+								{/* ) */}
+						
+					{/* </div> */}
+				</div>
 			</div>
 		</div>
 	)

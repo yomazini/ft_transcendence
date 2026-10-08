@@ -81,9 +81,7 @@ export function VisualizerCard({ report }) {
 	);
 
 	return (
-			<Card
-				className="w-full min-w-0 shrink-0 h-[450px]"
-			>
+			<Card className="w-full min-w-0 shrink-0 h-[550px] rounded-none">
 				<div className="pointer-events-none absolute -bottom-20 -left-20 max-h-[48px] rounded-full bg-slate-400/5 blur-3xl" />
 
 				<CardHeader className="relative flex flex-row items-start border-b justify-between">
@@ -133,7 +131,7 @@ export function VisualizerCard({ report }) {
 					<div className="w-full overflow-x-auto">
 						<ChartContainer
 							config={chartConfig}
-							className="h-[320px] w-full aspect-auto"
+							className="h-[400px] lg:h-[430px] w-full aspect-auto"
 							style={{ minWidth: Math.max(daysInMonth * 40, 600) }}
 						>
 							<AreaChart

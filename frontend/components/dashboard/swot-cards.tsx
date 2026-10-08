@@ -15,7 +15,7 @@ import { Icon } from "next/dist/lib/metadata/types/metadata-types";
 export function Cards({ items, icon : Icon, title , description, iconColor} : {items : string[]; icon : LucideIcon; title : string, description : string, iconColor: string}) {
 	return (
 
-		<Card className="stat-card group bg-slate-100 h-[150px]">
+		<Card className="stat-card group bg-slate-100 h-[200px]">
 			{/* Subtle orange glow */}
 			<div className="stat-card-glow" />
 
