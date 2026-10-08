@@ -1,7 +1,7 @@
 /*  defines Role as a type that can only ever be one of those three exact strings. 
 	✅ this is called a union of string literals — a lightweight way to write an enum in TypeScript.
 */
-export type Role = "admin" | "analyst" | "viewer";
+export type Role = "Admin" | "Analyst" | "Viewer";
 
 /** @note describes the shape of a user object — matches contracts/openapi.yaml's User schema exactly: id, org_id, email, role are required; created_at is optional (the ?). */
 export interface User {
@@ -14,6 +14,7 @@ export interface User {
 
 export interface AuthResponse {
 	access_token: string;
+	token_type: string;
 	user: User;
 }
 
@@ -55,7 +56,7 @@ export function register(
 
 	if (USE_MOCK) return mockRegister(email, orgName, orgDescription);
 
-	return post<AuthResponse>("/api/auth/register", {
+	return post<AuthResponse>("/api/auth/signup", {
 		email,
 		password,
 		org_name: orgName,
@@ -112,7 +113,8 @@ async function mockLogin(email: string, password: string): Promise<AuthResponse>
 	}
 	return {
 		access_token: "mock-token",
-		user: { id: MOCK_USER_ID, org_id: MOCK_ORG_ID, email, role: "admin" },
+		token_type: "Bearer",
+		user: { id: MOCK_USER_ID, org_id: MOCK_ORG_ID, email, role: "Admin" },
 	};
 }
 
@@ -130,6 +132,7 @@ async function mockRegister(
 	);
 	return {
 		access_token: "mock-token",
-		user: { id: MOCK_USER_ID, org_id: MOCK_ORG_ID, email, role: "admin" },
+		token_type: "Bearer",
+		user: { id: MOCK_USER_ID, org_id: MOCK_ORG_ID, email, role: "Admin" },
 	};
 }
