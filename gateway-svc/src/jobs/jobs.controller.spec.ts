@@ -85,4 +85,25 @@ describe('JobsController', () => {
       expect(result.blue_ocean).toBeDefined();
     });
   });
+
+  describe('EventsGateway', () => {
+    it('should emit job:done and job:update events with extra payload', () => {
+      const gateway = new EventsGateway();
+      const emitMock = jest.fn();
+      gateway.server = { emit: emitMock } as any;
+
+      gateway.broadcastJobStatus('job-123', 'done', { report_id: 'rep-456' });
+
+      expect(emitMock).toHaveBeenCalledWith('job:done', {
+        job_id: 'job-123',
+        status: 'done',
+        report_id: 'rep-456',
+      });
+      expect(emitMock).toHaveBeenCalledWith('job:update', {
+        job_id: 'job-123',
+        status: 'done',
+        report_id: 'rep-456',
+      });
+    });
+  });
 });
