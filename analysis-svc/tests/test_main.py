@@ -1,12 +1,15 @@
 import math
 from unittest.mock import AsyncMock, patch
+
 from fastapi.testclient import TestClient
 
-with patch("app.database.get_pool", new_callable=AsyncMock), \
-     patch("app.worker.start_worker", new_callable=AsyncMock), \
-     patch("app.worker.stop_worker", new_callable=AsyncMock), \
-     patch("app.events.close_redis", new_callable=AsyncMock), \
-     patch("app.database.close_pool", new_callable=AsyncMock):
+with patch("app.database.get_pool", new_callable=AsyncMock), patch(
+    "app.worker.start_worker", new_callable=AsyncMock
+), patch("app.worker.stop_worker", new_callable=AsyncMock), patch(
+    "app.events.close_redis", new_callable=AsyncMock
+), patch(
+    "app.database.close_pool", new_callable=AsyncMock
+):
     from app.main import app
 
 client = TestClient(app)
@@ -178,6 +181,7 @@ def test_fixture_comments():
 
 def test_publish_job_event():
     import asyncio
+
     from app.events import publish_job_event
 
     mock_redis = AsyncMock()
@@ -188,3 +192,53 @@ def test_publish_job_event():
         assert channel == "job-events"
         assert '"status": "done"' in message
         assert '"report_id": "rep-1"' in message
+
+
+def test_rank_top_comments():
+    from app.fixtures import get_fixture_comments
+    from app.ranking import rank_top_comments
+    from app.sentiment import score_comments
+
+    scored = score_comments(get_fixture_comments())
+    ranked = rank_top_comments(scored, top_k=5)
+    assert len(ranked["top_overall"]) == 5
+    scores = [c["impact_score"] for c in ranked["top_overall"]]
+    assert scores == sorted(scores, reverse=True)
+    assert "top_positive" in ranked
+    assert "top_negative" in ranked
+
+
+def test_build_synthesis_prompt():
+    from app.canvas import build_synthesis_prompt
+    from app.fixtures import get_fixture_comments
+    from app.sentiment import score_comments
+
+    scored = score_comments(get_fixture_comments())
+    job = {
+        "id": "job-123",
+        "target": "r/freelance",
+        "mode": "Subreddit",
+        "customer_persona": {
+            "description": "indie hackers",
+            "price_sensitivity": "high",
+        },
+    }
+    prompt = build_synthesis_prompt(job, scored)
+    assert "<customer_persona>" in prompt
+    assert "indie hackers" in prompt
+    assert '<comment id="c1"' in prompt
+    assert "# SWOT Synthesis" in prompt
+    assert "# Blue Ocean Strategy Synthesis" in prompt
+    assert "# Feature Suggestions" in prompt
+
+
+def test_build_rag_prompt():
+    from app.canvas import build_rag_prompt
+
+    comments = [
+        {"id": "uuid-1", "similarity": 0.88, "upvotes": 42, "text": "Too expensive."}
+    ]
+    prompt = build_rag_prompt("What is the price?", comments)
+    assert "<question>What is the price?</question>" in prompt
+    assert '<retrieved_comment id="c1"' in prompt
+    assert 'relevance_score="0.88"' in prompt
