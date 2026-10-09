@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     queue_name: str = "scrape-job"
     events_channel: str = "job-events"
 
+    embedding_model: str = "all-MiniLM-L6-v2"
+    use_mock_embeddings: bool = False
+
     @property
     def database_url(self) -> str:
         return (
