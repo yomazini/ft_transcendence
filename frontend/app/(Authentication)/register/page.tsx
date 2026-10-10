@@ -23,6 +23,7 @@ import {
 	saveToken,
 } from "@/lib/auth";
 
+const MIN_ORG_DESCRIPTION_CHARS = 100;
 const MAX_ORG_DESCRIPTION_CHARS = 200;
 
 export default function RegisterPage() {
@@ -39,7 +40,9 @@ export default function RegisterPage() {
 
 	function validate(): string {
 		if (!orgName.trim()) return "Enter your organization name.";
-		if (!orgDescription.trim()) return "Describe your organization.";
+		if (orgDescription.trim().length < MIN_ORG_DESCRIPTION_CHARS) {
+			return `Describe your organization in at least ${MIN_ORG_DESCRIPTION_CHARS} characters.`;
+		}
 		if (!isValidEmail(email.trim())) return "Enter a valid email address.";
 		if (password.length < MIN_PASSWORD_LENGTH) {
 			return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
