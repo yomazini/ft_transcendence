@@ -1,5 +1,5 @@
 import { Body, Controller, Get, HttpCode, Post, Req, UseGuards, Res } from '@nestjs/common';
-import { LoginDto, RegisterDto } from './dto';
+import { Complete42Dto, LoginDto, RegisterDto } from './dto';
 import { AuthService } from './auth.service';
 import { JwtGuard } from './guard/jwt.guard';
 import { FortyTwoGuard } from './guard/42.guard';
@@ -31,7 +31,16 @@ export class AuthController {
 	@Get('42/callback') /** GET /auth/42/callback */
 	@UseGuards(FortyTwoGuard)
 	async fortyTwoAuthCallback(@Req() req, @Res() res) {
-		const { access_token } = await this.authService.fortyTwoLogin(req.user);
-		return res.redirect(`${process.env.FRONTEND_URL}/auth/42/done#token=${access_token}`);
+
+		const result = await this.authService.fortyTwoLogin(req.user);
+		if ('signup_token' in result) {
+			return res.redirect(`${process.env.FRONTEND_URL}/auth/42/complete#signup_token=${result.signup_token}`);
+		}
+		return res.redirect(`${process.env.FRONTEND_URL}/auth/42/done#token=${result.access_token}`);
+	}
+
+	@Post('42/complete') /** POST /auth/42/complete */
+	complete42Auth(@Body() dto: Complete42Dto) {
+		return this.authService.complete42Login(dto);
 	}
 }
