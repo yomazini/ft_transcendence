@@ -242,3 +242,91 @@ def test_build_rag_prompt():
     assert "<question>What is the price?</question>" in prompt
     assert '<retrieved_comment id="c1"' in prompt
     assert 'relevance_score="0.88"' in prompt
+
+
+def test_extract_json_object():
+    from app.llm import extract_json_object 
+
+    fence = "`" * 3
+    raw = f"<think>reasoning</think>\n{fence}json\n{{\"swot\": {{\"strengths\": []}}}}\n{fence}"
+    parsed = extract_json_object(raw)
+    assert "swot" in parsed
+
+
+def test_synthesize_full_report_with_mocked_llm():
+    import asyncio
+    from app.fixtures import get_fixture_comments
+    from app.sentiment import compute_sentiment_summary, score_comments
+    from app.synthesis import synthesize_full_report
+
+    scored = score_comments(get_fixture_comments())
+    summary = compute_sentiment_summary(scored)
+    fake_llm_json = {
+        "swot": {
+            "persona_used": "indie hackers",
+            "strengths": [{"point": "Clean UI", "cited_comment_ids": ["c1"]}],
+            "weaknesses": [{"point": "High pricing", "cited_comment_ids": ["c2"]}],
+            "opportunities": [],
+            "threats": [],
+            "notes": "No injection detected",
+        },
+        "blue_ocean": {
+            "eliminate": [],
+            "reduce": [],
+            "raise": [],
+            "create": [
+                {
+                    "action": "Solo tier",
+                    "from_weakness_or_opportunity": "High pricing",
+                    "why_this_is_the_strongest_candidate": "Underserved segment",
+                }
+            ],
+        },
+        "features": [
+            {
+                "name": "Solo $9 Plan",
+                "justification": "Matches budget priority",
+                "cited_comment_ids": ["c2"],
+                "priority": "high",
+            }
+        ],
+        "weakest_suggestion": "Custom enterprise themes",
+    }
+
+    with patch(
+        "app.synthesis.call_openrouter_json",
+        new_callable=AsyncMock,
+        return_value=fake_llm_json,
+    ):
+        report = asyncio.run(
+            synthesize_full_report(
+                {"customer_persona": {"description": "indie hackers"}},
+                summary,
+                scored,
+            )
+        )
+        assert report["swot"]["persona_used"] == "indie hackers"
+        assert "subjectivity_breakdown" in report["swot"]
+        assert report["blue_ocean"]["features"][0]["name"] == "Solo $9 Plan"
+        assert "Solo $9 Plan" in report["conclusion"]
+
+
+def test_synthesize_full_report_fallback_when_no_key():
+    import asyncio
+    from app.fixtures import get_fixture_comments
+    from app.sentiment import compute_sentiment_summary, score_comments
+    from app.synthesis import synthesize_full_report
+
+    scored = score_comments(get_fixture_comments())
+    summary = compute_sentiment_summary(scored)
+
+    with patch(
+        "app.synthesis.call_openrouter_json",
+        new_callable=AsyncMock,
+        return_value=None,
+    ):
+        report = asyncio.run(synthesize_full_report(None, summary, scored))
+        assert "strengths" in report["swot"]
+        assert "factors" in report["blue_ocean"]
+        assert "Analysis of community feedback" in report["conclusion"]
+
