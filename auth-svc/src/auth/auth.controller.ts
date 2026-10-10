@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Req, UseGuards, Res } from '@nestjs/common';
 import { LoginDto, RegisterDto } from './dto';
 import { AuthService } from './auth.service';
 import { JwtGuard } from './guard/jwt.guard';
@@ -30,7 +30,8 @@ export class AuthController {
 
 	@Get('42/callback') /** GET /auth/42/callback */
 	@UseGuards(FortyTwoGuard)
-	fortyTwoAuthCallback(@Req() req) {
-		return this.authService.fortyTwoLogin(req.user);
+	async fortyTwoAuthCallback(@Req() req, @Res() res) {
+		const { access_token } = await this.authService.fortyTwoLogin(req.user);
+		return res.redirect(`${process.env.FRONTEND_URL}/auth/42/done#token=${access_token}`);
 	}
 }
