@@ -7,6 +7,7 @@ from bullmq import Worker
 from .config import settings
 from .database import (
     get_comments_by_job,
+    get_job,
     insert_comment,
     insert_report,
     update_comment_analysis,
@@ -16,7 +17,7 @@ from .embeddings import generate_embedding
 from .events import publish_job_event
 from .fixtures import get_fixture_comments
 from .sentiment import compute_sentiment_summary, score_comments
-from .synthesis import generate_conclusion, synthesize_blue_ocean, synthesize_swot
+from .synthesis import synthesize_full_report
 
 logger = logging.getLogger("analysis-worker")
 logger.setLevel(logging.INFO)
@@ -35,6 +36,10 @@ async def process_job(job, token):
     try:
         await update_job_status(job_id, "Running")
         await publish_job_event(job_id, "running")
+
+        job_row = await get_job(job_id)
+        if not job_row and job.data:
+            job_row = dict(job.data)
 
         existing_db_comments = await get_comments_by_job(job_id)
         payload_comments = job.data.get("comments") if job.data else None
@@ -79,17 +84,15 @@ async def process_job(job, token):
                     embedding=embedding,
                 )
 
-        swot = synthesize_swot(summary, scored)
-        blue_ocean = synthesize_blue_ocean(summary, scored)
-        conclusion = generate_conclusion(summary, swot)
+        report_data = await synthesize_full_report(job_row, summary, scored)
         report_id = str(uuid.uuid4())
 
         await insert_report(
             report_id=report_id,
             job_id=job_id,
-            swot=swot,
-            blue_ocean=blue_ocean,
-            conclusion=conclusion,
+            swot=report_data["swot"],
+            blue_ocean=report_data["blue_ocean"],
+            conclusion=report_data["conclusion"],
         )
 
         await update_job_status(job_id, "Done")

@@ -1,3 +1,12 @@
+import logging
+from typing import Any
+
+from .canvas import build_synthesis_prompt
+from .llm import call_openrouter_json
+
+logger = logging.getLogger("analysis-synthesis")
+
+
 def synthesize_swot(sentiment_summary: dict, scored_comments: list[dict]) -> dict:
     sorted_by_score = sorted(scored_comments, key=lambda c: c["compound"])
     top_negative = sorted_by_score[:3]
@@ -123,12 +132,84 @@ def generate_conclusion(sentiment_summary: dict, swot: dict) -> str:
         + sentiment_summary.get("neutral_count", 0)
     )
 
+    first_strength = "N/A"
+    if swot.get("strengths"):
+        s0 = swot["strengths"][0]
+        first_strength = s0.get("point", str(s0)) if isinstance(s0, dict) else str(s0)
+
+    first_weakness = "N/A"
+    if swot.get("weaknesses"):
+        w0 = swot["weaknesses"][0]
+        first_weakness = w0.get("point", str(w0)) if isinstance(w0, dict) else str(w0)
+
     return (
         f"Analysis of community feedback reveals a {tone} overall sentiment "
         f"(avg compound: {avg}, avg subjectivity: {avg_subj}). "
         f"{sentiment_summary.get('positive_count', 0)} out of {total} "
         f"comments were positive ({pos:.0%}), while {sentiment_summary.get('negative_count', 0)} "
         f"were negative ({neg:.0%}). "
-        f"Key strengths include {swot['strengths'][0][:60] if swot['strengths'] else 'N/A'}. "
-        f"Primary concerns center around {swot['weaknesses'][0][:60] if swot['weaknesses'] else 'N/A'}."
+        f"Key strengths include {first_strength[:60]}. "
+        f"Primary concerns center around {first_weakness[:60]}."
     )
+
+
+async def synthesize_full_report(
+    job: dict | None,   
+    sentiment_summary: dict,
+    scored_comments: list[dict],
+) -> dict[str, Any]:
+    fallback_swot = synthesize_swot(sentiment_summary, scored_comments)
+    fallback_bo = synthesize_blue_ocean(sentiment_summary, scored_comments)
+
+    prompt = build_synthesis_prompt(job, scored_comments)
+    llm_result = await call_openrouter_json(prompt, max_tokens=3072, temperature=0.3)
+
+    if (
+        isinstance(llm_result, dict)
+        and "swot" in llm_result
+        and "blue_ocean" in llm_result
+    ):
+        swot_data = llm_result["swot"]
+        if isinstance(swot_data, dict):
+            notes = swot_data.get("notes")
+            if notes:
+                logger.warning("Flagged synthesis note for job: %s", notes)
+            swot_data["subjectivity_breakdown"] = fallback_swot[
+                "subjectivity_breakdown"
+            ]
+
+        bo_data = llm_result["blue_ocean"]
+        features = llm_result.get("features", [])
+        weakest = llm_result.get("weakest_suggestion", "")
+
+        combined_bo = {
+            "factors": fallback_bo["factors"],
+            "strategy": (
+                bo_data if isinstance(bo_data, dict) else fallback_bo["strategy"]
+            ),
+            "features": features,
+            "weakest_suggestion": weakest,
+        }
+
+        conclusion = generate_conclusion(
+            sentiment_summary,
+            swot_data if isinstance(swot_data, dict) else fallback_swot,
+        )
+        if features and isinstance(features[0], dict):
+            top_feat = features[0].get("name", "")
+            if top_feat:
+                conclusion = (
+                    f"{conclusion} Recommended top feature to build: {top_feat}."
+                )
+
+        return {
+            "swot": swot_data if isinstance(swot_data, dict) else fallback_swot,
+            "blue_ocean": combined_bo,
+            "conclusion": conclusion,
+        }
+
+    return {
+        "swot": fallback_swot,
+        "blue_ocean": fallback_bo,
+        "conclusion": generate_conclusion(sentiment_summary, fallback_swot),
+    }

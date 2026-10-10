@@ -20,7 +20,7 @@ from .embeddings import generate_embedding
 from .events import close_redis, publish_job_event
 from .fixtures import get_fixture_comments
 from .sentiment import compute_sentiment_summary, score_comments
-from .synthesis import generate_conclusion, synthesize_blue_ocean, synthesize_swot
+from .synthesis import synthesize_full_report
 from .worker import start_worker, stop_worker
 
 logging.basicConfig(level=logging.INFO)
@@ -123,17 +123,15 @@ async def trigger_analysis(job_id: str):
             embedding=embedding,
         )
 
-    swot = synthesize_swot(summary, scored)
-    blue_ocean = synthesize_blue_ocean(summary, scored)
-    conclusion = generate_conclusion(summary, swot)
+    report_data = await synthesize_full_report(job, summary, scored)
     report_id = str(uuid.uuid4())
 
     await insert_report(
         report_id=report_id,
         job_id=job_id,
-        swot=swot,
-        blue_ocean=blue_ocean,
-        conclusion=conclusion,
+        swot=report_data["swot"],
+        blue_ocean=report_data["blue_ocean"],
+        conclusion=report_data["conclusion"],
     )
 
     await update_job_status(job_id, "Done")
