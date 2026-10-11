@@ -1,5 +1,5 @@
 import { Body, Controller, Get, HttpCode, Post, Req, UseGuards, Res } from '@nestjs/common';
-import { AcceptInviteDto, Complete42Dto, LoginDto, RegisterDto } from './dto';
+import { AcceptInviteDto, ChangePasswordDto, Complete42Dto, LoginDto, RegisterDto } from './dto';
 import { AuthService } from './auth.service';
 import { JwtGuard } from './guard/jwt.guard';
 import { FortyTwoGuard } from './guard/42.guard';
@@ -45,9 +45,20 @@ export class AuthController {
 		return this.authService.complete42Login(dto);
 	}
 
-	@Post('invite/accept')
+	@Post('invite/accept') /** POST /auth/invite/accept */
 	acceptInvitation(@Body() dto: AcceptInviteDto) {
 		return this.authService.acceptInvite(dto);
+	}
+
+	@Post('change-password') /** POST /auth/change-password */
+	@UseGuards(JwtGuard)
+	@HttpCode(200)
+	changePassword(@Body() dto: ChangePasswordDto, @Req() req) {
+		return this.authService.changePassword(req.user.sub, dto); 
+		/** ⚠️ id from the token, never from the body
+		 * The token is signed by the server, so the id inside it (req.user.sub) cannot be faked.
+			The body is typed by the user, so anything in it can be a lie.
+		*/
 	}
 
 }

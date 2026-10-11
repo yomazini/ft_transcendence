@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable,UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as argon from 'argon2';
-import { AcceptInviteDto, Complete42Dto, LoginDto, RegisterDto } from './dto';
+import { AcceptInviteDto, ChangePasswordDto, Complete42Dto, LoginDto, RegisterDto } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 
@@ -269,5 +269,24 @@ export class AuthService {
 			}
 			throw error;
 		}
+	}
+
+	async changePassword(userId: string, dto: ChangePasswordDto) {
+		const user = await this.prisma.user.findUnique({
+			where: {id: userId},
+		});
+
+		if (!user) { throw new UnauthorizedException(); }
+
+		const passwordMatches = await argon.verify(user.password, dto.current_password);
+		if (!passwordMatches) {
+			throw new UnauthorizedException('Invalid credentials');
+		}
+		const hash = await argon.hash(dto.new_password);
+
+		await this.prisma.user.update({
+			where: { id: userId }, data: { password: hash },
+		}) 
+		return { message: 'Password changed'};
 	}
 }
