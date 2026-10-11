@@ -245,16 +245,17 @@ def test_build_rag_prompt():
 
 
 def test_extract_json_object():
-    from app.llm import extract_json_object 
+    from app.llm import extract_json_object
 
     fence = "`" * 3
-    raw = f"<think>reasoning</think>\n{fence}json\n{{\"swot\": {{\"strengths\": []}}}}\n{fence}"
+    raw = f'<think>reasoning</think>\n{fence}json\n{{"swot": {{"strengths": []}}}}\n{fence}'
     parsed = extract_json_object(raw)
     assert "swot" in parsed
 
 
 def test_synthesize_full_report_with_mocked_llm():
     import asyncio
+
     from app.fixtures import get_fixture_comments
     from app.sentiment import compute_sentiment_summary, score_comments
     from app.synthesis import synthesize_full_report
@@ -313,6 +314,7 @@ def test_synthesize_full_report_with_mocked_llm():
 
 def test_synthesize_full_report_fallback_when_no_key():
     import asyncio
+
     from app.fixtures import get_fixture_comments
     from app.sentiment import compute_sentiment_summary, score_comments
     from app.synthesis import synthesize_full_report
@@ -330,3 +332,60 @@ def test_synthesize_full_report_fallback_when_no_key():
         assert "factors" in report["blue_ocean"]
         assert "Analysis of community feedback" in report["conclusion"]
 
+
+def test_rerank_for_rag():
+    from app.ranking import rerank_for_rag
+
+    comments = [
+        {"id": "c1", "similarity": 0.90, "upvotes": 0},
+        {"id": "c2", "similarity": 0.85, "upvotes": 100},
+        {"id": "c3", "similarity": 0.40, "upvotes": 5},
+    ]
+    reranked = rerank_for_rag(comments, top_k=2)
+    assert len(reranked) == 2
+    assert reranked[0]["id"] == "c2"
+    assert reranked[0]["final_score"] > reranked[1]["final_score"]
+
+
+def test_rag_query_endpoint_success():
+    fake_comments = [
+        {
+            "id": "c-1",
+            "job_id": "job-123",
+            "text": "the monthly price is high",
+            "author": "dev1",
+            "upvotes": 45,
+            "sentiment_score": -0.5,
+            "similarity": 0.88,
+            "created_at": "2026-10-10t12:00:00z",
+        }
+    ]
+    with patch(
+        "app.main.get_job", new_callable=AsyncMock, return_value={"id": "job-123"}
+    ), patch(
+        "app.main.search_comments_by_vector",
+        new_callable=AsyncMock,
+        return_value=fake_comments,
+    ), patch(
+        "app.main.call_openrouter_text",
+        new_callable=AsyncMock,
+        return_value="pricing is considered expensive by users.\n\nsources: c1",
+    ):
+        response = client.post(
+            "/rag/query",
+            json={"job_id": "job-123", "query": "how is the pricing?"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "pricing is considered expensive" in data["answer"]
+        assert len(data["citations"]) == 1
+        assert data["citations"][0]["author"] == "dev1"
+
+
+def test_rag_query_endpoint_job_not_found():
+    with patch("app.main.get_job", new_callable=AsyncMock, return_value=None):
+        response = client.post(
+            "/rag/query",
+            json={"job_id": "unknown-job", "query": "any query?"},
+        )
+        assert response.status_code == 404
