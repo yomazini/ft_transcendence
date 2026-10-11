@@ -10,8 +10,7 @@ from .config import settings
 logger = logging.getLogger("analysis-llm")
 
 FALLBACK_MODELS = [
-    "google/gemma-3-27b-it:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
+    "nvidia/nemotron-3.5-lightning:free",
     "openrouter/free",
 ]
 
