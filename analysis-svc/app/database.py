@@ -127,3 +127,22 @@ async def get_report_by_job(job_id: str) -> dict | None:
     pool = await get_pool()
     row = await pool.fetchrow('SELECT * FROM "Report" WHERE job_id = $1', job_id)
     return dict(row) if row else None
+
+
+async def search_comments_by_vector(
+    job_id: str,
+    query_embedding: list[float],
+    limit: int = 20,
+) -> list[dict]:
+    pool = await get_pool()
+    embedding_str = "[" + ",".join(str(v) for v in query_embedding) + "]"
+    query = """
+        SELECT id, job_id, text, author, upvotes, sentiment_score, created_at,
+               1 - (embedding <=> $1::vector) AS similarity
+        FROM "Comments"
+        WHERE job_id = $2 AND embedding IS NOT NULL
+        ORDER BY embedding <=> $1::vector ASC
+        LIMIT $3
+    """
+    rows = await pool.fetch(query, embedding_str, job_id, limit)
+    return [dict(r) for r in rows]
