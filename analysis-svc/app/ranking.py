@@ -28,3 +28,26 @@ def rank_top_comments(
         "top_positive": top_positive,
         "top_negative": top_negative,
     }
+
+
+def rerank_for_rag(
+    retrieved_comments: list[dict],
+    top_k: int = 5,
+) -> list[dict]:
+    if not retrieved_comments:
+        return []
+
+    max_upvotes = max(max(0, int(c.get("upvotes", 0))) for c in retrieved_comments)
+    norm_denom = math.log1p(max(max_upvotes, 10))
+
+    enriched = []
+    for c in retrieved_comments:
+        item = dict(c)
+        similarity = max(0.0, min(1.0, float(item.get("similarity", 0.0))))
+        upvotes = max(0, int(item.get("upvotes", 0)))
+        norm_upvotes = math.log1p(upvotes) / norm_denom
+
+        item["final_score"] = round((0.7 * similarity) + (0.3 * norm_upvotes), 4)
+        enriched.append(item)
+
+    return sorted(enriched, key=lambda x: x["final_score"], reverse=True)[:top_k]
