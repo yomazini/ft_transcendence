@@ -76,6 +76,17 @@ export function completeFortyTwoSignup(
 	});
 }
 
+/** @note the invited person has no account yet: the invite token from the email link is their proof, and the account is created by this call. */
+export function acceptInvite(
+	invite_token: string,
+	password: string,
+): Promise<AuthResponse> {
+	return post<AuthResponse>("/api/auth/invite/accept", {
+		invite_token,
+		password,
+	});
+}
+
 /** ⚠️ the one real network call */
 async function post<T>(path: string, body: unknown): Promise<T> {
 	let response: Response; /** @note Response is a built-in browser type describing a fetch reply. */
