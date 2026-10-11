@@ -1,5 +1,5 @@
 import { Body, Controller, Get, HttpCode, Post, Req, UseGuards, Res } from '@nestjs/common';
-import { Complete42Dto, LoginDto, RegisterDto } from './dto';
+import { AcceptInviteDto, Complete42Dto, LoginDto, RegisterDto } from './dto';
 import { AuthService } from './auth.service';
 import { JwtGuard } from './guard/jwt.guard';
 import { FortyTwoGuard } from './guard/42.guard';
@@ -7,6 +7,7 @@ import { FortyTwoGuard } from './guard/42.guard';
 @Controller('auth')
 export class AuthController {
 	constructor(private readonly authService: AuthService) {}
+
 	@Post('signup') /** POST /auth/signup */
 	register(@Body() registerDto: RegisterDto) {
 		return this.authService.register(registerDto);
@@ -43,4 +44,10 @@ export class AuthController {
 	complete42Auth(@Body() dto: Complete42Dto) {
 		return this.authService.complete42Login(dto);
 	}
+
+	@Post('invite/accept')
+	acceptInvitation(@Body() dto: AcceptInviteDto) {
+		return this.authService.acceptInvite(dto);
+	}
+
 }

@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable,UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as argon from 'argon2';
-import { Complete42Dto, LoginDto, RegisterDto } from './dto';
+import { AcceptInviteDto, Complete42Dto, LoginDto, RegisterDto } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 
@@ -201,6 +201,71 @@ export class AuthService {
 		} catch(error: any) {
 			if (error.code === 'P2002') { /* duplicate-email check */
 				throw new BadRequestException('User already exists');
+			}
+			throw error;
+		}
+	}
+
+	async acceptInvite(dto: AcceptInviteDto) {
+		let payload: any;
+		try {
+			payload = await this.jwt.verifyAsync(dto.invite_token);
+		} catch (error) {
+			throw new UnauthorizedException('Invalid or expired invite token');
+		}
+		if (payload.purpose !== 'invite') {
+			throw new UnauthorizedException('Invalid invite token');
+		}
+		try {
+			const hash = await argon.hash(dto.password);
+
+			/** ⚠️ The user and their membership are created in one transaction.
+			 *  An invite is valid for 48 hours, and the org can be deleted in that time.
+			 *  Without a transaction the user would be created, the membership would fail,
+			 *  and a user with no org (who can never log in) would stay in the database. */
+			const { user, role } = await this.prisma.$transaction(async (tx) => {
+				const user = await tx.user.create({
+					data: {
+						email: payload.email,
+						password: hash,
+					},
+				});
+
+				const role = await tx.role_and_organization.create({
+					data: {
+						user_id: user.id,
+						org_id: payload.org_id,
+						role: payload.role,
+					}
+				})
+
+				return { user, role };
+			});
+
+			const access_token = await this.jwt.signAsync({
+				sub: user.id,
+				org_id: payload.org_id,
+				role: role.role,
+			})
+
+			return {
+				access_token,
+				token_type: 'Bearer',
+				user: {
+					id: user.id,
+					org_id: payload.org_id,
+					email: user.email,
+					role: role.role,
+					created_at: user.created_at,
+				}
+			}
+
+		} catch (error: any) {
+			if (error.code === 'P2002') { /* duplicate-email check */
+				throw new BadRequestException('User already exists');
+			}
+			if (error.code === 'P2003') { /* the org in the invite was deleted */
+				throw new BadRequestException('This organization no longer exists');
 			}
 			throw error;
 		}

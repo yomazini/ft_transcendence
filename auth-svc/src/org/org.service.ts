@@ -1,10 +1,17 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UpdateOrgDto } from './dto';
+import { InviteMemberDto, UpdateOrgDto } from './dto';
+import { MailService } from 'src/mail/mail.service';
+import { JwtService } from '@nestjs/jwt';
+import { UpdateMemberDto } from './dto/update-member.dto';
 
 @Injectable()
 export class OrgService {
-	constructor(private readonly prisma: PrismaService) {}
+	constructor(
+		private readonly prisma: PrismaService,
+		private readonly mail: MailService,
+		private readonly jwt: JwtService,
+	) {}
 
 	async get(id: string, userOrgId: string) {
 		if (id !== userOrgId) {
@@ -51,5 +58,101 @@ export class OrgService {
 			where: { id: { in: members.map((m) => m.user_id) } },
 		});
 		});
+	}
+
+	async list(id: string, userOrgId: string) {
+		if (id !== userOrgId) { throw new NotFoundException();  /** 404 */}
+
+		const rows = await this.prisma.role_and_organization.findMany({
+			where: { org_id: id },
+			include: { user: true },
+		})
+
+		const list = rows.map((row) =>({
+			email: row.user.email,
+			id: row.user.id,
+			role: row.role,
+			created_at: row.user.created_at,
+		}))
+		return list;
+	}
+
+	async invite(id: string, dto: InviteMemberDto, userOrgId: string, role: string) {
+		if (id !== userOrgId) { throw new NotFoundException();  /** 404 */}
+		if (role !== 'Admin') { throw new ForbiddenException();  /** 403 */}
+
+		const user = await this.prisma.user.findUnique({
+			where: { email: dto.email },
+		})
+		if (user) { throw new BadRequestException('User already exists'); }
+
+		const invite_token = await this.jwt.signAsync({
+			email: dto.email,
+			org_id: id,
+			role: dto.role,
+			purpose: 'invite'}, { expiresIn: '48h' }
+		)
+
+		const link = `${process.env.FRONTEND_URL}/invite/accept#invite_token=${invite_token}`;
+		
+		await this.mail.sendInvite(dto.email, link);
+		return { message: 'Invitation sent'}
+	}
+
+	/** change a role */
+	async updateMember(id: string, userId: string, dto: UpdateMemberDto, userOrgId: string, role: string) {
+		if (id !== userOrgId) { throw new NotFoundException();  /** 404 */}
+		if (role !== 'Admin') { throw new ForbiddenException();  /** 403 */}
+
+		const membership = await this.prisma.role_and_organization.findFirst({
+				where: {
+					user_id: userId,
+					org_id: id,
+				}
+			})
+		if (!membership) { throw new NotFoundException() }
+		
+		if (membership.role === 'Admin' && dto.role !== 'Admin') {
+			const admines = await this.prisma.role_and_organization.count({
+				where: { org_id: id, role: 'Admin'},
+			});
+			if (admines === 1) {
+				throw new BadRequestException('An organization must keep at least one Admin');
+			}
+		}
+
+		await this.prisma.role_and_organization.update({
+			where: { id: membership.id },
+			data: { role: dto.role }
+		});
+
+		return {
+			id: userId,
+			role: dto.role,
+		}
+	}
+
+	async removeMember(id: string, userId: string, userOrgId: string, role: string) {
+		if (id !== userOrgId) { throw new NotFoundException();  /** 404 */}
+		if (role !== 'Admin') { throw new ForbiddenException();  /** 403 */}
+
+		const membership = await this.prisma.role_and_organization.findFirst({
+			where: {
+				user_id: userId,
+				org_id: id,
+			}
+		})
+		if (!membership) { throw new NotFoundException() }
+
+		if (membership.role === 'Admin') {
+			const admins = await this.prisma.role_and_organization.count({
+				where: { org_id: id, role: 'Admin' },
+			});
+			if (admins === 1) {
+				throw new BadRequestException('An organization must keep at least one Admin');
+			}
+		}
+
+		await this.prisma.user.delete({ where: { id: userId } });
 	}
 }
