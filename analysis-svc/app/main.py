@@ -7,6 +7,7 @@ from typing import List
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
+from .canvas import build_rag_prompt
 from .database import (
     close_pool,
     get_comments_by_job,
@@ -14,11 +15,14 @@ from .database import (
     get_report_by_job,
     insert_comment,
     insert_report,
+    search_comments_by_vector,
     update_job_status,
 )
 from .embeddings import generate_embedding
 from .events import close_redis, publish_job_event
 from .fixtures import get_fixture_comments
+from .llm import call_openrouter_text
+from .ranking import rerank_for_rag
 from .sentiment import compute_sentiment_summary, score_comments
 from .synthesis import synthesize_full_report
 from .worker import start_worker, stop_worker
@@ -54,6 +58,26 @@ class AnalyzeStubRequest(BaseModel):
 
 class SentimentRequest(BaseModel):
     comments: List[str]
+
+
+class RagQueryRequest(BaseModel):
+    job_id: str
+    query: str
+
+
+class CommentCitation(BaseModel):
+    id: str
+    job_id: str
+    text: str
+    author: str
+    upvotes: int
+    sentiment_score: float | None = None
+    created_at: str | None = None
+
+
+class RagQueryResponse(BaseModel):
+    answer: str
+    citations: List[CommentCitation]
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -176,3 +200,50 @@ async def get_job_report(job_id: str):
     if not report:
         raise HTTPException(status_code=404, detail=f"No report found for job {job_id}")
     return report
+
+
+@app.post("/rag/query", response_model=RagQueryResponse)
+async def query_rag(payload: RagQueryRequest):
+    job = await get_job(payload.job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {payload.job_id} not found")
+
+    query_vec = generate_embedding(payload.query)
+    candidates = await search_comments_by_vector(payload.job_id, query_vec, limit=20)
+    if not candidates:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Target job vector data not found for job {payload.job_id}",
+        )
+
+    reranked = rerank_for_rag(candidates, top_k=5)
+    prompt = build_rag_prompt(payload.query, reranked)
+
+    llm_answer = await call_openrouter_text(prompt, max_tokens=768, temperature=0.2)
+    if llm_answer and llm_answer.strip():
+        answer = llm_answer.strip()
+    else:
+        top_snippets = [f'"{c["text"]}" ({c["author"]})' for c in reranked[:3]]
+        answer = (
+            f"Based on the retrieved community feedback regarding '{payload.query}', "
+            f"users highlighted: {'; '.join(top_snippets)}."
+        )
+
+    citations = [
+        CommentCitation(
+            id=str(c["id"]),
+            job_id=str(c["job_id"]),
+            text=str(c["text"]),
+            author=str(c["author"]),
+            upvotes=int(c.get("upvotes", 0)),
+            sentiment_score=(
+                float(c["sentiment_score"])
+                if c.get("sentiment_score") is not None
+                else None
+            ),
+            created_at=str(c.get("created_at") or ""),
+        )
+        for c in reranked
+    ]
+
+    return RagQueryResponse(answer=answer, citations=citations)
