@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth/auth-card";
 import { AuthHeader } from "@/components/auth/auth-header";
 import { AuthLayout } from "@/components/auth/auth-layout";
+import { PasswordInput } from "@/components/auth/password-input";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { acceptInvite, saveToken, MIN_PASSWORD_LENGTH } from "@/lib/auth";
@@ -77,10 +77,9 @@ export default function AcceptInvitePage() {
 							Password
 						</Label>
 
-						<Input
+						<PasswordInput
 							id="password"
 							name="password"
-							type="password"
 							placeholder="••••••••"
 							autoComplete="new-password"
 							value={password}
@@ -95,10 +94,9 @@ export default function AcceptInvitePage() {
 							Confirm Password
 						</Label>
 
-						<Input
+						<PasswordInput
 							id="confirmPassword"
 							name="confirmPassword"
-							type="password"
 							placeholder="••••••••"
 							autoComplete="new-password"
 							value={confirmPassword}

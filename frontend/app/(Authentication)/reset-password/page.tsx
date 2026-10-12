@@ -7,9 +7,9 @@ import { AuthCard } from "@/components/auth/auth-card";
 import { AuthFooter } from "@/components/auth/auth-footer";
 import { AuthHeader } from "@/components/auth/auth-header";
 import { AuthLayout } from "@/components/auth/auth-layout";
+import { PasswordInput } from "@/components/auth/password-input";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function ResetPasswordPage() {
@@ -68,9 +68,8 @@ export default function ResetPasswordPage() {
 					<div className="space-y-2">
 						<Label htmlFor="password">New Password</Label>
 
-						<Input
+						<PasswordInput
 							id="password"
-							type="password"
 							placeholder="••••••••"
 							autoComplete="new-password"
 							value={password}
@@ -84,9 +83,8 @@ export default function ResetPasswordPage() {
 					<div className="space-y-2">
 						<Label htmlFor="confirmPassword">Confirm New Password</Label>
 
-						<Input
+						<PasswordInput
 							id="confirmPassword"
-							type="password"
 							placeholder="••••••••"
 							autoComplete="new-password"
 							value={confirmPassword}
