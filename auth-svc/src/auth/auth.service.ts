@@ -17,24 +17,31 @@ export class AuthService {
 	async register(dto: RegisterDto) {
 		try {
 			const hash = await argon.hash(dto.password);
-			const org = await this.prisma.organization.create({
-				data: {
-					name:dto.org_name,
-					description: dto.org_description,
-				}
-			});
-			const user = await this.prisma.user.create({
-				data: {
-					email: dto.email,
-					password: hash,
-				},
-			});
-			const role = await this.prisma.role_and_organization.create({
-				data: {
-					user_id: user.id,
-					org_id: org.id,
-					role: 'Admin',
-				},
+
+			/** ⚠️ The org, the user and the membership are created in one transaction.
+			 *  If the user fails (email already taken), the org is rolled back too,
+			 *  so no org without an Admin stays in the database. */
+			const { org, user, role } = await this.prisma.$transaction(async (tx) => {
+				const org = await tx.organization.create({
+					data: {
+						name:dto.org_name,
+						description: dto.org_description,
+					}
+				});
+				const user = await tx.user.create({
+					data: {
+						email: dto.email,
+						password: hash,
+					},
+				});
+				const role = await tx.role_and_organization.create({
+					data: {
+						user_id: user.id,
+						org_id: org.id,
+						role: 'Admin',
+					},
+				});
+				return { org, user, role };
 			});
 			const access_token = await this.jwt.signAsync({
 				sub: user.id,
@@ -161,26 +168,32 @@ export class AuthService {
 		try {
 			const hash = await argon.hash(crypto.randomUUID());
 
-			const org = await this.prisma.organization.create({
-				data: {
-					name: dto.org_name,
-					description: dto.org_description,
-				},
-			});
+			/** ⚠️ Same rule as register(): one transaction, so a failed user
+			 *  does not leave an org without an Admin behind. */
+			const { org, user, role } = await this.prisma.$transaction(async (tx) => {
+				const org = await tx.organization.create({
+					data: {
+						name: dto.org_name,
+						description: dto.org_description,
+					},
+				});
 
-			const user = await this.prisma.user.create({
-				data: {
-					email: payload.email,
-					password: hash,
-				},
-			})
+				const user = await tx.user.create({
+					data: {
+						email: payload.email,
+						password: hash,
+					},
+				})
 
-			const role = await this.prisma.role_and_organization.create({
-				data: {
-					user_id: user.id,
-					org_id: org.id,
-					role: 'Admin',
-				},
+				const role = await tx.role_and_organization.create({
+					data: {
+						user_id: user.id,
+						org_id: org.id,
+						role: 'Admin',
+					},
+				});
+
+				return { org, user, role };
 			});
 
 			const access_token = await this.jwt.signAsync({
