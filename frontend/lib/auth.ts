@@ -87,6 +87,20 @@ export function acceptInvite(
 	});
 }
 
+export function forgotPassword(email: string): Promise<{ message: string }> {
+	return post<{ message: string }>("/api/auth/forgot-password", { email });
+}
+
+export function resetPassword(
+	reset_token: string,
+	new_password: string,
+): Promise<{ message: string }> {
+	return post<{ message: string }>("/api/auth/reset-password", {
+		reset_token,
+		new_password,
+	})
+}
+
 /** ⚠️ the one real network call */
 async function post<T>(path: string, body: unknown): Promise<T> {
 	let response: Response; /** @note Response is a built-in browser type describing a fetch reply. */
