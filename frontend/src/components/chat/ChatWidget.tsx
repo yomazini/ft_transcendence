@@ -15,10 +15,9 @@ interface ChatWidgetProps {
   apiEndpoint?: string;
   onClose?: () => void;
 }
-
 export function ChatWidget({
-  jobId = "demo-job-42",
-  apiEndpoint = "/api/chat",
+  jobId = "a18f2d90-3b41-4e2a-9f12-987654321abc",
+  apiEndpoint = "/api/rag/query",
   onClose,
 }: ChatWidgetProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -65,7 +64,7 @@ export function ChatWidget({
         } else {
           throw new Error(`API returned ${res.status}`);
         }
-      } catch (err) {
+      } catch {
         await new Promise((resolve) => setTimeout(resolve, 800));
         responseData = generateMockRagResponse(jobId, queryText);
       }
@@ -82,7 +81,7 @@ export function ChatWidget({
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
-    } catch (error) {
+    } catch {
       const errorMsg: ChatMessage = {
         id: `err-${Date.now()}`,
         role: "assistant",

@@ -64,7 +64,7 @@ export function CitationModal({ citation, onClose }: CitationModalProps) {
           </div>
 
           <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-gray-800 leading-relaxed font-sans max-h-60 overflow-y-auto">
-            "{citation.text}"
+            &ldquo;{citation.text}&rdquo;
           </div>
 
           <div className="flex items-center justify-between text-xs text-gray-400">

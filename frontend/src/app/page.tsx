@@ -48,13 +48,16 @@ export default function Home() {
 
         <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl text-xs text-blue-800 flex items-center justify-between">
           <span>
-            💡 <strong>Interactive Assistant:</strong> Click the floating button in
-            the bottom-right corner to query Reddit comments and citations.
+            💡 <strong>Interactive Assistant:</strong> Click the floating button
+            in the bottom-right corner to query Reddit comments and citations.
           </span>
         </div>
       </div>
 
-      <FloatingChatWidget jobId={currentReportJobId} apiEndpoint="/api/chat" />
+      <FloatingChatWidget
+        jobId={currentReportJobId}
+        apiEndpoint="/api/rag/query"
+      />
     </div>
   );
 }
