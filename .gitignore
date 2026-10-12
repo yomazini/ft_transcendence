@@ -34,3 +34,6 @@ dockercompo.yml
 .DS_Store
 *.swp
 *.swo
+
+#vault secrets
+vault/secrets
