@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable,UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as argon from 'argon2';
-import { AcceptInviteDto, ChangePasswordDto, Complete42Dto, ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from './dto';
+import { AcceptInviteDto, ChangePasswordDto, Complete42Dto, DeleteAccountDto, ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import { MailService } from 'src/mail/mail.service';
@@ -350,5 +350,78 @@ export class AuthService {
 			throw error;
 		}
 		return { message: 'Password changed' };
+	}
+
+	async exportData(userId: string) {
+		const user = await this.prisma.user.findUnique({
+			where: { id: userId },
+			include: { user_roles_organization: { include: { organization: true } }}
+		})
+
+		if (!user) { throw new UnauthorizedException(); }
+
+		const membership = user.user_roles_organization[0];
+
+		await this.mail.sendExportReceipt(user.email);
+
+		return {
+			exported_at: new Date().toISOString(),
+			user: {
+				id: user.id,
+				email: user.email,
+				created_at: user.created_at,
+			},
+			membership: {
+				role: membership.role,
+			},
+			organization: {
+				id: membership.organization.id,
+				name: membership.organization.name,
+				description: membership.organization.description,
+				created_at: membership.organization.created_at,
+			},
+		};
+	}
+
+	async deleteAccount(userId: string, dto: DeleteAccountDto) {
+		const user = await this.prisma.user.findUnique({
+			where: {id: userId},
+			include: { user_roles_organization: true },
+		});
+
+		if (!user) { throw new UnauthorizedException(); }
+
+		const passwordMatches = await argon.verify(user.password, dto.password);
+		if (!passwordMatches) { throw new UnauthorizedException('Invalid credentials'); }
+
+		const membership = user.user_roles_organization[0];
+		const orgId = membership.org_id;
+		const members = await this.prisma.role_and_organization.count({
+			where: { org_id: orgId },
+		});
+
+		/** ⚠️ only member: the organization goes with them (an org with nobody in it must not stay). */
+		if (members === 1) {
+			await this.prisma.$transaction(async (tx) => {
+				await tx.organization.delete({ where: { id: orgId } });
+				await tx.user.delete({ where: { id:userId } });
+			});
+			await this.mail.sendDeletionReceipt(user.email);
+			return;
+		}
+
+		/** ❗⚠️ Other members exist: the last Admin cannot leave them without an Admin. */
+
+		if (membership.role === 'Admin') {
+			const admins = await this.prisma.role_and_organization.count({
+				where: { org_id: orgId, role: 'Admin'},
+			});
+			if (admins === 1) {
+				throw new BadRequestException('An organization must keep at least one Admin');
+			}
+		}
+
+		await this.prisma.user.delete({ where: { id: userId } });
+		await this.mail.sendDeletionReceipt(user.email);
 	}
 }

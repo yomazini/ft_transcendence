@@ -1,5 +1,5 @@
-import { Body, Controller, Get, HttpCode, Post, Req, UseGuards, Res } from '@nestjs/common';
-import { AcceptInviteDto, ChangePasswordDto, Complete42Dto, ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from './dto';
+import { Body, Controller, Get, HttpCode, Post, Req, UseGuards, Res, Delete } from '@nestjs/common';
+import { AcceptInviteDto, ChangePasswordDto, Complete42Dto, DeleteAccountDto, ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from './dto';
 import { AuthService } from './auth.service';
 import { JwtGuard } from './guard/jwt.guard';
 import { FortyTwoGuard } from './guard/42.guard';
@@ -72,5 +72,20 @@ export class AuthController {
 	resetPassword(@Body() dto: ResetPasswordDto) {
 		return this.authService.resetPassword(dto);
 	}
+
+	@Post('gdpr/export') /** POST auth/gdpr/export */
+	@UseGuards(JwtGuard)
+	@HttpCode(200)
+	exportData(@Req() req) {
+		return this.authService.exportData(req.user.sub);
+	}
+
+	@Delete('gdpr/delete') /** DELETE auth/gdpr/export */
+	@UseGuards(JwtGuard)
+	@HttpCode(204)
+	deleteAccount(@Req() req, @Body() dto: DeleteAccountDto) {
+		return this.authService.deleteAccount(req.user.sub, dto);
+	}
+
 
 }
