@@ -36,8 +36,6 @@ ACTUAL=$(openssl dgst -sha256 -hmac "$BACKUP_HMAC_KEY" "$BACKUP_PATH/$FileName" 
 [ "$EXPECTED" = "$ACTUAL" ] || { echo "INTEGRITY CHECK FAILED - do not restore"; exit 1; }
 echo "Integrity OK"
 
-docker compose exec -T postgres pg_restore --list < "$BACKUP_PATH/$FileName" > /dev/null
-
 echo "Stopping apps..."
 docker compose stop $SVCS
 
@@ -52,3 +50,6 @@ docker compose exec -T postgres pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 echo "Starting apps..."
 docker compose start $SVCS
 echo "Done."
+
+
+

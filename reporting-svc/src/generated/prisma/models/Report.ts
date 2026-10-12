@@ -150,7 +150,7 @@ export type ReportGroupByOutputType = {
   job_id: string
   swot: runtime.JsonValue
   blue_ocean: runtime.JsonValue
-  conclusion: string
+  conclusion: string | null
   created_at: Date
   _count: ReportCountAggregateOutputType | null
   _min: ReportMinAggregateOutputType | null
@@ -180,7 +180,7 @@ export type ReportWhereInput = {
   job_id?: Prisma.StringFilter<"Report"> | string
   swot?: Prisma.JsonFilter<"Report">
   blue_ocean?: Prisma.JsonFilter<"Report">
-  conclusion?: Prisma.StringFilter<"Report"> | string
+  conclusion?: Prisma.StringNullableFilter<"Report"> | string | null
   created_at?: Prisma.DateTimeFilter<"Report"> | Date | string
   job?: Prisma.XOR<Prisma.JobScalarRelationFilter, Prisma.JobWhereInput>
 }
@@ -190,7 +190,7 @@ export type ReportOrderByWithRelationInput = {
   job_id?: Prisma.SortOrder
   swot?: Prisma.SortOrder
   blue_ocean?: Prisma.SortOrder
-  conclusion?: Prisma.SortOrder
+  conclusion?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   job?: Prisma.JobOrderByWithRelationInput
 }
@@ -203,7 +203,7 @@ export type ReportWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.ReportWhereInput | Prisma.ReportWhereInput[]
   swot?: Prisma.JsonFilter<"Report">
   blue_ocean?: Prisma.JsonFilter<"Report">
-  conclusion?: Prisma.StringFilter<"Report"> | string
+  conclusion?: Prisma.StringNullableFilter<"Report"> | string | null
   created_at?: Prisma.DateTimeFilter<"Report"> | Date | string
   job?: Prisma.XOR<Prisma.JobScalarRelationFilter, Prisma.JobWhereInput>
 }, "id" | "job_id">
@@ -213,7 +213,7 @@ export type ReportOrderByWithAggregationInput = {
   job_id?: Prisma.SortOrder
   swot?: Prisma.SortOrder
   blue_ocean?: Prisma.SortOrder
-  conclusion?: Prisma.SortOrder
+  conclusion?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   _count?: Prisma.ReportCountOrderByAggregateInput
   _max?: Prisma.ReportMaxOrderByAggregateInput
@@ -228,7 +228,7 @@ export type ReportScalarWhereWithAggregatesInput = {
   job_id?: Prisma.StringWithAggregatesFilter<"Report"> | string
   swot?: Prisma.JsonWithAggregatesFilter<"Report">
   blue_ocean?: Prisma.JsonWithAggregatesFilter<"Report">
-  conclusion?: Prisma.StringWithAggregatesFilter<"Report"> | string
+  conclusion?: Prisma.StringNullableWithAggregatesFilter<"Report"> | string | null
   created_at?: Prisma.DateTimeWithAggregatesFilter<"Report"> | Date | string
 }
 
@@ -236,7 +236,7 @@ export type ReportCreateInput = {
   id?: string
   swot: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  conclusion: string
+  conclusion?: string | null
   created_at?: Date | string
   job: Prisma.JobCreateNestedOneWithoutReportInput
 }
@@ -246,7 +246,7 @@ export type ReportUncheckedCreateInput = {
   job_id: string
   swot: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  conclusion: string
+  conclusion?: string | null
   created_at?: Date | string
 }
 
@@ -254,7 +254,7 @@ export type ReportUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   swot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  conclusion?: Prisma.StringFieldUpdateOperationsInput | string
+  conclusion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   job?: Prisma.JobUpdateOneRequiredWithoutReportNestedInput
 }
@@ -264,7 +264,7 @@ export type ReportUncheckedUpdateInput = {
   job_id?: Prisma.StringFieldUpdateOperationsInput | string
   swot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  conclusion?: Prisma.StringFieldUpdateOperationsInput | string
+  conclusion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -273,7 +273,7 @@ export type ReportCreateManyInput = {
   job_id: string
   swot: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  conclusion: string
+  conclusion?: string | null
   created_at?: Date | string
 }
 
@@ -281,7 +281,7 @@ export type ReportUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   swot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  conclusion?: Prisma.StringFieldUpdateOperationsInput | string
+  conclusion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -290,7 +290,7 @@ export type ReportUncheckedUpdateManyInput = {
   job_id?: Prisma.StringFieldUpdateOperationsInput | string
   swot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  conclusion?: Prisma.StringFieldUpdateOperationsInput | string
+  conclusion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -358,7 +358,7 @@ export type ReportCreateWithoutJobInput = {
   id?: string
   swot: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  conclusion: string
+  conclusion?: string | null
   created_at?: Date | string
 }
 
@@ -366,7 +366,7 @@ export type ReportUncheckedCreateWithoutJobInput = {
   id?: string
   swot: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  conclusion: string
+  conclusion?: string | null
   created_at?: Date | string
 }
 
@@ -390,7 +390,7 @@ export type ReportUpdateWithoutJobInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   swot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  conclusion?: Prisma.StringFieldUpdateOperationsInput | string
+  conclusion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -398,7 +398,7 @@ export type ReportUncheckedUpdateWithoutJobInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   swot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  conclusion?: Prisma.StringFieldUpdateOperationsInput | string
+  conclusion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -464,7 +464,7 @@ export type $ReportPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     job_id: string
     swot: runtime.JsonValue
     blue_ocean: runtime.JsonValue
-    conclusion: string
+    conclusion: string | null
     created_at: Date
   }, ExtArgs["result"]["report"]>
   composites: {}
