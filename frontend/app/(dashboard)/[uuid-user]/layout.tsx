@@ -1,5 +1,6 @@
 import { DashboardNavbar } from "@/components/dashboard/layout/navbar"
 import { AppSidebar } from "@/components/dashboard/layout/sidebar"
+import FloatingChatWidget from "@/components/message/FloatingChatWidget";
 import {
   SidebarProvider,
   SidebarTrigger,
@@ -11,9 +12,11 @@ export default function Layout({
 }: {
   children: React.ReactNode
 }) {
+
+
   return (
-    <SidebarProvider className="p-2 bg-gray-200">
-      <AppSidebar  />
+    <SidebarProvider className="p-2 bg-gray-200 dark:bg-black">
+      <AppSidebar />
 
       <SidebarInset className="border " >
         <DashboardNavbar />
@@ -22,6 +25,8 @@ export default function Layout({
           {children}
         </main>
       </SidebarInset>
+      <FloatingChatWidget/>
     </SidebarProvider>
   )
 }
+

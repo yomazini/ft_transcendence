@@ -4,9 +4,11 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { AuthCard } from "@/components/auth/auth-card";
 import { AuthFooter } from "@/components/auth/auth-footer";
 import { AuthHeader } from "@/components/auth/auth-header";
 import { AuthLayout } from "@/components/auth/auth-layout";
+import { SocialLogin } from "@/components/auth/social-login";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,8 +22,6 @@ import {
 	register,
 	saveToken,
 } from "@/lib/auth";
-import { AuthCard } from "@/components/auth/auth-card";
-import { SocialLogin } from "@/components/auth/social-login";
 
 const MAX_ORG_DESCRIPTION_CHARS = 200;
 

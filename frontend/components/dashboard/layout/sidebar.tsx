@@ -94,7 +94,7 @@ export function AppSidebar() {
 		<Sidebar
 			variant="sidebar"
 			collapsible="icon"
-			className="border bg-white"
+			className="border bg-white dark:bg-black"
 		>
 		{/* Logo */}
 		<SidebarHeader className="border-b">

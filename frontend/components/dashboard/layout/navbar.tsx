@@ -21,6 +21,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar"
+import { ThemeToggle } from "./theme-toggle"
 
 export function DashboardNavbar() {
   return (
@@ -54,13 +55,15 @@ export function DashboardNavbar() {
         </Button>
 
         {/* Theme */}
-        <Button
+        {/* <Button
           variant="ghost"
           size="icon"
         >
           <Moon />
-        </Button>
-
+        
+        </Button> */}
+        
+        <ThemeToggle/>
         
 
         {/* User */}

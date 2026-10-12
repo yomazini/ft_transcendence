@@ -31,7 +31,7 @@ export default function BillingPage() {
             <div className="mt-1 flex items-center gap-3">
               <h3 className="text-xl font-semibold">Free</h3>
 
-              <span className="rounded-full  px-2.5 py-1 text-xs font-medium bg-green-200 ">
+              <span className="rounded-full  px-2.5 py-1 text-xs text-black font-medium bg-green-200 ">
                 Current plan
               </span>
             </div>

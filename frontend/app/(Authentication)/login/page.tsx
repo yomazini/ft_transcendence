@@ -4,18 +4,18 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { AuthFooter } from "@/components/auth/auth-footer"
-import { AuthHeader } from "@/components/auth/auth-header"
-import { AuthLayout } from "@/components/auth/auth-layout"
-import { SocialLogin } from "@/components/auth/social-login"
+import { AuthCard } from "@/components/auth/auth-card";
+import { AuthFooter } from "@/components/auth/auth-footer";
+import { AuthHeader } from "@/components/auth/auth-header";
+import { AuthLayout } from "@/components/auth/auth-layout";
+import { SocialLogin } from "@/components/auth/social-login";
 
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 import { login, saveToken } from "@/lib/auth";
-import { AuthCard } from "@/components/auth/auth-card";
 
 export default function LoginPage() {
 	/** @line asks Next.js for the router object and keeps it in router var */
