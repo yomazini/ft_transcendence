@@ -199,9 +199,9 @@ export type CommentsGroupByOutputType = {
   id: string
   job_id: string
   text: string
-  author: string
+  author: string | null
   upvotes: number
-  sentiment_score: number
+  sentiment_score: number | null
   created_at: Date
   _count: CommentsCountAggregateOutputType | null
   _avg: CommentsAvgAggregateOutputType | null
@@ -232,9 +232,9 @@ export type CommentsWhereInput = {
   id?: Prisma.StringFilter<"Comments"> | string
   job_id?: Prisma.StringFilter<"Comments"> | string
   text?: Prisma.StringFilter<"Comments"> | string
-  author?: Prisma.StringFilter<"Comments"> | string
+  author?: Prisma.StringNullableFilter<"Comments"> | string | null
   upvotes?: Prisma.IntFilter<"Comments"> | number
-  sentiment_score?: Prisma.FloatFilter<"Comments"> | number
+  sentiment_score?: Prisma.FloatNullableFilter<"Comments"> | number | null
   created_at?: Prisma.DateTimeFilter<"Comments"> | Date | string
   job?: Prisma.XOR<Prisma.JobScalarRelationFilter, Prisma.JobWhereInput>
 }
@@ -243,9 +243,9 @@ export type CommentsOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   job_id?: Prisma.SortOrder
   text?: Prisma.SortOrder
-  author?: Prisma.SortOrder
+  author?: Prisma.SortOrderInput | Prisma.SortOrder
   upvotes?: Prisma.SortOrder
-  sentiment_score?: Prisma.SortOrder
+  sentiment_score?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   job?: Prisma.JobOrderByWithRelationInput
 }
@@ -257,9 +257,9 @@ export type CommentsWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.CommentsWhereInput | Prisma.CommentsWhereInput[]
   job_id?: Prisma.StringFilter<"Comments"> | string
   text?: Prisma.StringFilter<"Comments"> | string
-  author?: Prisma.StringFilter<"Comments"> | string
+  author?: Prisma.StringNullableFilter<"Comments"> | string | null
   upvotes?: Prisma.IntFilter<"Comments"> | number
-  sentiment_score?: Prisma.FloatFilter<"Comments"> | number
+  sentiment_score?: Prisma.FloatNullableFilter<"Comments"> | number | null
   created_at?: Prisma.DateTimeFilter<"Comments"> | Date | string
   job?: Prisma.XOR<Prisma.JobScalarRelationFilter, Prisma.JobWhereInput>
 }, "id">
@@ -268,9 +268,9 @@ export type CommentsOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   job_id?: Prisma.SortOrder
   text?: Prisma.SortOrder
-  author?: Prisma.SortOrder
+  author?: Prisma.SortOrderInput | Prisma.SortOrder
   upvotes?: Prisma.SortOrder
-  sentiment_score?: Prisma.SortOrder
+  sentiment_score?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   _count?: Prisma.CommentsCountOrderByAggregateInput
   _avg?: Prisma.CommentsAvgOrderByAggregateInput
@@ -286,18 +286,18 @@ export type CommentsScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Comments"> | string
   job_id?: Prisma.StringWithAggregatesFilter<"Comments"> | string
   text?: Prisma.StringWithAggregatesFilter<"Comments"> | string
-  author?: Prisma.StringWithAggregatesFilter<"Comments"> | string
+  author?: Prisma.StringNullableWithAggregatesFilter<"Comments"> | string | null
   upvotes?: Prisma.IntWithAggregatesFilter<"Comments"> | number
-  sentiment_score?: Prisma.FloatWithAggregatesFilter<"Comments"> | number
+  sentiment_score?: Prisma.FloatNullableWithAggregatesFilter<"Comments"> | number | null
   created_at?: Prisma.DateTimeWithAggregatesFilter<"Comments"> | Date | string
 }
 
 export type CommentsCreateInput = {
   id?: string
   text: string
-  author: string
+  author?: string | null
   upvotes: number
-  sentiment_score: number
+  sentiment_score?: number | null
   created_at?: Date | string
   job: Prisma.JobCreateNestedOneWithoutCommentsInput
 }
@@ -306,18 +306,18 @@ export type CommentsUncheckedCreateInput = {
   id?: string
   job_id: string
   text: string
-  author: string
+  author?: string | null
   upvotes: number
-  sentiment_score: number
+  sentiment_score?: number | null
   created_at?: Date | string
 }
 
 export type CommentsUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  author?: Prisma.StringFieldUpdateOperationsInput | string
+  author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   upvotes?: Prisma.IntFieldUpdateOperationsInput | number
-  sentiment_score?: Prisma.FloatFieldUpdateOperationsInput | number
+  sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   job?: Prisma.JobUpdateOneRequiredWithoutCommentsNestedInput
 }
@@ -326,9 +326,9 @@ export type CommentsUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   job_id?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  author?: Prisma.StringFieldUpdateOperationsInput | string
+  author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   upvotes?: Prisma.IntFieldUpdateOperationsInput | number
-  sentiment_score?: Prisma.FloatFieldUpdateOperationsInput | number
+  sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -336,18 +336,18 @@ export type CommentsCreateManyInput = {
   id?: string
   job_id: string
   text: string
-  author: string
+  author?: string | null
   upvotes: number
-  sentiment_score: number
+  sentiment_score?: number | null
   created_at?: Date | string
 }
 
 export type CommentsUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  author?: Prisma.StringFieldUpdateOperationsInput | string
+  author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   upvotes?: Prisma.IntFieldUpdateOperationsInput | number
-  sentiment_score?: Prisma.FloatFieldUpdateOperationsInput | number
+  sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -355,9 +355,9 @@ export type CommentsUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   job_id?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  author?: Prisma.StringFieldUpdateOperationsInput | string
+  author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   upvotes?: Prisma.IntFieldUpdateOperationsInput | number
-  sentiment_score?: Prisma.FloatFieldUpdateOperationsInput | number
+  sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -419,8 +419,8 @@ export type IntFieldUpdateOperationsInput = {
   divide?: number
 }
 
-export type FloatFieldUpdateOperationsInput = {
-  set?: number
+export type NullableFloatFieldUpdateOperationsInput = {
+  set?: number | null
   increment?: number
   decrement?: number
   multiply?: number
@@ -472,18 +472,18 @@ export type CommentsUncheckedUpdateManyWithoutJobNestedInput = {
 export type CommentsCreateWithoutJobInput = {
   id?: string
   text: string
-  author: string
+  author?: string | null
   upvotes: number
-  sentiment_score: number
+  sentiment_score?: number | null
   created_at?: Date | string
 }
 
 export type CommentsUncheckedCreateWithoutJobInput = {
   id?: string
   text: string
-  author: string
+  author?: string | null
   upvotes: number
-  sentiment_score: number
+  sentiment_score?: number | null
   created_at?: Date | string
 }
 
@@ -520,45 +520,45 @@ export type CommentsScalarWhereInput = {
   id?: Prisma.StringFilter<"Comments"> | string
   job_id?: Prisma.StringFilter<"Comments"> | string
   text?: Prisma.StringFilter<"Comments"> | string
-  author?: Prisma.StringFilter<"Comments"> | string
+  author?: Prisma.StringNullableFilter<"Comments"> | string | null
   upvotes?: Prisma.IntFilter<"Comments"> | number
-  sentiment_score?: Prisma.FloatFilter<"Comments"> | number
+  sentiment_score?: Prisma.FloatNullableFilter<"Comments"> | number | null
   created_at?: Prisma.DateTimeFilter<"Comments"> | Date | string
 }
 
 export type CommentsCreateManyJobInput = {
   id?: string
   text: string
-  author: string
+  author?: string | null
   upvotes: number
-  sentiment_score: number
+  sentiment_score?: number | null
   created_at?: Date | string
 }
 
 export type CommentsUpdateWithoutJobInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  author?: Prisma.StringFieldUpdateOperationsInput | string
+  author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   upvotes?: Prisma.IntFieldUpdateOperationsInput | number
-  sentiment_score?: Prisma.FloatFieldUpdateOperationsInput | number
+  sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type CommentsUncheckedUpdateWithoutJobInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  author?: Prisma.StringFieldUpdateOperationsInput | string
+  author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   upvotes?: Prisma.IntFieldUpdateOperationsInput | number
-  sentiment_score?: Prisma.FloatFieldUpdateOperationsInput | number
+  sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type CommentsUncheckedUpdateManyWithoutJobInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  author?: Prisma.StringFieldUpdateOperationsInput | string
+  author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   upvotes?: Prisma.IntFieldUpdateOperationsInput | number
-  sentiment_score?: Prisma.FloatFieldUpdateOperationsInput | number
+  sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -627,9 +627,9 @@ export type $CommentsPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     id: string
     job_id: string
     text: string
-    author: string
+    author: string | null
     upvotes: number
-    sentiment_score: number
+    sentiment_score: number | null
     created_at: Date
   }, ExtArgs["result"]["comments"]>
   composites: {}

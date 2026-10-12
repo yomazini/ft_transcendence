@@ -189,6 +189,7 @@ export type role_and_organizationOrderByWithRelationInput = {
 
 export type role_and_organizationWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  user_id_org_id?: Prisma.role_and_organizationUser_idOrg_idCompoundUniqueInput
   AND?: Prisma.role_and_organizationWhereInput | Prisma.role_and_organizationWhereInput[]
   OR?: Prisma.role_and_organizationWhereInput[]
   NOT?: Prisma.role_and_organizationWhereInput | Prisma.role_and_organizationWhereInput[]
@@ -197,7 +198,7 @@ export type role_and_organizationWhereUniqueInput = Prisma.AtLeast<{
   role?: Prisma.EnumRolesFilter<"role_and_organization"> | $Enums.Roles
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   organization?: Prisma.XOR<Prisma.OrganizationScalarRelationFilter, Prisma.OrganizationWhereInput>
-}, "id">
+}, "id" | "user_id_org_id">
 
 export type role_and_organizationOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -274,6 +275,11 @@ export type Role_and_organizationListRelationFilter = {
 
 export type role_and_organizationOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type role_and_organizationUser_idOrg_idCompoundUniqueInput = {
+  user_id: string
+  org_id: string
 }
 
 export type role_and_organizationCountOrderByAggregateInput = {
