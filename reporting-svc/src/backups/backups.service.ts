@@ -5,193 +5,97 @@ import * as fs from 'fs';
 import { getDbConfig } from './backup.config';
 import { spawn } from 'child_process';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { S3Service } from 'src/s3/s3.service';
 import { BackupStatus } from 'src/generated/prisma/enums';
+import { MinioService } from 'src/minio/minio.service';
+import { ConfigService } from '@nestjs/config';
+import { createHash, createHmac } from 'crypto';
 
 @Injectable()
 export class BackupsService {
 	private readonly logger = new Logger(BackupsService.name);
-	private readonly backupDir = path.resolve(__dirname, '../../../../backups');
-	constructor(private readonly prisma: PrismaService, private readonly s3Service: S3Service) {
-		if (!fs.existsSync(this.backupDir)) {
-			fs.mkdirSync(this.backupDir, { recursive: true });
+	constructor(private readonly prisma: PrismaService, private readonly minioService: MinioService, private readonly configService: ConfigService) {
+		if (!fs.existsSync(this.configService.getOrThrow<string>("BACKUP_DIR", "/home/osouadi/Desktop/Downloads"))) {
+			fs.mkdirSync(this.configService.getOrThrow<string>("BACKUP_DIR", "/home/osouadi/Desktop/Downloads"), { recursive: true });
 		}
+	}
+
+	private runPgDump(o: {
+		host: string; port: string; user: string; password: string;
+		database: string; filePath: string;
+	}): Promise<void> {
+
+		const dump = new Promise<void>((resolve, reject) => {
+			const args = ['-h', o.host, '-p', o.port, '-U', o.user, '-F', 'c', '-f', o.filePath, o.database];
+			const dump = spawn('pg_dump', args, { env: { ...process.env, PGPASSWORD: o.password } });
+
+			let stderr = '';
+			dump.stderr.on('data', (d) => (stderr += d.toString()));
+			dump.on('error', (err) => reject(new Error(`Failed to start pg_dump: ${err.message}`)));
+			dump.on('close', (code) =>
+				code === 0 ? resolve() : reject(new Error(`pg_dump exited with code ${code}: ${stderr}`)),
+			);
+		});
+		return dump;
+	}
+
+	private Hmac(filePath: string): Promise<string> {
+
+		const sha =  new Promise<string>((resolve, reject) => {
+			const hash = createHmac('sha256', this.configService.getOrThrow<string>("BACKUP_HMAC_KEY"));
+			fs.createReadStream(filePath)
+				.on('error', reject)
+				.on('data', (chunk) => hash.update(chunk))
+				.on('end', () => resolve(hash.digest('hex')));
+		});
+		return sha;
 	}
 
 	async createBackup(): Promise<string> {
 		const { host, port, database, user, password } = getDbConfig();
 		const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 		const fileName = `${database}_${timestamp}.dump`;
-		const filePath = path.join(this.backupDir, `${database}_${timestamp}.dump`);
-
+		const filePath = path.join(this.configService.getOrThrow<string>("BACKUP_DIR", "/home/osouadi/Desktop/Downloads"), `${database}_${timestamp}.dump`);
+		const shaPath = `${filePath}.hmac`;
+		
 		const backupRecord = await this.prisma.backups.create({
 			data: {
 				fileName: fileName,
 				filePath: filePath,
-				status: BackupStatus.SUCCESS,
+				status: BackupStatus.IN_PROGRESS,
 			},
 		});
 
-		const args = [
-			'-h', host,
-			'-p', port,
-			'-U', user,
-			'-F', 'c',
-			'-f', filePath,
-			database,
-		];
+		try {
+			await this.runPgDump({host, port: String(port), user, password, database, filePath});
+			const hash = await this.Hmac(filePath);
+			await fs.promises.writeFile(shaPath, `${hash}  ${fileName}\n`);
 
-		const env = { ...process.env, PGPASSWORD: password };
+			const s3Key = await this.minioService.uploadFromDisk(fileName);
+			await this.minioService.uploadFromDisk(`${fileName}.hmac`);
+			const { size } = await fs.promises.stat(filePath);
 
-		const backup = await new Promise<string>((resolve, reject) => {
-			const dump = spawn('pg_dump', args, { env });
-
-			let stderr = '';
-			dump.stderr.on('data', (data) => (stderr += data.toString()));
-
-			dump.on('error', async (err) => {
-				await this.prisma.backups.update({
-					where: {
-						id: backupRecord.id,
-					},
-					data: {
-						status: BackupStatus.FAILED,
-						errorMessage: `Failed to start pg_dump: ${err.message}`,
-					},
-				});
-				this.logger.error(`Failed to start pg_dump: ${err.message}`);
-				reject(err);
+			await this.prisma.backups.update({
+				where: { id: backupRecord.id },
+				data: { s3Key, fileSize: size, status: BackupStatus.SUCCESS },
 			});
 
-			dump.on('close', async (code) => {
-				if (code === 0) {
-					this.logger.log(`Backup created: ${filePath}`);
-					resolve(filePath);
-				} else {
-					await this.prisma.backups.update({
-						where: {
-							id: backupRecord.id,
-						},
-						data: {
-							fileName: fileName,
-							filePath: filePath,
-							status: BackupStatus.FAILED,
-							errorMessage: `pg_dump exited with code ${code}: ${stderr}`,
-						},
-					});
-					this.logger.error(`pg_dump failed: ${stderr}`);
-					reject(new Error(`pg_dump exited with code ${code}: ${stderr}`));
-				}
-			});
-		});
-
-		const key = await this.s3Service.uploadFile(filePath, "backup");
-
-		await this.prisma.backups.update({
-			where: {
-				id: backupRecord.id,
-			},
-			data: {
-				status: BackupStatus.SUCCESS,
-				s3Key: key,
-			},
-		});
-
-		await fs.promises.unlink(filePath).catch(() => {});
-
-		return backup;
-	}
-
-	async restoreBackup(backupId: string): Promise<void> {
-		const record = await this.prisma.backups.findUniqueOrThrow({
-			where: {
-				id: backupId
-			},
-		});
-
-		if (!record.s3Key) {
-			throw new BadRequestException('This backup has no file in S3 and cannot be restored');
+			this.logger.log(`Backup created: ${fileName}`);
+			return s3Key;
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			this.logger.error(`Backup failed: ${message}`);
+			await this.prisma.backups.update({
+				where: { id: backupRecord.id },
+				data: { status: BackupStatus.FAILED, errorMessage: message },
+			}).catch((e) => this.logger.error(`Failed to record failure: ${e.message}`));
+			throw err;
+		} finally {
+			await fs.promises.unlink(filePath).catch(() => {});
+			await fs.promises.unlink(shaPath).catch(() => {});
 		}
-		const tempfile = await this.s3Service.downloadToPath(record.s3Key);
-
-		const { host, port, database, user, password } = getDbConfig();
-
-		const restore = await new Promise<void>((resolve, reject) => {
-			const proc = spawn('pg_restore', [
-				'-h', host,
-				'-p', port,
-				'-U', user,
-				'-d', database,
-				'-c',
-				tempfile,
-			], {
-				env: { ...process.env, PGPASSWORD: password },
-			});
-
-			let stderr = '';
-			proc.stderr.on('data', (data) => (stderr += data.toString()));
-
-			proc.on('error', async (err) => {
-				await this.prisma.backups.update({
-					where: {
-						id: backupId,
-					},
-					data: {
-						status: BackupStatus.FAILED,
-						errorMessage: `Failed to start pg_restore: ${err.message}`,
-					}
-				});
-				this.logger.error(`Failed to start pg_restore: ${err.message}`);
-				reject(err);
-			});
-
-			proc.on('close', async (code) => {
-				if (code === 0) {
-				try {
-					await this.prisma.backups.update({
-						where: { id: backupId },
-						data: { status: BackupStatus.RESTORED },
-					});
-					this.logger.log(`Restore completed from: ${record.filePath}`);
-					resolve();
-				} catch (err) {
-					await this.prisma.backups.update({
-						where: {
-							id: backupId,
-						},
-						data: {
-							status: BackupStatus.FAILED,
-							errorMessage: `Failed to start pg_restore: ${err}`,
-						}
-					});
-					reject(err);
-				}
-				} else {
-					await this.prisma.backups.update({
-						where: {
-							id: backupId,
-						},
-						data: {
-							status: BackupStatus.FAILED,
-							errorMessage: `pg_restore failed: ${stderr}`,
-						}
-					});
-					this.logger.error(`pg_restore failed: ${stderr}`);
-					reject(new Error(`pg_restore exited with code ${code}: ${stderr}`));
-				}
-			});
-		});
-
-		await fs.promises.unlink(tempfile).catch(() => {});
-
-		return restore;
 	}
 
-	async listBackups() {
-		return this.prisma.backups.findMany({ orderBy: { created_at: 'desc' } });
-	}
-
-	@Cron(CronExpression.EVERY_DAY_AT_2AM)
+	@Cron(CronExpression.EVERY_DAY_AT_10AM)
 	async handleScheduledBackup() {
 		try {
 			await this.createBackup();

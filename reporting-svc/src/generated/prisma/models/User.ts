@@ -28,6 +28,9 @@ export type UserMinAggregateOutputType = {
   id: string | null
   email: string | null
   password: string | null
+  two_factor_secret: string | null
+  is_2fa_enabled: boolean | null
+  email_verified: boolean | null
   created_at: Date | null
 }
 
@@ -35,6 +38,9 @@ export type UserMaxAggregateOutputType = {
   id: string | null
   email: string | null
   password: string | null
+  two_factor_secret: string | null
+  is_2fa_enabled: boolean | null
+  email_verified: boolean | null
   created_at: Date | null
 }
 
@@ -42,6 +48,9 @@ export type UserCountAggregateOutputType = {
   id: number
   email: number
   password: number
+  two_factor_secret: number
+  is_2fa_enabled: number
+  email_verified: number
   created_at: number
   _all: number
 }
@@ -51,6 +60,9 @@ export type UserMinAggregateInputType = {
   id?: true
   email?: true
   password?: true
+  two_factor_secret?: true
+  is_2fa_enabled?: true
+  email_verified?: true
   created_at?: true
 }
 
@@ -58,6 +70,9 @@ export type UserMaxAggregateInputType = {
   id?: true
   email?: true
   password?: true
+  two_factor_secret?: true
+  is_2fa_enabled?: true
+  email_verified?: true
   created_at?: true
 }
 
@@ -65,6 +80,9 @@ export type UserCountAggregateInputType = {
   id?: true
   email?: true
   password?: true
+  two_factor_secret?: true
+  is_2fa_enabled?: true
+  email_verified?: true
   created_at?: true
   _all?: true
 }
@@ -145,6 +163,9 @@ export type UserGroupByOutputType = {
   id: string
   email: string
   password: string
+  two_factor_secret: string | null
+  is_2fa_enabled: boolean
+  email_verified: boolean
   created_at: Date
   _count: UserCountAggregateOutputType | null
   _min: UserMinAggregateOutputType | null
@@ -173,6 +194,9 @@ export type UserWhereInput = {
   id?: Prisma.StringFilter<"User"> | string
   email?: Prisma.StringFilter<"User"> | string
   password?: Prisma.StringFilter<"User"> | string
+  two_factor_secret?: Prisma.StringNullableFilter<"User"> | string | null
+  is_2fa_enabled?: Prisma.BoolFilter<"User"> | boolean
+  email_verified?: Prisma.BoolFilter<"User"> | boolean
   created_at?: Prisma.DateTimeFilter<"User"> | Date | string
   user_roles_organization?: Prisma.Role_and_organizationListRelationFilter
   messages?: Prisma.MessagesListRelationFilter
@@ -183,6 +207,9 @@ export type UserOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   email?: Prisma.SortOrder
   password?: Prisma.SortOrder
+  two_factor_secret?: Prisma.SortOrderInput | Prisma.SortOrder
+  is_2fa_enabled?: Prisma.SortOrder
+  email_verified?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   user_roles_organization?: Prisma.role_and_organizationOrderByRelationAggregateInput
   messages?: Prisma.MessagesOrderByRelationAggregateInput
@@ -196,6 +223,9 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.UserWhereInput[]
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   password?: Prisma.StringFilter<"User"> | string
+  two_factor_secret?: Prisma.StringNullableFilter<"User"> | string | null
+  is_2fa_enabled?: Prisma.BoolFilter<"User"> | boolean
+  email_verified?: Prisma.BoolFilter<"User"> | boolean
   created_at?: Prisma.DateTimeFilter<"User"> | Date | string
   user_roles_organization?: Prisma.Role_and_organizationListRelationFilter
   messages?: Prisma.MessagesListRelationFilter
@@ -206,6 +236,9 @@ export type UserOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   email?: Prisma.SortOrder
   password?: Prisma.SortOrder
+  two_factor_secret?: Prisma.SortOrderInput | Prisma.SortOrder
+  is_2fa_enabled?: Prisma.SortOrder
+  email_verified?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
   _max?: Prisma.UserMaxOrderByAggregateInput
@@ -219,6 +252,9 @@ export type UserScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"User"> | string
   email?: Prisma.StringWithAggregatesFilter<"User"> | string
   password?: Prisma.StringWithAggregatesFilter<"User"> | string
+  two_factor_secret?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  is_2fa_enabled?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
+  email_verified?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
   created_at?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
 }
 
@@ -226,6 +262,9 @@ export type UserCreateInput = {
   id?: string
   email: string
   password: string
+  two_factor_secret?: string | null
+  is_2fa_enabled?: boolean
+  email_verified?: boolean
   created_at?: Date | string
   user_roles_organization?: Prisma.role_and_organizationCreateNestedManyWithoutUserInput
   messages?: Prisma.MessagesCreateNestedManyWithoutUserInput
@@ -236,6 +275,9 @@ export type UserUncheckedCreateInput = {
   id?: string
   email: string
   password: string
+  two_factor_secret?: string | null
+  is_2fa_enabled?: boolean
+  email_verified?: boolean
   created_at?: Date | string
   user_roles_organization?: Prisma.role_and_organizationUncheckedCreateNestedManyWithoutUserInput
   messages?: Prisma.MessagesUncheckedCreateNestedManyWithoutUserInput
@@ -246,6 +288,9 @@ export type UserUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  two_factor_secret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  is_2fa_enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  email_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_roles_organization?: Prisma.role_and_organizationUpdateManyWithoutUserNestedInput
   messages?: Prisma.MessagesUpdateManyWithoutUserNestedInput
@@ -256,6 +301,9 @@ export type UserUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  two_factor_secret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  is_2fa_enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  email_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_roles_organization?: Prisma.role_and_organizationUncheckedUpdateManyWithoutUserNestedInput
   messages?: Prisma.MessagesUncheckedUpdateManyWithoutUserNestedInput
@@ -266,6 +314,9 @@ export type UserCreateManyInput = {
   id?: string
   email: string
   password: string
+  two_factor_secret?: string | null
+  is_2fa_enabled?: boolean
+  email_verified?: boolean
   created_at?: Date | string
 }
 
@@ -273,6 +324,9 @@ export type UserUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  two_factor_secret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  is_2fa_enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  email_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -280,6 +334,9 @@ export type UserUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  two_factor_secret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  is_2fa_enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  email_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -287,6 +344,9 @@ export type UserCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   email?: Prisma.SortOrder
   password?: Prisma.SortOrder
+  two_factor_secret?: Prisma.SortOrder
+  is_2fa_enabled?: Prisma.SortOrder
+  email_verified?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
 }
 
@@ -294,6 +354,9 @@ export type UserMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   email?: Prisma.SortOrder
   password?: Prisma.SortOrder
+  two_factor_secret?: Prisma.SortOrder
+  is_2fa_enabled?: Prisma.SortOrder
+  email_verified?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
 }
 
@@ -301,12 +364,28 @@ export type UserMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   email?: Prisma.SortOrder
   password?: Prisma.SortOrder
+  two_factor_secret?: Prisma.SortOrder
+  is_2fa_enabled?: Prisma.SortOrder
+  email_verified?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
 }
 
 export type UserScalarRelationFilter = {
   is?: Prisma.UserWhereInput
   isNot?: Prisma.UserWhereInput
+}
+
+export type UserNullableScalarRelationFilter = {
+  is?: Prisma.UserWhereInput | null
+  isNot?: Prisma.UserWhereInput | null
+}
+
+export type NullableStringFieldUpdateOperationsInput = {
+  set?: string | null
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
 }
 
 export type UserCreateNestedOneWithoutUser_roles_organizationInput = {
@@ -329,10 +408,12 @@ export type UserCreateNestedOneWithoutJobsInput = {
   connect?: Prisma.UserWhereUniqueInput
 }
 
-export type UserUpdateOneRequiredWithoutJobsNestedInput = {
+export type UserUpdateOneWithoutJobsNestedInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutJobsInput, Prisma.UserUncheckedCreateWithoutJobsInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutJobsInput
   upsert?: Prisma.UserUpsertWithoutJobsInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutJobsInput, Prisma.UserUpdateWithoutJobsInput>, Prisma.UserUncheckedUpdateWithoutJobsInput>
 }
@@ -355,6 +436,9 @@ export type UserCreateWithoutUser_roles_organizationInput = {
   id?: string
   email: string
   password: string
+  two_factor_secret?: string | null
+  is_2fa_enabled?: boolean
+  email_verified?: boolean
   created_at?: Date | string
   messages?: Prisma.MessagesCreateNestedManyWithoutUserInput
   jobs?: Prisma.JobCreateNestedManyWithoutUserInput
@@ -364,6 +448,9 @@ export type UserUncheckedCreateWithoutUser_roles_organizationInput = {
   id?: string
   email: string
   password: string
+  two_factor_secret?: string | null
+  is_2fa_enabled?: boolean
+  email_verified?: boolean
   created_at?: Date | string
   messages?: Prisma.MessagesUncheckedCreateNestedManyWithoutUserInput
   jobs?: Prisma.JobUncheckedCreateNestedManyWithoutUserInput
@@ -389,6 +476,9 @@ export type UserUpdateWithoutUser_roles_organizationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  two_factor_secret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  is_2fa_enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  email_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.MessagesUpdateManyWithoutUserNestedInput
   jobs?: Prisma.JobUpdateManyWithoutUserNestedInput
@@ -398,6 +488,9 @@ export type UserUncheckedUpdateWithoutUser_roles_organizationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  two_factor_secret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  is_2fa_enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  email_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.MessagesUncheckedUpdateManyWithoutUserNestedInput
   jobs?: Prisma.JobUncheckedUpdateManyWithoutUserNestedInput
@@ -407,6 +500,9 @@ export type UserCreateWithoutJobsInput = {
   id?: string
   email: string
   password: string
+  two_factor_secret?: string | null
+  is_2fa_enabled?: boolean
+  email_verified?: boolean
   created_at?: Date | string
   user_roles_organization?: Prisma.role_and_organizationCreateNestedManyWithoutUserInput
   messages?: Prisma.MessagesCreateNestedManyWithoutUserInput
@@ -416,6 +512,9 @@ export type UserUncheckedCreateWithoutJobsInput = {
   id?: string
   email: string
   password: string
+  two_factor_secret?: string | null
+  is_2fa_enabled?: boolean
+  email_verified?: boolean
   created_at?: Date | string
   user_roles_organization?: Prisma.role_and_organizationUncheckedCreateNestedManyWithoutUserInput
   messages?: Prisma.MessagesUncheckedCreateNestedManyWithoutUserInput
@@ -441,6 +540,9 @@ export type UserUpdateWithoutJobsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  two_factor_secret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  is_2fa_enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  email_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_roles_organization?: Prisma.role_and_organizationUpdateManyWithoutUserNestedInput
   messages?: Prisma.MessagesUpdateManyWithoutUserNestedInput
@@ -450,6 +552,9 @@ export type UserUncheckedUpdateWithoutJobsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  two_factor_secret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  is_2fa_enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  email_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_roles_organization?: Prisma.role_and_organizationUncheckedUpdateManyWithoutUserNestedInput
   messages?: Prisma.MessagesUncheckedUpdateManyWithoutUserNestedInput
@@ -459,6 +564,9 @@ export type UserCreateWithoutMessagesInput = {
   id?: string
   email: string
   password: string
+  two_factor_secret?: string | null
+  is_2fa_enabled?: boolean
+  email_verified?: boolean
   created_at?: Date | string
   user_roles_organization?: Prisma.role_and_organizationCreateNestedManyWithoutUserInput
   jobs?: Prisma.JobCreateNestedManyWithoutUserInput
@@ -468,6 +576,9 @@ export type UserUncheckedCreateWithoutMessagesInput = {
   id?: string
   email: string
   password: string
+  two_factor_secret?: string | null
+  is_2fa_enabled?: boolean
+  email_verified?: boolean
   created_at?: Date | string
   user_roles_organization?: Prisma.role_and_organizationUncheckedCreateNestedManyWithoutUserInput
   jobs?: Prisma.JobUncheckedCreateNestedManyWithoutUserInput
@@ -493,6 +604,9 @@ export type UserUpdateWithoutMessagesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  two_factor_secret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  is_2fa_enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  email_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_roles_organization?: Prisma.role_and_organizationUpdateManyWithoutUserNestedInput
   jobs?: Prisma.JobUpdateManyWithoutUserNestedInput
@@ -502,6 +616,9 @@ export type UserUncheckedUpdateWithoutMessagesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  two_factor_secret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  is_2fa_enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  email_verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_roles_organization?: Prisma.role_and_organizationUncheckedUpdateManyWithoutUserNestedInput
   jobs?: Prisma.JobUncheckedUpdateManyWithoutUserNestedInput
@@ -560,6 +677,9 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   id?: boolean
   email?: boolean
   password?: boolean
+  two_factor_secret?: boolean
+  is_2fa_enabled?: boolean
+  email_verified?: boolean
   created_at?: boolean
   user_roles_organization?: boolean | Prisma.User$user_roles_organizationArgs<ExtArgs>
   messages?: boolean | Prisma.User$messagesArgs<ExtArgs>
@@ -571,6 +691,9 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   id?: boolean
   email?: boolean
   password?: boolean
+  two_factor_secret?: boolean
+  is_2fa_enabled?: boolean
+  email_verified?: boolean
   created_at?: boolean
 }, ExtArgs["result"]["user"]>
 
@@ -578,6 +701,9 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   id?: boolean
   email?: boolean
   password?: boolean
+  two_factor_secret?: boolean
+  is_2fa_enabled?: boolean
+  email_verified?: boolean
   created_at?: boolean
 }, ExtArgs["result"]["user"]>
 
@@ -585,10 +711,13 @@ export type UserSelectScalar = {
   id?: boolean
   email?: boolean
   password?: boolean
+  two_factor_secret?: boolean
+  is_2fa_enabled?: boolean
+  email_verified?: boolean
   created_at?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "password" | "created_at", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "password" | "two_factor_secret" | "is_2fa_enabled" | "email_verified" | "created_at", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user_roles_organization?: boolean | Prisma.User$user_roles_organizationArgs<ExtArgs>
   messages?: boolean | Prisma.User$messagesArgs<ExtArgs>
@@ -609,6 +738,9 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     id: string
     email: string
     password: string
+    two_factor_secret: string | null
+    is_2fa_enabled: boolean
+    email_verified: boolean
     created_at: Date
   }, ExtArgs["result"]["user"]>
   composites: {}
@@ -1039,6 +1171,9 @@ export interface UserFieldRefs {
   readonly id: Prisma.FieldRef<"User", 'String'>
   readonly email: Prisma.FieldRef<"User", 'String'>
   readonly password: Prisma.FieldRef<"User", 'String'>
+  readonly two_factor_secret: Prisma.FieldRef<"User", 'String'>
+  readonly is_2fa_enabled: Prisma.FieldRef<"User", 'Boolean'>
+  readonly email_verified: Prisma.FieldRef<"User", 'Boolean'>
   readonly created_at: Prisma.FieldRef<"User", 'DateTime'>
 }
     

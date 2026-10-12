@@ -18,7 +18,7 @@ model	Organization {
 	script_jobs			Job[]
 	user_organization	role_and_organization[]
 	messages			Messages[]
-	description			String
+	description			String 		@db.VarChar(200)
 	created_at			DateTime	@default(now())
 }
 
@@ -35,6 +35,9 @@ model	User {
 	user_roles_organization		role_and_organization[]
 	messages					Messages[]
 	jobs						Job[]
+	two_factor_secret			String?
+	is_2fa_enabled				Boolean 	@default(false)
+	email_verified				Boolean 	@default(false)
 	created_at					DateTime	@default(now())
 }
 
@@ -45,6 +48,7 @@ model	role_and_organization {
 	organization	Organization	@relation(fields: [org_id], references: [id], onDelete: Cascade)
 	org_id			String
 	role			Roles			@default(Viewer)
+	@@unique([user_id, org_id])
 }
 
 model	Comments {
@@ -52,23 +56,23 @@ model	Comments {
 	job				Job	@relation(fields: [job_id], references: [id], onDelete: Cascade)
 	job_id			String
 	text			String
-	author			String
+	author			String?
 	upvotes			Int
-	sentiment_score	Float
+	sentiment_score	Float?
 	embedding		Unsupported("vector")?
 	created_at		DateTime		@default(now())
 }
 
 model	Job {
-	id				String			@id @default(uuid())
+	id				String				@id @default(uuid())
 	organization		Organization	@relation(fields: [org_id], references: [id], onDelete: Cascade)
 	org_id				String
 	user				User?			@relation(fields: [created_by], references: [id], onDelete: SetNull)
 	created_by			String?
 	target				String
 	mode				JobModes		@default(Keyword)
-	status				JobStatuses	@default(Running)
-	customer_persona	Json
+	status				JobStatuses		@default(Running)
+	customer_persona	Json?
 	report				Report?
 	comments			Comments[]
 	created_at			DateTime		@default(now())
@@ -89,13 +93,13 @@ enum	JobStatuses {
 }
 
 model	Report {
-	id				String			@id	@default(uuid())
-	job    Job    @relation(fields: [job_id], references: [id], onDelete: Cascade)
-	job_id String @unique
+	id				String		@id	@default(uuid())
+	job    			Job   		@relation(fields: [job_id], references: [id], onDelete: Cascade)
+	job_id 			String		@unique
 	swot			Json
 	blue_ocean		Json
-	conclusion		String
-	created_at		DateTime		@default(now())
+	conclusion		String?
+	created_at		DateTime	@default(now())
 }
 
 model	Backups {

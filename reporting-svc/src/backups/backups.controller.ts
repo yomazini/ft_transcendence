@@ -1,7 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Param } from '@nestjs/common';
 import { BackupsService } from './backups.service';
-import { CreateBackupDto } from './dto/create-backup.dto';
-import { UpdateBackupDto } from './dto/update-backup.dto';
 
 @Controller('backups')
 export class BackupsController {
@@ -13,14 +11,4 @@ export class BackupsController {
 		return { message: 'Backup created', filePath };
 	}
 
-	@Post('restore/:id')
-	async restore(@Param('id') id: string) {
-	await this.backupsService.restoreBackup(id);
-		return { message: 'Restore complete' };
-	}
-
-	@Get()
-	async list() {
-		return this.backupsService.listBackups();
-	}
 }
