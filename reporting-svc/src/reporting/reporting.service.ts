@@ -162,11 +162,11 @@ export class ReportingService {
 			});
 			const current = monthly.get(day);
 			if (current){
-				current.total += comment.sentiment_score;
+				current.total += Number(comment.sentiment_score ?? 0);
 				current.count++;
 			} else {
 				monthly.set(day, {
-					total: comment.sentiment_score,
+					total: Number(comment.sentiment_score ?? 0),
 					count: 1,
 				});
 			}
@@ -279,11 +279,11 @@ export class ReportingService {
 			});
 			const current = monthly.get(day);
 			if (current){
-				current.total += comment.sentiment_score;
+				current.total += Number(comment.sentiment_score ?? 0);
 				current.count++;
 			} else {
 				monthly.set(day, {
-					total: comment.sentiment_score,
+					total: Number(comment.sentiment_score ?? 0),
 					count: 1,
 				});
 			}
