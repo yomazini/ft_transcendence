@@ -1,15 +1,17 @@
 import { BadRequestException, Injectable,UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as argon from 'argon2';
-import { AcceptInviteDto, ChangePasswordDto, Complete42Dto, LoginDto, RegisterDto } from './dto';
+import { AcceptInviteDto, ChangePasswordDto, Complete42Dto, ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class AuthService {
 	constructor(
 		private readonly prisma: PrismaService,
 		private readonly jwt: JwtService,
+		private readonly mail: MailService,
 	) {}
 
 	async register(dto: RegisterDto) {
@@ -288,5 +290,52 @@ export class AuthService {
 			where: { id: userId }, data: { password: hash },
 		}) 
 		return { message: 'Password changed'};
+	}
+
+	async forgotPassword(dto: ForgotPasswordDto) {
+		const user = await this.prisma.user.findUnique({
+			where: { email: dto.email },
+		});
+
+		/** ⚠️ No error when the email is unknown: the reply is the same in both cases,
+		 *  so nobody can use this route to find out which emails have an account. */
+		if (user) {
+			const reset_token = await this.jwt.signAsync({
+				sub: user.id,
+				purpose: 'reset'}, { expiresIn: '15m' }
+			)
+
+			const link = `${process.env.FRONTEND_URL}/reset-password#reset_token=${reset_token}`;
+
+			await this.mail.sendPasswordReset(user.email, link);
+		}
+
+		return { message: 'If this email exists, a reset link was sent' };
+	}
+
+	async resetPassword(dto: ResetPasswordDto) {
+		let payload: any;
+		try {
+			payload = await this.jwt.verifyAsync(dto.reset_token);
+		} catch (error) {
+			throw new UnauthorizedException('Invalid or expired reset token');
+		}
+		if (payload.purpose !== 'reset') {
+			throw new UnauthorizedException('Invalid reset token');
+		}
+
+		const hash = await argon.hash(dto.new_password);
+
+		try {
+			await this.prisma.user.update({
+				where: { id: payload.sub }, data: { password: hash },
+			})
+		} catch (error: any) {
+			if (error.code === 'P2025') { /* the account was deleted after the email was sent */
+				throw new UnauthorizedException('Invalid reset token');
+			}
+			throw error;
+		}
+		return { message: 'Password changed' };
 	}
 }

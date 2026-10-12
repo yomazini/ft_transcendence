@@ -1,5 +1,5 @@
 import { Body, Controller, Get, HttpCode, Post, Req, UseGuards, Res } from '@nestjs/common';
-import { AcceptInviteDto, ChangePasswordDto, Complete42Dto, LoginDto, RegisterDto } from './dto';
+import { AcceptInviteDto, ChangePasswordDto, Complete42Dto, ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from './dto';
 import { AuthService } from './auth.service';
 import { JwtGuard } from './guard/jwt.guard';
 import { FortyTwoGuard } from './guard/42.guard';
@@ -59,6 +59,18 @@ export class AuthController {
 		 * The token is signed by the server, so the id inside it (req.user.sub) cannot be faked.
 			The body is typed by the user, so anything in it can be a lie.
 		*/
+	}
+
+	@Post('forgot-password') /** POST /auth/forgot-password */
+	@HttpCode(200)
+	forgotPassword(@Body() dto: ForgotPasswordDto) {
+		return this.authService.forgotPassword(dto);
+	}
+
+	@Post('reset-password') /** POST /auth/reset-password */
+	@HttpCode(200)
+	resetPassword(@Body() dto: ResetPasswordDto) {
+		return this.authService.resetPassword(dto);
 	}
 
 }
