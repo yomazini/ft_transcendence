@@ -22,8 +22,6 @@ configure_vault(){
 		port="5432" \
 		database="${POSTGRES_DB}"
 
-	vault auth enable approle
-
 	unset VAULT_ADDR VAULT_TOKEN
 }
 
