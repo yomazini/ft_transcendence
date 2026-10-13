@@ -13,16 +13,16 @@ configure_vault(){
 
 	echo "Setting up sessions key..."
 
-	vault kv put secret/sessions sessions="$(cat /run/secrets/sessions)"
+	vault kv put secret/sessions sessions="${REDDIT_SESSIONS}"
 
 	vault kv put secret/database \
 		username="${POSTGRES_USER}" \
-		password="$(cat /run/secrets/db-pass)" \
+		password="${POSTGRES_PASSWORD}" \
 		host="postgres" \
 		port="5432" \
 		database="${POSTGRES_DB}"
 
-	unset VAULT_ADDR VAULT_TOKEN
+	unset VAULT_ADDR VAULT_TOKEN REDDIT_SESSIONS POSTGRES_PASSWORD
 }
 
 configure_vault &
