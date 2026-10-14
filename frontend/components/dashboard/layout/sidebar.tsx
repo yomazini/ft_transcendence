@@ -24,7 +24,8 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { useReports } from "@/hooks/useReports"
+import { useQuery } from "@tanstack/react-query"
+import { listJobs } from "@/lib/api/jobs"
 import { useDeleteRepById } from "@/hooks/useDeleteRepById"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
@@ -33,45 +34,30 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 
+/** Pages under /<user id>/…; the id is read from the current URL. */
 const dashboardItems = [
-	{
-		title: "Home",
-		url: "/33/dashboard",
-		icon: House,
-	},
-	{
-		title: "Billing",
-		url: "/33/billing",
-		icon: CreditCard,
-	},
-	{
-		title: "Setting",
-		url: "/33/setting",
-		icon: Settings,
-	},
+	{ title: "Home", page: "dashboard", icon: House },
+	{ title: "Billing", page: "billing", icon: CreditCard },
+	{ title: "Members", page: "members", icon: Users },
+	{ title: "Setting", page: "setting", icon: Settings },
 ]
 
-type Report = {
-	id: string;
-	title: string;
-	createdAt: string;
-};
 
 export function AppSidebar() {
 	const router = useRouter();
-	const { reports, loading, error } = useReports() as {
-		reports: Report[];
-		loading: boolean;
-		error: Error | null;
-	};
+	const pathname = usePathname();
+	const userId = useParams<{ "uuid-user": string }>()["uuid-user"];
+	// Same cached list as the Jobs panel, which keeps it updated live.
+	const { data: jobs = [], isLoading: loading, error } = useQuery({ queryKey: ["jobs"], queryFn: listJobs });
+	const selectedJob = useSearchParams().get("job");
 	const deleteReport = useDeleteRepById();
 
 	const handleDelete = async (id: string) => {
 		try {
 			await deleteReport.mutateAsync(id);
-			router.push("/33/billing");
+			router.push(`/${userId}/dashboard`);
 		} catch (err) {
 			console.log("error", err);
 		}
@@ -116,17 +102,23 @@ export function AppSidebar() {
 					</SidebarGroupLabel>
 
 					<SidebarGroupContent>
-						<SidebarMenu className="space-y-2">
-							{dashboardItems.map((item) => (
-								<SidebarMenuItem key={item.title}>
-									<SidebarMenuButton tooltip={item.title}>
-										<Link href={item.url} className="flex space-x-3">
+						<SidebarMenu className="gap-1">
+							{dashboardItems.map((item) => {
+								const href = `/${userId}/${item.page}`;
+								return (
+									<SidebarMenuItem key={item.title}>
+										{/* The whole row is the link (a link inside a button is invalid HTML). */}
+										<SidebarMenuButton
+											tooltip={item.title}
+											isActive={pathname === href}
+											render={<Link href={href} />}
+										>
 											<item.icon />
-											<span className="font-bold ">{item.title}</span>
-										</Link>
-									</SidebarMenuButton>
-								</SidebarMenuItem>
-							))}
+											<span className="font-medium">{item.title}</span>
+										</SidebarMenuButton>
+									</SidebarMenuItem>
+								);
+							})}
 						</SidebarMenu>
 					</SidebarGroupContent>
 				</SidebarGroup>
@@ -153,7 +145,7 @@ export function AppSidebar() {
 											<h1>Failed to load reports {error.message}</h1>
 										</div>
 									) : (
-										reports.map((report) => (
+										jobs.map((report) => (
 											<SidebarMenuItem
 												key={report.id}
 												className="group relative"
@@ -161,10 +153,12 @@ export function AppSidebar() {
 
 												<SidebarMenuButton
 													className="report-menu-button"
-													render={<Link href={`/${report.id}/dashboard`} />}
+													isActive={selectedJob === report.id}
+													render={<Link href={`/${userId}/dashboard?job=${report.id}`} />}
 												>
 													<span className="report-dot" />
-													<span className="truncate">{report.id}</span>
+													<span className="truncate">{report.target}</span>
+													<span className="ml-auto text-[10px] text-muted-foreground">{report.status}</span>
 												</SidebarMenuButton>
 
 												<DropdownMenu>

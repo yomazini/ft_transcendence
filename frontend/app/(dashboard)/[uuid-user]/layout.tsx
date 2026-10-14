@@ -1,6 +1,7 @@
 import { DashboardNavbar } from "@/components/dashboard/layout/navbar"
 import { AppSidebar } from "@/components/dashboard/layout/sidebar"
 import FloatingChatWidget from "@/components/message/FloatingChatWidget";
+import { AuthGuard } from "@/components/auth/auth-guard";
 import {
   SidebarProvider,
   SidebarTrigger,
@@ -15,18 +16,20 @@ export default function Layout({
 
 
   return (
-    <SidebarProvider className="p-2 bg-gray-200 dark:bg-black">
-      <AppSidebar />
+    <AuthGuard>
+      <SidebarProvider className="p-2 bg-gray-200 dark:bg-black">
+        <AppSidebar />
 
-      <SidebarInset className="border " >
-        <DashboardNavbar />
+        <SidebarInset className="border " >
+          <DashboardNavbar />
 
-        <main className="flex-1 p-3">
-          {children}
-        </main>
-      </SidebarInset>
-      <FloatingChatWidget/>
-    </SidebarProvider>
+          <main className="flex-1 p-3">
+            {children}
+          </main>
+        </SidebarInset>
+        <FloatingChatWidget/>
+      </SidebarProvider>
+    </AuthGuard>
   )
 }
 
