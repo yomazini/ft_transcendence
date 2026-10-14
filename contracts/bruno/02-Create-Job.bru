@@ -1,0 +1,27 @@
+meta {
+  name: 02 Create Job
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{gateway_url}}/api/jobs
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "mode": "subreddit",
+    "target": "r/freelance",
+    "customer_persona": {
+      "description": "budget-conscious college students",
+      "price_sensitivity": "budget",
+      "top_priority": "speed"
+    }
+  }
+}
