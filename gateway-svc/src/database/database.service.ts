@@ -107,6 +107,47 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /** Used when a service that has no database access (scraper-svc) reports a failure. */
+  async updateJobStatus(id: string, status: string): Promise<void> {
+    if (!this.isConnected || !this.pool) return;
+    try {
+      await this.pool.query('UPDATE "Job" SET status = $1 WHERE id = $2;', [
+        this.normalizeJobStatus(status),
+        id,
+      ]);
+    } catch (err: any) {
+      this.logger.warn(`Failed to update status of job ${id}: ${err.message}`);
+    }
+  }
+
+  /** The latest jobs of one organization, newest first (dashboard job list). */
+  async findJobsByOrg(orgId: string, limit = 50): Promise<JobRecord[]> {
+    if (!this.isConnected || !this.pool) return [];
+    try {
+      const res: QueryResult = await this.pool.query(
+        `SELECT id, org_id, created_by, target, mode, status, customer_persona, created_at
+           FROM "Job" WHERE org_id = $1 ORDER BY created_at DESC LIMIT $2;`,
+        [orgId, limit],
+      );
+      return res.rows.map((row) => ({
+        id: row.id,
+        org_id: row.org_id,
+        created_by: row.created_by,
+        target: row.target,
+        mode: String(row.mode).toLowerCase(),
+        status: String(row.status).toLowerCase(),
+        customer_persona: row.customer_persona,
+        created_at:
+          row.created_at instanceof Date
+            ? row.created_at.toISOString()
+            : String(row.created_at),
+      }));
+    } catch (err: any) {
+      this.logger.warn(`Failed to list jobs of org ${orgId}: ${err.message}`);
+      return [];
+    }
+  }
+
   async findJobById(id: string): Promise<JobRecord | null> {
     if (this.isConnected && this.pool) {
       try {

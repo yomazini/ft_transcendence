@@ -8,10 +8,11 @@ import {
 import { Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import Redis from 'ioredis';
+import { DatabaseService } from '../database/database.service';
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: process.env.FRONTEND_URL || 'http://localhost',
   },
 })
 export class EventsGateway
@@ -27,6 +28,8 @@ export class EventsGateway
 
   private readonly logger = new Logger(EventsGateway.name);
   private subscriber: Redis | null = null;
+
+  constructor(private readonly databaseService: DatabaseService) {}
 
   async onModuleInit() {
     if (process.env.NODE_ENV === 'test') {
@@ -49,6 +52,10 @@ export class EventsGateway
           const data = JSON.parse(message);
           const { job_id, status, ...extra } = data;
           if (job_id && status) {
+            // scraper-svc has no database access: record its failures here.
+            if (status === 'failed') {
+              void this.databaseService.updateJobStatus(job_id, 'failed');
+            }
             this.broadcastJobStatus(job_id, status, extra);
           }
         } catch {

@@ -18,6 +18,7 @@ import {
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import { JobsService } from './jobs.service';
 import { CreateJobDto } from './dto/create-job.dto';
+import { RagQueryDto } from './dto/rag-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Public } from '../auth/public.decorator';
 
@@ -51,6 +52,26 @@ export class JobsController {
   })
   createJob(@Body() body: CreateJobDto, @Req() req: any) {
     return this.jobsService.createJob(body, req.user);
+  }
+
+  @Post('rag/query')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @ApiOperation({ summary: "Ask a question about one job's comments (RAG)" })
+  @ApiResponse({ status: 200, description: 'Answer with cited comments' })
+  @ApiResponse({ status: 404, description: 'Job not found, or no analyzed comments yet' })
+  ragQuery(@Body() body: RagQueryDto, @Req() req: any) {
+    return this.jobsService.ragQuery(body.job_id, body.query, req.user);
+  }
+
+  @Get('jobs')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "List the caller's organization jobs with their status" })
+  @ApiResponse({ status: 200, description: 'Jobs, newest first' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  listJobs(@Req() req: any) {
+    return this.jobsService.listJobs(req.user);
   }
 
   @Get('jobs/:id')

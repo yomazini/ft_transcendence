@@ -4,6 +4,7 @@ import {
   OnModuleDestroy,
   Logger,
   NotFoundException,
+  HttpException,
 } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { randomUUID } from 'crypto';
@@ -15,6 +16,14 @@ import {
 } from '../database/database.service';
 import { EventsGateway } from '../events/events.gateway';
 import { AuthenticatedUser } from '../auth/jwt-auth.guard';
+
+/** Values of the JobModes enum in the shared database (owned by reporting-svc). */
+const JOB_MODES: Record<string, string> = {
+  keyword: 'Keyword',
+  subreddit: 'Subreddit',
+  post: 'Post',
+  user: 'User',
+};
 
 @Injectable()
 export class JobsService implements OnModuleInit, OnModuleDestroy {
@@ -64,8 +73,8 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       org_id: user.org_id,
       created_by: user.id,
       target: dto.target,
-      mode: dto.mode,
-      status: 'queued',
+      mode: JOB_MODES[dto.mode.toLowerCase()],
+      status: 'Queued',
       customer_persona: dto.customer_persona || {
         description: 'general market demographic',
         price_sensitivity: 'budget',
@@ -85,7 +94,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
           {
             id: jobId,
             target: dto.target,
-            mode: dto.mode,
+            mode: dto.mode.toLowerCase(),
             org_id: user.org_id,
             created_by: user.id,
             customer_persona: jobRecord.customer_persona,
@@ -112,24 +121,35 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     return jobRecord;
   }
 
+  /** Ask analysis-svc a question about one job's comments (semantic search + answer).
+   *  The job must belong to the caller's organization: analysis-svc has no auth of its own. */
+  async ragQuery(jobId: string, query: string, user: AuthenticatedUser) {
+    await this.getJobById(jobId, user); // 404 for a job of another organization
+    const base = process.env.ANALYSIS_SVC_URL || 'http://analysis-svc:8001';
+    const response = await fetch(`${base}/rag/query`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ job_id: jobId, query }),
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new HttpException(
+        data?.detail ?? 'analysis-svc could not answer',
+        response.status,
+      );
+    }
+    return data;
+  }
+
+  async listJobs(user: AuthenticatedUser): Promise<JobRecord[]> {
+    return this.databaseService.findJobsByOrg(user.org_id);
+  }
+
   async getJobById(id: string, user: AuthenticatedUser): Promise<JobRecord> {
     const job = await this.databaseService.findJobById(id);
-    if (!job) {
-      // Fallback response if querying demo UUID
-      return {
-        id,
-        org_id: user.org_id,
-        created_by: user.id,
-        target: 'r/freelance',
-        mode: 'subreddit',
-        status: 'done',
-        customer_persona: {
-          description: 'budget-conscious freelancers',
-          price_sensitivity: 'budget',
-          top_priority: 'speed',
-        },
-        created_at: new Date().toISOString(),
-      };
+    // A job of another organization answers like a missing one (no BOLA leak).
+    if (!job || job.org_id !== user.org_id) {
+      throw new NotFoundException(`No job found with ID ${id}`);
     }
     return job;
   }
@@ -138,6 +158,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     id: string,
     user: AuthenticatedUser,
   ): Promise<ReportRecord> {
+    await this.getJobById(id, user); // 404 unless the job belongs to the caller's org
     const report = await this.databaseService.findReportByJobId(id);
     if (!report) {
       throw new NotFoundException(`No report found for job ID ${id}`);
