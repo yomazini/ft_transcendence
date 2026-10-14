@@ -1,0 +1,247 @@
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
+import { Pool, QueryResult } from 'pg';
+
+export interface JobRecord {
+  id: string;
+  org_id: string;
+  created_by: string;
+  target: string;
+  mode: string;
+  status: string;
+  customer_persona: any;
+  created_at: string;
+}
+
+export interface ReportRecord {
+  id: string;
+  job_id: string;
+  swot: any;
+  blue_ocean: any;
+  conclusion: string;
+  created_at: string;
+}
+
+@Injectable()
+export class DatabaseService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(DatabaseService.name);
+  private pool: Pool | null = null;
+  private isConnected = false;
+
+  // In-memory stub storage for offline development & resilient fallback
+  private readonly inMemoryJobs = new Map<string, JobRecord>();
+  private readonly inMemoryReports = new Map<string, ReportRecord>();
+
+  constructor() {
+    this.seedDefaultStubData();
+  }
+
+  async onModuleInit() {
+    const host = process.env.POSTGRES_HOST || 'postgres';
+    const port = parseInt(process.env.POSTGRES_PORT || '5432', 10);
+    const user = process.env.POSTGRES_USER || 'ft_transcendence';
+    const password = process.env.POSTGRES_PASSWORD || 'changeme';
+    const database = process.env.POSTGRES_DB || 'ft_transcendence';
+
+    try {
+      this.pool = new Pool({
+        host,
+        port,
+        user,
+        password,
+        database,
+        connectionTimeoutMillis: 3000,
+      });
+
+      const client = await this.pool.connect();
+      this.isConnected = true;
+      client.release();
+      this.logger.log(`Connected to PostgreSQL at ${host}:${port}/${database}`);
+    } catch (err: any) {
+      this.isConnected = false;
+      this.logger.warn(
+        `PostgreSQL not reachable at ${host}:${port} (${err.message}). Using resilient in-memory stub storage.`,
+      );
+    }
+
+    // Seed default demo report in stub store
+    this.seedDefaultStubData();
+  }
+
+  async onModuleDestroy() {
+    if (this.pool) {
+      await this.pool.end();
+    }
+  }
+
+  async saveJob(job: JobRecord): Promise<void> {
+    this.inMemoryJobs.set(job.id, job);
+
+    if (this.isConnected && this.pool) {
+      try {
+        const query = `
+          INSERT INTO "Job" (id, org_id, created_by, target, mode, status, customer_persona, created_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status;
+        `;
+        await this.pool.query(query, [
+          job.id,
+          job.org_id,
+          job.created_by,
+          job.target,
+          this.normalizeJobMode(job.mode),
+          this.normalizeJobStatus(job.status),
+          JSON.stringify(job.customer_persona),
+          new Date(job.created_at),
+        ]);
+        this.logger.log(`Persisted Job ${job.id} to PostgreSQL`);
+      } catch (err: any) {
+        this.logger.warn(
+          `Failed to persist Job to DB: ${err.message}. Retained in in-memory store.`,
+        );
+      }
+    }
+  }
+
+  async findJobById(id: string): Promise<JobRecord | null> {
+    if (this.isConnected && this.pool) {
+      try {
+        const res: QueryResult = await this.pool.query(
+          `SELECT id, org_id, created_by, target, mode, status, customer_persona, created_at FROM "Job" WHERE id = $1;`,
+          [id],
+        );
+        if (res.rows.length > 0) {
+          const row = res.rows[0];
+          return {
+            id: row.id,
+            org_id: row.org_id,
+            created_by: row.created_by,
+            target: row.target,
+            mode: row.mode,
+            status: String(row.status).toLowerCase(),
+            customer_persona: row.customer_persona,
+            created_at:
+              row.created_at instanceof Date
+                ? row.created_at.toISOString()
+                : String(row.created_at),
+          };
+        }
+      } catch (err: any) {
+        this.logger.warn(
+          `Postgres lookup failed: ${err.message}. Falling back to in-memory store.`,
+        );
+      }
+    }
+
+    return this.inMemoryJobs.get(id) || null;
+  }
+
+  async findReportByJobId(jobId: string): Promise<ReportRecord | null> {
+    if (this.isConnected && this.pool) {
+      try {
+        const res: QueryResult = await this.pool.query(
+          `SELECT id, job_id, swot, blue_ocean, conclusion, created_at FROM "Report" WHERE job_id = $1 OR id = $1;`,
+          [jobId],
+        );
+        if (res.rows.length > 0) {
+          const row = res.rows[0];
+          return {
+            id: row.id,
+            job_id: row.job_id,
+            swot: row.swot,
+            blue_ocean: row.blue_ocean,
+            conclusion: row.conclusion,
+            created_at:
+              row.created_at instanceof Date
+                ? row.created_at.toISOString()
+                : String(row.created_at),
+          };
+        }
+      } catch (err: any) {
+        this.logger.warn(`Postgres report lookup failed: ${err.message}`);
+      }
+    }
+
+    return this.inMemoryReports.get(jobId) || null;
+  }
+
+  private normalizeJobMode(mode: string): string {
+    const map: Record<string, string> = {
+      keyword: 'Keyword',
+      subreddit: 'Subreddit',
+      post: 'Post',
+      user: 'User',
+    };
+    return map[mode.toLowerCase()] || 'Subreddit';
+  }
+
+  private normalizeJobStatus(status: string): string {
+    const map: Record<string, string> = {
+      queued: 'Queued',
+      running: 'Running',
+      done: 'Done',
+      failed: 'Failed',
+    };
+    return map[status.toLowerCase()] || 'Queued';
+  }
+
+  private seedDefaultStubData() {
+    const defaultJobId = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
+    const seedJobId = 'a18f2d90-3b41-4e2a-9f12-987654321abc';
+
+    const defaultReport: ReportRecord = {
+      id: 'c39e4a81-9b12-4f3e-8c3d-123456789abc',
+      job_id: defaultJobId,
+      swot: {
+        strengths: [
+          'High organic community praise for responsive customer support',
+          'Fast synchronization and reliable offline access',
+        ],
+        weaknesses: [
+          'Mobile application UX feels bloated according to power users',
+          'Pricing friction and lack of granular seat-based tiers',
+        ],
+        opportunities: [
+          'Automated topic auto-organization and AI sentiment insights',
+          'High demand for verified Reddit comment citation search',
+        ],
+        threats: [
+          'Incumbent SaaS competitors launching bundled LLM features',
+          'Users switching to minimal markdown self-hosted tools',
+        ],
+      },
+      blue_ocean: {
+        eliminate: [
+          'Complex manual database setups',
+          'Bloated multi-tier onboarding forms',
+        ],
+        reduce: [
+          'Report generation latency',
+          'Cost per analyzed Reddit thread',
+        ],
+        raise: [
+          'Actionable customer sentiment resolution',
+          'Traceability to original comments',
+        ],
+        create: [
+          'One-click executive SWOT synthesis',
+          'Interactive pgvector semantic chat',
+        ],
+      },
+      conclusion:
+        'Users value fast synchronization and clear support, but express dissatisfaction regarding opaque auto-renewals. Strong market opportunity exists for an automated social intelligence dashboard.',
+      created_at: new Date().toISOString(),
+    };
+
+    this.inMemoryReports.set(defaultJobId, defaultReport);
+    this.inMemoryReports.set(seedJobId, {
+      ...defaultReport,
+      job_id: seedJobId,
+    });
+    this.inMemoryReports.set(defaultReport.id, defaultReport);
+  }
+}

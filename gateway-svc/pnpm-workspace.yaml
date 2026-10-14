@@ -1,3 +1,8 @@
 allowBuilds:
-  msgpackr-extract: set this to true or false
-  unrs-resolver: set this to true or false
+  '@scarf/scarf': true
+  msgpackr-extract: true
+  unrs-resolver: true
+onlyBuiltDependencies:
+  - msgpackr-extract
+  - unrs-resolver
+  - '@scarf/scarf'
