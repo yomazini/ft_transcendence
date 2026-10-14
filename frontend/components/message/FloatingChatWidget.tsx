@@ -4,10 +4,9 @@ import { useState, useEffect } from "react";
 import { MessageSquareText, X } from "lucide-react";
 import { ChatWidget } from "./ChatWidget";
 import { FloatingChatWidgetProps } from "@/types/chat";
-
 export function FloatingChatWidget({
-  jobId = "report-job-42",
-  apiEndpoint = "/api/chat",
+  jobId = "a18f2d90-3b41-4e2a-9f12-987654321abc",
+  apiEndpoint = "/api/rag/query",
 }: FloatingChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
