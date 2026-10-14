@@ -41,16 +41,16 @@ const dashboardItems = [
     url: "/33/dashboard",
     icon: House,
   },
-  {
-    title: "Management",
-    url: "/33/management",
-    icon: ShoppingCart,
-  },
-  {
-    title: "Chats",
-    url: "/33/chats",
-    icon: Sparkles,
-  },
+//   {
+//     title: "Management",
+//     url: "/33/management",
+//     icon: ShoppingCart,
+//   },
+//   {
+//     title: "Chats",
+//     url: "/33/chats",
+//     icon: Sparkles,
+//   },
   {
     title: "Billing",
     url: "/33/billing",

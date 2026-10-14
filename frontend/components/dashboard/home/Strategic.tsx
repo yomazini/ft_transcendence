@@ -61,70 +61,66 @@ export default function Strategic({ params }: { params: Promise<{ "uuid-user": s
 
 
     return (
-        <div className="min-w-0 xl:col-span-1">
-                <SectionTitle icon={Megaphone}>Strategic Analysis</SectionTitle>
+        <div className="min-w-0 xl:col-span-2  ">
+            <SectionTitle icon={Megaphone}>Strategic Analysis</SectionTitle>
 
 
-                <div className="divide-y">
-                    <div className="flex w-full min-w-0 justify-center">
-                        <div className="grid w-full min-w-0  grid-cols-2 gap-2 rounded-lg bg-slate-100  ">
-                            <button
-                                type="button"
-                                onClick={() => setActiveCard(1)}
-                                className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:gap-2 sm:text-sm ${activeCard === 1
-                                    ? "bg-white text-black shadow-sm"
-                                    : "text-slate-500 hover:text-slate-800"
-                                    }`}
-                            >
-                                <Target className="size-4 shrink-0" />
-                                <span className="min-w-0 truncate">SWOT</span>
-                            </button>
+            <div className="divide-y">
+                <div className="flex w-full min-w-0 justify-center">
+                    <div className="grid w-full min-w-0  grid-cols-2 gap-2 rounded-lg bg-slate-100  ">
+                        <button
+                            type="button"
+                            onClick={() => setActiveCard(1)}
+                            className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:gap-2 sm:text-sm ${activeCard === 1
+                                ? "bg-white text-black shadow-sm"
+                                : "text-slate-500 hover:text-slate-800"
+                                }`}
+                        >
+                            <Target className="size-4 shrink-0" />
+                            <span className="min-w-0 truncate">SWOT</span>
+                        </button>
 
-                            <button
-                                type="button"
-                                onClick={() => setActiveCard(2)}
-                                className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:gap-2 sm:text-sm ${activeCard === 2
-                                    ? "bg-white text-black shadow-sm"
-                                    : "text-slate-500 hover:text-slate-800"
-                                    }`}
-                            >
-                                <Waves className="size-4 shrink-0" />
-                                <span className="min-w-0 truncate">Blue Ocean</span>
-                            </button>
-                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setActiveCard(2)}
+                            className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:gap-2 sm:text-sm ${activeCard === 2
+                                ? "bg-white text-black shadow-sm"
+                                : "text-slate-500 hover:text-slate-800"
+                                }`}
+                        >
+                            <Waves className="size-4 shrink-0" />
+                            <span className="min-w-0 truncate">Blue Ocean</span>
+                        </button>
                     </div>
-                    <div className="grid w-full min-w-0 grid-cols-1 gap-4 py-4 lg:grid-cols-2 p-2">
-                        {activeCard === 1
-                            ? swot.map((item, i) => (
-                                <Cards
-                                    key={i}
-                                    items={item.items}
-                                    icon={item.icon}
-                                    title={item.title}
-                                    description={item.description}
-                                    iconColor={item.iconColor}
-
-                                />
-                            ))
-                            : errc.map((item, i) => (
-                                <Cards
-                                    key={i}
-                                    items={item.items}
-                                    icon={item.icon}
-                                    title={item.title}
-                                    description={item.description}
-                                    iconColor={item.iconColor}
-                                />
-                            ))}
-                    </div>
-
                 </div>
-                <div className="p-3 sm:p-4">
-                    <Button variant="outline" className="w-full">
-                        See Report <ArrowRight className="ml-2 size-4" />
-                    </Button>
+                <div className="grid w-full min-w-0 grid-cols-1 gap-4 py-4 lg:grid-cols-2 p-2">
+                    {activeCard === 1
+                        ? swot.map((item, i) => (
+                            <Cards
+                                key={i}
+                                items={item.items}
+                                icon={item.icon}
+                                title={item.title}
+                                description={item.description}
+                                iconColor={item.iconColor}
+
+                            />
+                        ))
+                        : errc.map((item, i) => (
+                            <Cards
+                                key={i}
+                                items={item.items}
+                                icon={item.icon}
+                                title={item.title}
+                                description={item.description}
+                                iconColor={item.iconColor}
+                            />
+                        ))}
                 </div>
+
             </div>
+            
+        </div>
     )
 }
 

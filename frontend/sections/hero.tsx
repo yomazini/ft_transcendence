@@ -82,11 +82,10 @@ export function HeroSection() {
         {/* Buttons */}
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Button
-            
             size="lg"
             className="group bg-orange-500 text-white shadow-[0_8px_30px_-6px_rgba(249,115,22,0.5)] hover:bg-orange-600"
           >
-            <Link href="/register">
+            <Link href="/register" className="flex space-x-1 items-center">
               Start free
               <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>

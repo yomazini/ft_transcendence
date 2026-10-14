@@ -42,7 +42,7 @@ export default function SettingsProfile() {
      bg-[radial-gradient(#d4d4d4_1px,transparent_1px)] [background-size:16px_16px]">
 
       {/* Header */}
-      <div className=" border-b p-6 bg-white">
+      <div className=" border-b p-6 bg-background">
         <h1 className="text-2xl font-semibold">
           Settings
         </h1>

@@ -2,28 +2,29 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "./dashboard/layout/theme-toggle";
 
 const links = [
-  {
-    title: "Features",
-    href: "#features",
-  },
-  {
-    title: "Solutions",
-    href: "#workflow",
-  },
-  {
-    title: "Pricing",
-    href: "#pricing",
-  },
-  {
-    title: "Docs",
-    href: "#",
-  },
-  {
-    title: "About",
-    href: "#",
-  },
+  // {
+  //   title: "Features",
+  //   href: "#features",
+  // },
+  // {
+  //   title: "Solutions",
+  //   href: "#workflow",
+  // },
+  // {
+  //   title: "Pricing",
+  //   href: "#pricing",
+  // },
+  // {
+  //   title: "Docs",
+  //   href: "#",
+  // },
+  // {
+  //   title: "About",
+  //   href: "#",
+  // },
 ];
 
 export function Navbar() {
@@ -63,6 +64,7 @@ export function Navbar() {
         {/* Actions */}
 
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <Button
             variant="ghost"
             // 

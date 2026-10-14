@@ -23,7 +23,7 @@ function MetricCard({
                         </span>
                         <Badge
                             variant="secondary"
-                            className={`border-0 bg-teal-50 ${color} `}
+                            className={`border-0 bg-teal-50 dark:bg-teal-950 ${color} `}
                         >
                             {/* text-teal-700 */}
                             Jobs

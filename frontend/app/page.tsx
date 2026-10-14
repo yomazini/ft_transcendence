@@ -21,8 +21,8 @@ export default function Home() {
       <ProblemSection />
       <FeaturesSection />
       <ProductPreviewSection />
-      <WorkflowSection />
-      <AnalyticsSection />
+      {/* <WorkflowSection /> */}
+      {/* <AnalyticsSection /> */}
       <TestimonialsSection />
       <PricingSection />
       <FAQSection />
@@ -31,3 +31,4 @@ export default function Home() {
     </main>
   );
 }
+
