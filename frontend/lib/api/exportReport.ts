@@ -1,8 +1,8 @@
+import { authHeaders } from "@/lib/auth";
+
 export async function exportReport( id : string, format : string) {
-	const response = await fetch(`http://localhost:3003/reporting/${id}/export?format=${format}`, {
-		headers: {
-			"org-id": "018f2d90-3b41-7e2a-9f12-111122223333",
-		}
+	const response = await fetch(`/api/reporting/${id}/export?format=${format}`, {
+		headers: authHeaders(),
 	})
 
 	if (!response.ok) {

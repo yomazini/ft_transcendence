@@ -1,16 +1,21 @@
+"use client";
+
 import { useState } from "react";
 // import ListUesrs from "./listUsers";
 import Strategic from "./Strategic";
 import { Lightbulb, Target, Waves } from "lucide-react";
 import SectionTitle from "./SectionTitle";
+import { useMembers } from "@/hooks/useMembers";
 import { Download, Users } from "lucide-react";
 
 
 
-export default function StrategicUsers({ params }: { params: Promise<{ "uuid-user": string }> }) {
-  const totalUsers = 20;
-  const freeUsers = 15;
-  const allocatedUsers = totalUsers - freeUsers;
+export default function StrategicUsers() {
+  // Real members of the organization (auth-svc). The ring shows how many are Admins.
+  const { members } = useMembers();
+  const totalUsers = members.length;
+  const admins = members.filter((m) => m.role === "Admin").length;
+  const allocatedUsers = admins;
 
   const totalBars = 80;
   const allocatedBars = totalUsers > 0
@@ -22,7 +27,7 @@ export default function StrategicUsers({ params }: { params: Promise<{ "uuid-use
     <section className="grid min-w-0 grid-cols-1 overflow-hidden border xl:grid-cols-3">
 
 
-      <Strategic params={params} />
+      <Strategic />
 
       <div className="min-w-0 border-t lg:border-l lg:border-t-0">
         <SectionTitle icon={Lightbulb}>Key Insights</SectionTitle>
@@ -32,8 +37,8 @@ export default function StrategicUsers({ params }: { params: Promise<{ "uuid-use
               <Users className="size-5 mr-2" /> {totalUsers}
             </p>
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-emerald-600">5</span>
-              <span className="ml-2">available places</span>
+              <span className="font-medium text-emerald-600">{admins}</span>
+              <span className="ml-2">admin{admins === 1 ? "" : "s"}</span>
             </p>
           </div>
           <div className="flex flex-col items-center gap-5 ">
@@ -106,11 +111,11 @@ export default function StrategicUsers({ params }: { params: Promise<{ "uuid-use
           <div className="flex gap-4 text-xs justify-center ">
             <div className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-neutral-900" />
-              Allocated
+              Admins
             </div>
             <div className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-neutral-500" />
-              Available
+              Others
             </div>
           </div>
         </div>

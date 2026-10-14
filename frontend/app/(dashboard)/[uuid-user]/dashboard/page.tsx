@@ -28,6 +28,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import Welcome from "@/components/dashboard/home/welcome";
+import NewJobCard from "@/components/dashboard/home/NewJobCard";
+import JobsPanel from "@/components/dashboard/home/JobsPanel";
 import SectionTitle from "@/components/dashboard/home/SectionTitle";
 import RevenueOverview from "@/components/dashboard/home/RevenueOverview";
 import SummaryMetrics from "@/components/dashboard/home/SummaryMetrics";
@@ -41,21 +43,27 @@ import ListUesrs from "@/components/dashboard/home/listUsers";
 
 
 
-export default function DashboardPage({ params }: { params: Promise<{ "uuid-user": string }>}) {
+export default function DashboardPage() {
   return (
     <main className="min-w-0 w-full mx-auto max-w-[1730px] space-y-3 bg-background p-3 text-foreground sm:p-5 lg:p-6">
       {/* Welcome and key insights */}
       <Welcome />
 
+      {/* Submit a new job */}
+      <NewJobCard />
+
+      {/* All jobs with their live status */}
+      <JobsPanel />
+
       {/* Revenue overview and sales distribution */}
-      <RevenueOverview params={params} />
+      <RevenueOverview />
 
       {/* Summary metrics */}
       
       <SummaryMetrics />
 
       {/* Campaigns and products */}
-      <StrategicUsers params={params}/>
+      <StrategicUsers />
 
       <ListUesrs />
     </main>

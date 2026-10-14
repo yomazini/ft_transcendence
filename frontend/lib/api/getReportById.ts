@@ -1,10 +1,9 @@
+import { authHeaders } from "@/lib/auth";
 import { ReportDetails } from "@/app/types/report";
 
 export async function getReportById(id: string): Promise<ReportDetails> {
-	const response = await fetch(`http://localhost:3003/reporting/${id}`, {
-		headers: {
-			"org-id": "018f2d90-3b41-7e2a-9f12-111122223333",
-		},
+	const response = await fetch(`/api/reporting/${id}`, {
+		headers: authHeaders(),
 	});
 
 	if (!response.ok) {

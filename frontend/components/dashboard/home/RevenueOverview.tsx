@@ -2,11 +2,11 @@
 import { VisualizerCard } from "../visualizer-card";
 
 import { useReportById } from "@/hooks/useReportById";
-import { use } from "react";
+import { useSelectedJobId } from "@/hooks/useSelectedJob";
 
 
-export default function RevenueOverview({ params }: { params: Promise<{ "uuid-user": string }>}) {
-    const { "uuid-user": id } = use(params);
+export default function RevenueOverview() {
+    const id = useSelectedJobId();
     const { report, loading, error } = useReportById(id);
 
     return (

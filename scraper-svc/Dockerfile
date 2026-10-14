@@ -1,16 +1,12 @@
-# scraper-svc/Dockerfile — FastAPI Scraper microservice
-FROM python:3.12-slim
-
+# scraper-svc/Dockerfile — Reddit scraper worker (BullMQ consumer). Owner: Madani.
+FROM python:3.13-slim
 WORKDIR /app
-
-# Install uv package manager
 RUN pip install --no-cache-dir uv
 
-COPY pyproject.toml ./
-RUN uv pip install --system -r pyproject.toml || pip install --no-cache-dir fastapi "uvicorn[standard]" asyncpraw pydantic redis asyncpg
+# README.md is required by pyproject.toml (readme field) to build the package.
+COPY pyproject.toml uv.lock README.md ./
+COPY src ./src
+RUN uv sync --frozen --no-dev
 
-COPY . .
-
-EXPOSE 8000
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# A queue worker: it listens to Redis, it does not serve HTTP.
+CMD ["uv", "run", "--no-sync", "scraper-svc"]

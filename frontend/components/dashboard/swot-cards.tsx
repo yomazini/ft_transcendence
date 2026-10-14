@@ -39,12 +39,16 @@ export function Cards({ items, icon: Icon, title, description, iconColor }: { it
 
 			<CardContent className="relative max-h-[150px] overflow-y-auto pr-3">
 				<ul>
-					{/* {items.map((item) => (
-						<li key={item} className="stat-list-item group">
-							<span className="stat-list-dot" />
-							<span className="leading-relaxed">{item}</span>
-						</li>
-					))} */}
+					{items.length === 0 ? (
+						<li className="text-xs text-muted-foreground">Nothing found for this job.</li>
+					) : (
+						items.map((item) => (
+							<li key={item} className="stat-list-item group">
+								<span className="stat-list-dot" />
+								<span className="leading-relaxed">{item}</span>
+							</li>
+						))
+					)}
 				</ul>
 			</CardContent>
 		</Card>

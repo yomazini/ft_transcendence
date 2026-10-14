@@ -4,10 +4,14 @@ import { useState, useEffect } from "react";
 import { MessageSquareText, X } from "lucide-react";
 import { ChatWidget } from "./ChatWidget";
 import { FloatingChatWidgetProps } from "@/types/chat";
+import { useSelectedJobId } from "@/hooks/useSelectedJob";
 export function FloatingChatWidget({
-  jobId = "a18f2d90-3b41-4e2a-9f12-987654321abc",
+  jobId: jobIdProp,
   apiEndpoint = "/api/rag/query",
 }: FloatingChatWidgetProps) {
+  // The chat answers about the job shown on the dashboard (?job=… or the newest finished one).
+  const selectedJobId = useSelectedJobId();
+  const jobId = jobIdProp ?? selectedJobId ?? "";
   const [isOpen, setIsOpen] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
 

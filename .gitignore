@@ -7,6 +7,9 @@ __pycache__/
 .pytest_cache/
 .next/
 NOTE.md
+SPRINT_PLAN.md
+DAY1_TASKS.md
+DAY2_TASKS.md
 NOTEs.md
 agent.md
 subject.txt
@@ -34,3 +37,7 @@ dockercompo.yml
 .DS_Store
 *.swp
 *.swo
+SPRINT_PLAN.md
+DAY1_TASKS.md
+DAY2_TASKS.md
+DAY3_TASKS.md

@@ -11,14 +11,25 @@ volumes:
   postgres_data:
   redis_data:
   grafana_data:
+  minio_data:
 
 services:
 
   # --- Entry point -----------------------------------------------------
   nginx:
     build: ./nginx
-    ports: ["80:80"]
+    ports: ["80:8080"]
+    environment:
+      # The OWASP rules allow only GET HEAD POST OPTIONS by default; the API also
+      # uses PATCH (change a role, edit the org) and DELETE (remove a member, a job, an account).
+      ALLOWED_METHODS: "GET HEAD POST OPTIONS PATCH DELETE"
     depends_on: [gateway-svc, frontend]
+    healthcheck:
+      # The image's own check calls https on 8443; this project serves plain http on 8080.
+      test: ["CMD-SHELL", "curl -fs http://localhost:8080/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
     networks: [ft_network]
     restart: unless-stopped
 
@@ -68,6 +79,9 @@ services:
     ports: ["8001:8001"]
     expose: ["8001"]
     env_file: .env
+    environment:
+      # scraper-svc reads scrape-job and forwards the comments here.
+      QUEUE_NAME: analyze-job
     depends_on:
       redis: { condition: service_healthy }
       postgres: { condition: service_healthy }
@@ -79,8 +93,32 @@ services:
     build: ./reporting-svc
     expose: ["3003"]
     env_file: .env
+    environment:
+      # The MinIO keys come from the root .env, so they match the minio service.
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
     depends_on:
       postgres: { condition: service_healthy }
+      minio: { condition: service_healthy }
+    networks: [ft_network]
+    restart: unless-stopped
+    # Owner: Oussama
+
+  # Object storage for reporting-svc backups (it fails to start without it).
+  minio:
+    image: soldevelo/minio:2026.7.17
+    command: server /bitnami/minio/data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes: ["minio_data:/bitnami/minio/data"]
+    expose: ["9000"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     networks: [ft_network]
     restart: unless-stopped
     # Owner: Oussama
@@ -115,10 +153,22 @@ services:
 
   # --- Security & secrets -----------------------------------------------
   vault:
-    image: hashicorp/vault:1.15
+    build: ./vault
     cap_add: [IPC_LOCK]
     environment:
       VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN_ID}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDDIT_SESSIONS: ${REDDIT_SESSIONS}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - VAULT_ADDR=http://127.0.0.1:8200 VAULT_TOKEN="$VAULT_DEV_ROOT_TOKEN_ID" vault kv get secret/database >/dev/null 2>&1
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     expose: ["8200"]
     networks: [ft_network]
     restart: unless-stopped
