@@ -129,6 +129,20 @@ export class ReportingService {
 			throw new NotFoundException('Job not found');
 		}
 
+		const now = new Date();
+
+		const startOfMonth = new Date(
+			now.getFullYear(),
+			now.getMonth(),
+			1
+		);
+
+		const startOfNextMonth = new Date(
+			now.getFullYear(),
+			now.getMonth() + 1,
+			1
+		);
+
 		const report = await this.prisma.report.findFirst({
 			where: {
 				job_id: id,
@@ -137,10 +151,19 @@ export class ReportingService {
 				job: {
 					include: {
 						comments: {
+							where: {
+								created_at: {
+									gte: startOfMonth,
+									lt: startOfNextMonth,
+								}
+							},
 							select: {
 								sentiment_score: true,
 								created_at: true,
 							},
+							orderBy: {
+								created_at: 'asc'
+							}
 						},
 					},
 				},
@@ -171,12 +194,8 @@ export class ReportingService {
 				});
 			}
 		}
-		const result = Array.from(monthly.entries()).sort(([dayA], [dayB]) => {
-			const dateA = new Date(`${dayA} 2026`);
-			const dateB = new Date(`${dayB} 2026`);
-
-			return dateA.getTime() - dateB.getTime();
-		}).map(([day, data]) => ({
+		const year = new Date().getFullYear().toString();
+		const result = Array.from(monthly.entries()).map(([day, data]) => ({
 			day,
 			sentiment_score: data.total / data.count,
 		}));
@@ -238,6 +257,20 @@ export class ReportingService {
 			throw new NotFoundException('there is no organization with this id');
 		}
 
+		const now = new Date();
+
+		const startOfMonth = new Date(
+			now.getFullYear(),
+			now.getMonth(),
+			1
+		);
+
+		const startOfNextMonth = new Date(
+			now.getFullYear(),
+			now.getMonth() + 1,
+			1
+		);
+
 		const report = await this.prisma.report.findFirst({
 			where: {
 				job_id: id,
@@ -251,6 +284,12 @@ export class ReportingService {
 						mode: true,
 						org_id: true,
 						comments: {
+							where: {
+								created_at: {
+									gte: startOfMonth,
+									lt: startOfNextMonth,
+								}
+							},
 							select: {
 								sentiment_score: true,
 								created_at: true,
@@ -258,6 +297,9 @@ export class ReportingService {
 								upvotes: true,
 								author: true,
 							},
+							orderBy: {
+								created_at: 'asc'
+							}
 						},
 					},
 				},
@@ -288,12 +330,7 @@ export class ReportingService {
 				});
 			}
 		}
-		const VADER = Array.from(monthly.entries()).sort(([dayA], [dayB]) => {
-			const dateA = new Date(`${dayA} 2026`);
-			const dateB = new Date(`${dayB} 2026`);
-
-			return dateA.getTime() - dateB.getTime();
-		}).map(([day, data]) => ({
+		const VADER = Array.from(monthly.entries()).map(([day, data]) => ({
 			day,
 			sentiment_score: data.total / data.count,
 		}));
