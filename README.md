@@ -2,7 +2,7 @@ _This project has been created as part of the 42 curriculum by drari kola i7ot u
 
 # ft_transcendence — Groundswell
 
-A. multi-tenant social-intelligence SaaS: submit a keyword or subreddit,
+A multi-tenant social-intelligence SaaS: submit a keyword or subreddit,
 get back sentiment-scored, SWOT/Blue-Ocean-synthesized market intelligence,
 with a live dashboard and a real RAG follow-up question feature.
 
