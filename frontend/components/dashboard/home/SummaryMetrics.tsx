@@ -1,4 +1,8 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import { listJobs } from "@/lib/api/jobs";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2, Clock3, Loader2 } from "lucide-react"
 
@@ -46,10 +50,13 @@ function MetricCard({
 }
 
 export default function SummaryMetrics() {
+    // Real counts from the organization's jobs (same live list as the Jobs panel).
+    const { data: jobs = [] } = useQuery({ queryKey: ["jobs"], queryFn: listJobs });
+    const count = (status: string) => jobs.filter((job) => job.status === status).length;
     const jobStatus = [
-        { status: "Runing", icon: Loader2, iconColor: 'orange-500', number: 10 },
-        { status: "Done", icon: CheckCircle2, iconColor: 'green-500', number: 20 },
-        { status: "Queued", icon: Clock3, iconColor: 'purple-500', number: 40 },
+        { status: "Running", icon: Loader2, iconColor: 'orange-500', number: count("running") },
+        { status: "Done", icon: CheckCircle2, iconColor: 'green-500', number: count("done") },
+        { status: "Queued", icon: Clock3, iconColor: 'purple-500', number: count("queued") },
     ]
 
 

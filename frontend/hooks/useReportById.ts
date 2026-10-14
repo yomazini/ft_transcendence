@@ -1,31 +1,17 @@
-import { ReportDetails } from "@/app/types/report";
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+
 import { getReportById } from "@/lib/api/getReportById";
-import { useEffect, useState } from "react";
 
+/** The report of one job (reporting-svc). Does nothing while no job is selected. */
+export function useReportById(id: string | null) {
+	const { data, isLoading, error } = useQuery({
+		queryKey: ["report", id],
+		queryFn: () => getReportById(id as string),
+		enabled: !!id,
+		retry: false,
+	});
 
-
-
-export function useReportById(id: string) {
-	const [report, setReport] = useState<ReportDetails | null>(null);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<Error | null>(null);
-
-	useEffect(() => {
-		getReportById(id)
-			.then((data) => {
-				setReport(data);
-			})
-			.catch((error) => {
-				setError(error);
-			})
-			.finally(() => {
-				setLoading(false);
-			});
-	}, [id]);
-
-	return {
-		report,
-		loading,
-		error
-	};
+	return { report: data ?? null, loading: !!id && isLoading, error: error as Error | null };
 }

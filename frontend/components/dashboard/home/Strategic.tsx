@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { useState } from "react";
 import {
     Activity,
     Globe,
@@ -18,17 +18,14 @@ import {
 
 import SectionTitle from "./SectionTitle";
 import { useReportById } from "@/hooks/useReportById";
+import { useSelectedJobId } from "@/hooks/useSelectedJob";
 import { Cards } from "../swot-cards";
 
 
 
 
-type StrategicProps = {
-    params: Promise<{ "uuid-user": string }>;
-};
-
-export default function Strategic({ params }: StrategicProps) {
-    const { "uuid-user": id } = use(params);
+export default function Strategic() {
+    const id = useSelectedJobId();
     const [activeCard, setActiveCard] = useState<1 | 2>(1);
 
     const { report, loading, error } = useReportById(id);
@@ -66,28 +63,28 @@ export default function Strategic({ params }: StrategicProps) {
 
     const blueOcean = [
         {
-            items: report?.blue_ocean?.eliminate ?? [],
+            items: report?.blue_ocean?.strategy?.eliminate ?? [],
             icon: Trash2,
             title: "ELIMINATE",
             description: "Remove unnecessary factors",
             iconColor: "text-red-500",
         },
         {
-            items: report?.blue_ocean?.reduce ?? [],
+            items: report?.blue_ocean?.strategy?.reduce ?? [],
             icon: MinusCircle,
             title: "REDUCE",
             description: "Lower factors below the standard",
             iconColor: "text-purple-800",
         },
         {
-            items: report?.blue_ocean?.raise ?? [],
+            items: report?.blue_ocean?.strategy?.raise ?? [],
             icon: TrendingUp,
             title: "RAISE",
             description: "Improve factors above the standard",
             iconColor: "text-green-500",
         },
         {
-            items: report?.blue_ocean?.create ?? [],
+            items: report?.blue_ocean?.strategy?.create ?? [],
             icon: PlusCircle,
             title: "CREATE",
             description: "Introduce new factors",

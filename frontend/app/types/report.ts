@@ -21,12 +21,18 @@ export type ReportDetails = {
 	threats: string[];
   };
 
+  // As written by analysis-svc: the four actions are under `strategy`.
   blue_ocean: {
-	eliminate: string[];
-	reduce: string[];
-	raise: string[];
-	create: string[];
+	factors?: Record<string, { importance: number; satisfaction: number }>;
+	strategy: {
+	  eliminate: string[];
+	  reduce: string[];
+	  raise: string[];
+	  create: string[];
+	};
   };
+
+  conclusion?: string;
 };
 
 // export interface ReportDetails extends Report {

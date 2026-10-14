@@ -16,8 +16,9 @@ export function useJobEvents(targetJobId?: string) {
   const [lastError, setLastError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Same origin as the page: nginx forwards /socket.io/ to gateway-svc.
     const gatewayUrl =
-      process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3001";
+      process.env.NEXT_PUBLIC_GATEWAY_URL || window.location.origin;
 
     const socket: Socket = io(gatewayUrl, {
       transports: ["websocket", "polling"],

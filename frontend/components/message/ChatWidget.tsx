@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { authHeaders } from "@/lib/auth";
 import {
   ChatMessage,
   Citation,
@@ -16,7 +17,7 @@ interface ChatWidgetProps {
   onClose?: () => void;
 }
 export function ChatWidget({
-  jobId = "a18f2d90-3b41-4e2a-9f12-987654321abc",
+  jobId = "",
   apiEndpoint = "/api/rag/query",
   onClose,
 }: ChatWidgetProps) {
@@ -52,7 +53,7 @@ export function ChatWidget({
       try {
         const res = await fetch(apiEndpoint, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeaders() },
           body: JSON.stringify({
             job_id: jobId,
             query: queryText,
@@ -62,11 +63,17 @@ export function ChatWidget({
         if (res.ok) {
           responseData = await res.json();
         } else {
-          throw new Error(`API returned ${res.status}`);
+          const data = await res.json().catch(() => null);
+          throw new Error(data?.message ?? `API returned ${res.status}`);
         }
-      } catch {
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        responseData = generateMockRagResponse(jobId, queryText);
+      } catch (err) {
+        // Say what went wrong instead of inventing an answer.
+        responseData = {
+          answer: !jobId
+            ? "Select a finished job first (Jobs panel or sidebar), then ask about its comments."
+            : `I could not answer: ${err instanceof Error ? err.message : "the analysis service is unreachable"}.`,
+          citations: [],
+        };
       }
 
       const assistantMsg: ChatMessage = {
@@ -133,34 +140,4 @@ export function ChatWidget({
       />
     </div>
   );
-}
-
-function generateMockRagResponse(
-  jobId: string,
-  query: string,
-): RagQueryResponse {
-  return {
-    answer: `Regarding "${query}": Based on customer feedback in Reddit threads for report #${jobId}, users express significant dissatisfaction regarding opaque auto-renewals and unexpected price increases. Multiple founders report switching to competitors due to better tier flexibility.`,
-
-    citations: [
-      {
-        id: "c-101-uuid",
-        job_id: jobId,
-        text: "The unexpected $50/mo renewal caught me off guard. Their pricing page doesn't mention that the starter discount only lasts 3 months.",
-        author: "saas_founder_42",
-        upvotes: 94,
-        sentiment_score: -0.76,
-        created_at: "2026-08-24T12:00:00.000Z",
-      },
-      {
-        id: "c-102-uuid",
-        job_id: jobId,
-        text: "We migrated our small agency to the competitor because they offer granular seat-based billing without annual lock-in.",
-        author: "growth_lead_bob",
-        upvotes: 48,
-        sentiment_score: 0.62,
-        created_at: "2026-08-25T14:30:00.000Z",
-      },
-    ],
-  };
 }
