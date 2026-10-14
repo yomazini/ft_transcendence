@@ -1,0 +1,15 @@
+meta {
+  name: 03 Get Job Status
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{gateway_url}}/api/jobs/fb1e7a06-e9ff-4b64-8e43-a3584c7c5392
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

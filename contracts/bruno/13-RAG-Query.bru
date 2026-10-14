@@ -1,0 +1,18 @@
+meta {
+  name: 13 RAG Query
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{analysis_url}}/rag/query
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "job_id": "a18f2d90-3b41-4e2a-9f12-987654321abc",
+    "query": "What do users say about subscription pricing?"
+  }
+}
