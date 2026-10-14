@@ -9,9 +9,12 @@ from .config import settings
 
 logger = logging.getLogger("analysis-llm")
 
+# Free OpenRouter models come and go: checked on 2026-10-14 (gemma-3 and llama-3.3 were removed
+# from the free tier, gemma-4 is often rate-limited). The main model is OPENROUTER_MODEL.
 FALLBACK_MODELS = [
-    "google/gemma-3-27b-it:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
+    "nvidia/nemotron-3-super-120b-a12b:free",
+    "poolside/laguna-s-2.1:free",
+    "google/gemma-4-26b-a4b-it:free",
     "openrouter/free",
 ]
 
