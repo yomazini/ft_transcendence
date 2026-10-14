@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
 import { IS_PUBLIC_KEY } from './public.decorator';
 
 export interface AuthenticatedUser {
@@ -16,6 +17,8 @@ export interface AuthenticatedUser {
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
+  private readonly jwt = new JwtService({ secret: process.env.JWT_SECRET });
+
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
@@ -44,37 +47,24 @@ export class JwtAuthGuard implements CanActivate {
       );
     }
 
-    // Dependency Inversion fallback:
-    // Extract user payload from token or use verified default matching seed.sql
+    // The token must be signed by auth-svc with the shared JWT_SECRET.
+    // Tokens that carry a `purpose` (signup, invite, reset) are not login tokens.
+    let payload: any;
     try {
-      const parts = token.split('.');
-      if (parts.length === 3) {
-        const payload = JSON.parse(
-          Buffer.from(parts[1], 'base64').toString('utf-8'),
-        );
-        request.user = {
-          id:
-            payload.sub || payload.id || '01111111-1111-7111-8111-111111111111',
-          org_id: payload.org_id || '018f2d90-3b41-7e2a-9f12-111122223333',
-          email: payload.email || 'test@acme.com',
-          role: payload.role || 'Admin',
-        } as AuthenticatedUser;
-      } else {
-        request.user = {
-          id: '01111111-1111-7111-8111-111111111111',
-          org_id: '018f2d90-3b41-7e2a-9f12-111122223333',
-          email: 'test@acme.com',
-          role: 'Admin',
-        } as AuthenticatedUser;
-      }
+      payload = this.jwt.verify(token);
     } catch {
-      request.user = {
-        id: '01111111-1111-7111-8111-111111111111',
-        org_id: '018f2d90-3b41-7e2a-9f12-111122223333',
-        email: 'test@acme.com',
-        role: 'Admin',
-      } as AuthenticatedUser;
+      throw new UnauthorizedException('Invalid or expired token');
     }
+    if (payload.purpose || !payload.sub || !payload.org_id) {
+      throw new UnauthorizedException('Invalid token');
+    }
+
+    request.user = {
+      id: payload.sub,
+      org_id: payload.org_id,
+      email: payload.email ?? '',
+      role: payload.role,
+    } as AuthenticatedUser;
 
     return true;
   }

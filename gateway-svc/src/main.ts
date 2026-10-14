@@ -6,9 +6,11 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // The browser reaches the gateway through nginx on the frontend's own origin,
+  // so only that origin may call it cross-site (FRONTEND_URL, e.g. http://localhost).
   app.enableCors({
-    origin: '*',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    origin: process.env.FRONTEND_URL || 'http://localhost',
+    methods: 'GET,HEAD,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
 
