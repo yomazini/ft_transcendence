@@ -8,6 +8,7 @@ import { AuthCard } from "@/components/auth/auth-card";
 import { AuthFooter } from "@/components/auth/auth-footer";
 import { AuthHeader } from "@/components/auth/auth-header";
 import { AuthLayout } from "@/components/auth/auth-layout";
+import { PasswordInput } from "@/components/auth/password-input";
 import { SocialLogin } from "@/components/auth/social-login";
 
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import {
 	saveToken,
 } from "@/lib/auth";
 
+const MIN_ORG_DESCRIPTION_CHARS = 100;
 const MAX_ORG_DESCRIPTION_CHARS = 200;
 
 export default function RegisterPage() {
@@ -39,7 +41,9 @@ export default function RegisterPage() {
 
 	function validate(): string {
 		if (!orgName.trim()) return "Enter your organization name.";
-		if (!orgDescription.trim()) return "Describe your organization.";
+		if (orgDescription.trim().length < MIN_ORG_DESCRIPTION_CHARS) {
+			return `Describe your organization in at least ${MIN_ORG_DESCRIPTION_CHARS} characters.`;
+		}
 		if (!isValidEmail(email.trim())) return "Enter a valid email address.";
 		if (password.length < MIN_PASSWORD_LENGTH) {
 			return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
@@ -155,10 +159,9 @@ export default function RegisterPage() {
 							Password
 						</Label>
 
-						<Input
+						<PasswordInput
 							id="password"
 							name="password"
-							type="password"
 							placeholder="••••••••"
 							autoComplete="new-password"
 							value={password}
@@ -176,10 +179,9 @@ export default function RegisterPage() {
 							Confirm Password
 						</Label>
 
-						<Input
+						<PasswordInput
 							id="confirmPassword"
 							name="confirmPassword"
-							type="password"
 							placeholder="••••••••"
 							autoComplete="new-password"
 							value={confirmPassword}

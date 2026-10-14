@@ -8,6 +8,7 @@ import { AuthCard } from "@/components/auth/auth-card";
 import { AuthFooter } from "@/components/auth/auth-footer";
 import { AuthHeader } from "@/components/auth/auth-header";
 import { AuthLayout } from "@/components/auth/auth-layout";
+import { PasswordInput } from "@/components/auth/password-input";
 import { SocialLogin } from "@/components/auth/social-login";
 
 import { Button } from "@/components/ui/button";
@@ -92,10 +93,9 @@ export default function LoginPage() {
 								Forgot password?
 							</Link>
 						</div>
-						<Input
+						<PasswordInput
 							id="password"
 							name="password"
-							type="password"
 							placeholder="••••••••"
 							autoComplete="current-password"
 							value={password}

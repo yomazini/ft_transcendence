@@ -1,7 +1,7 @@
 /*  defines Role as a type that can only ever be one of those three exact strings. 
 	✅ this is called a union of string literals — a lightweight way to write an enum in TypeScript.
 */
-export type Role = "admin" | "analyst" | "viewer";
+export type Role = "Admin" | "Analyst" | "Viewer";
 
 /** @note describes the shape of a user object — matches contracts/openapi.yaml's User schema exactly: id, org_id, email, role are required; created_at is optional (the ?). */
 export interface User {
@@ -14,12 +14,12 @@ export interface User {
 
 export interface AuthResponse {
 	access_token: string;
+	token_type: string;
 	user: User;
 }
 
 export const MIN_PASSWORD_LENGTH = 8;
 export const FORTY_TWO_LOGIN_URL = "/api/auth/42";
-
 
 /** Constants */
 
@@ -36,8 +36,10 @@ export function isValidEmail(email: string): boolean {
 
 /* ⚠️ API calls */
 
-export function login(email: string, password: string): Promise<AuthResponse> /** this is a return type. It says "this function returns a Promise that will eventually deliver an AuthResponse" */
-{
+export function login(
+	email: string,
+	password: string,
+): Promise<AuthResponse> /** this is a return type. It says "this function returns a Promise that will eventually deliver an AuthResponse" */ {
 	if (USE_MOCK) return mockLogin(email, password);
 
 	/** @note ⚠️ it calls a helper post that sends a POST request to a URL with a JSON body, and returns the reply as a Promise. <AuthResponse> tells TypeScript what shape that reply has. */
@@ -50,12 +52,11 @@ export function register(
 	email: string,
 	password: string,
 	orgName: string,
-	orgDescription: string
+	orgDescription: string,
 ): Promise<AuthResponse> {
-
 	if (USE_MOCK) return mockRegister(email, orgName, orgDescription);
 
-	return post<AuthResponse>("/api/auth/register", {
+	return post<AuthResponse>("/api/auth/signup", {
 		email,
 		password,
 		org_name: orgName,
@@ -63,6 +64,42 @@ export function register(
 	});
 }
 
+export function completeFortyTwoSignup(
+	signup_token: string,
+	org_name: string,
+	org_description: string,
+): Promise<AuthResponse> {
+	return post<AuthResponse>('/api/auth/42/complete', {
+		signup_token,
+		org_name,
+		org_description: org_description,
+	});
+}
+
+/** @note the invited person has no account yet: the invite token from the email link is their proof, and the account is created by this call. */
+export function acceptInvite(
+	invite_token: string,
+	password: string,
+): Promise<AuthResponse> {
+	return post<AuthResponse>("/api/auth/invite/accept", {
+		invite_token,
+		password,
+	});
+}
+
+export function forgotPassword(email: string): Promise<{ message: string }> {
+	return post<{ message: string }>("/api/auth/forgot-password", { email });
+}
+
+export function resetPassword(
+	reset_token: string,
+	new_password: string,
+): Promise<{ message: string }> {
+	return post<{ message: string }>("/api/auth/reset-password", {
+		reset_token,
+		new_password,
+	})
+}
 
 /** ⚠️ the one real network call */
 async function post<T>(path: string, body: unknown): Promise<T> {
@@ -80,7 +117,6 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 	/**
 	 * this catch only fires for network-level failures: DNS resolution failure, the server being completely unreachable, the browser being offline. A normal HTTP error response (401, 404, 500) does not throw here — fetch resolves successfully even for error status codes; that's handled separately below.
 	 */
-
 
 	/** — parses the response body as JSON, itself returning a Promise, hence the await.  */
 	const data = await response.json().catch(() => null);
@@ -105,31 +141,36 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const MOCK_ORG_ID = "00000000-0000-4000-8000-0000000000aa";
 const MOCK_USER_ID = "00000000-0000-4000-8000-000000000001";
 
-async function mockLogin(email: string, password: string): Promise<AuthResponse> {
+async function mockLogin(
+	email: string,
+	password: string,
+): Promise<AuthResponse> {
 	await delay(500);
 	if (email !== "test@example.com" || password !== "password123") {
 		throw new Error("Invalid email or password.");
 	}
 	return {
 		access_token: "mock-token",
-		user: { id: MOCK_USER_ID, org_id: MOCK_ORG_ID, email, role: "admin" },
+		token_type: "Bearer",
+		user: { id: MOCK_USER_ID, org_id: MOCK_ORG_ID, email, role: "Admin" },
 	};
 }
 
 async function mockRegister(
 	email: string,
 	orgName: string,
-	orgDescription: string
+	orgDescription: string,
 ): Promise<AuthResponse> {
 	await delay(500);
 	if (email === "taken@example.com") {
 		throw new Error("This email is already registered.");
 	}
 	console.info(
-		`[mock] created organization "${orgName}" (${orgDescription.length} chars description)`
+		`[mock] created organization "${orgName}" (${orgDescription.length} chars description)`,
 	);
 	return {
 		access_token: "mock-token",
-		user: { id: MOCK_USER_ID, org_id: MOCK_ORG_ID, email, role: "admin" },
+		token_type: "Bearer",
+		user: { id: MOCK_USER_ID, org_id: MOCK_ORG_ID, email, role: "Admin" },
 	};
 }
