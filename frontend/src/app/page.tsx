@@ -4,16 +4,23 @@ import { useState } from "react";
 import { FloatingChatWidget } from "@/components/chat";
 import { useJobEvents } from "@/hooks/useJobEvents";
 
+const DEFAULT_SEED_JOB_ID = "fb1e7a06-e9ff-4b64-8e43-a3584c7c5392";
+
 export default function Home() {
-  const [currentReportJobId, setCurrentReportJobId] = useState(
-    "fb1e7a06-e9ff-4b64-8e43-a3584c7c5392",
-  );
   const [targetSubreddit, setTargetSubreddit] = useState("r/freelance");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeJobId, setActiveJobId] = useState<string | undefined>(undefined);
+  const [submittedJobId, setSubmittedJobId] = useState<string | undefined>(
+    undefined,
+  );
 
-  const { status: liveStatus, reportId: liveReportId } =
-    useJobEvents(activeJobId);
+  const {
+    status: liveStatus,
+    reportId: liveReportId,
+    latestJobId,
+  } = useJobEvents(submittedJobId);
+
+  const currentReportJobId =
+    submittedJobId || latestJobId || DEFAULT_SEED_JOB_ID;
 
   const handleCreateJob = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,10 +45,9 @@ export default function Home() {
       }
 
       const data = await res.json();
-      setActiveJobId(data.id);
-      setCurrentReportJobId(data.id);
+      setSubmittedJobId(data.id);
     } catch {
-      setActiveJobId(undefined);
+      setSubmittedJobId(undefined);
     } finally {
       setIsSubmitting(false);
     }
@@ -123,10 +129,15 @@ export default function Home() {
               {isSubmitting ? "Dispatching..." : "Submit Analysis Job"}
             </button>
           </form>
-          {liveReportId && (
-            <p className="mt-3 text-xs text-emerald-600 font-mono">
-              Report Generated: {liveReportId}
-            </p>
+          {submittedJobId && (
+            <div className="mt-3 flex items-center gap-2 text-xs text-gray-600 font-mono">
+              <span>Submitted: {submittedJobId}</span>
+              {liveReportId && (
+                <span className="text-emerald-600 font-semibold">
+                  (Report: {liveReportId.slice(0, 8)}...)
+                </span>
+              )}
+            </div>
           )}
         </div>
 
