@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/card";
 import { TrendingUp } from "lucide-react";
 
+import type { ReportDetails } from "@/app/types/report";
+
 const chartConfig = {
   sentiment: {
     label: "Sentiment",
@@ -32,7 +34,7 @@ const chartConfig = {
 
 
 
-export function VisualizerCard({ report }) {
+export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 	const now = new Date();
 	const year = now.getFullYear();
 	const monthShort = now.toLocaleString("en-US", { month: "short" });
@@ -40,7 +42,7 @@ export function VisualizerCard({ report }) {
 	const daysInMonth = new Date(year, month + 1, 0).getDate();
 	const monthLabel = now.toLocaleString("en-US", { month: "long", year: "numeric" });
 
-	const sentimentByDay = new Map();
+	const sentimentByDay = new Map<number, number>();
 	report?.result?.forEach((item) => {
 		let dayNum;
 

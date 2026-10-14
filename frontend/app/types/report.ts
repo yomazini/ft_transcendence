@@ -3,8 +3,16 @@ export interface Report {
 	name : string;
 }
 
+/** One point of the sentiment chart: a day of the month (or a date string) and its score. */
+export type SentimentPoint = {
+	day: number | string;
+	sentiment_score: number;
+};
+
 export type ReportDetails = {
   // Keep all your existing properties here.
+
+  result?: SentimentPoint[];
 
   swot: {
 	strengths: string[];
