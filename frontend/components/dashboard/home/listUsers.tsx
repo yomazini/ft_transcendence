@@ -40,9 +40,7 @@ export default function ListUesrs() {
                 <table className="w-full min-w-[650px] border-collapse text-left text-sm">
                     <thead>
                         <tr className="border-b text-xs text-muted-foreground">
-                            <th className="w-10 px-3 py-3">
-                                <Checkbox aria-label="Select all products" />
-                            </th>
+                        
                             <th className="px-3 py-3 font-medium">
                                 <span className="inline-flex items-center gap-1">
                                     Item <ArrowDownUp className="size-3.5" />
@@ -65,9 +63,7 @@ export default function ListUesrs() {
                     <tbody className="divide-y">
                         {products.map((product) => (
                             <tr key={product.email} className="transition-colors hover:bg-muted/40">
-                                <td className="px-3 py-4">
-                                    <Checkbox aria-label={`Select ${product.email}`} />
-                                </td>
+                                
 
                                 <td className="px-3 py-4">
                                     <p className="whitespace-nowrap text-xs font-medium sm:text-sm">
