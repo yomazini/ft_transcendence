@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Download} from "lucide-react";
 import Image from "next/image";
+import { exportReport } from "@/lib/api/exportReport";
 
 
 export default function Welcome() {
 
+    const id = "sdcsdcsdc"
 
     return (
         <section className="grid min-w-0 grid-cols-1 overflow-hidden border lg:grid-cols-3 ">
@@ -41,9 +43,9 @@ export default function Welcome() {
 							}
 						/>
 						<DropdownMenuContent align="end">
-							<DropdownMenuItem onClick={() => exportRep(id, "CSV")}>Export as CSV</DropdownMenuItem>
-							<DropdownMenuItem onClick={() => exportRep(id, "XLSX")}>Export as XLSX</DropdownMenuItem>
-							<DropdownMenuItem onClick={() => exportRep(id, "JSON")}>Export as JSON</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => exportReport(id, "CSV")}>Export as CSV</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => exportReport(id, "XLSX")}>Export as XLSX</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => exportReport(id, "JSON")}>Export as JSON</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
                     

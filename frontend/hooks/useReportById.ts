@@ -2,6 +2,9 @@ import { ReportDetails } from "@/app/types/report";
 import { getReportById } from "@/lib/api/getReportById";
 import { useEffect, useState } from "react";
 
+
+
+
 export function useReportById(id: string) {
 	const [report, setReport] = useState<ReportDetails | null>(null);
 	const [loading, setLoading] = useState(true);

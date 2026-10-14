@@ -94,7 +94,7 @@ export default function ListUesrs() {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        aria-label={`Actions for ${product.name}`}
+                                        aria-label={`Actions for `}
                                     >
                                         <MoreHorizontal className="size-4" />
                                     </Button>

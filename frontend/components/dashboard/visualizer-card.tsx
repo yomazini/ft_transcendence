@@ -30,6 +30,8 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
+
+
 export function VisualizerCard({ report }) {
 	const now = new Date();
 	const year = now.getFullYear();
