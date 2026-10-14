@@ -3,10 +3,15 @@ import { AcceptInviteDto, ChangePasswordDto, Complete42Dto, DeleteAccountDto, Fo
 import { AuthService } from './auth.service';
 import { JwtGuard } from './guard/jwt.guard';
 import { FortyTwoGuard } from './guard/42.guard';
+import { TokenDenylist } from './token-denylist.service';
+import { ExtractJwt } from 'passport-jwt';
 
 @Controller('auth')
 export class AuthController {
-	constructor(private readonly authService: AuthService) {}
+	constructor(
+		private readonly authService: AuthService,
+		private readonly denylist: TokenDenylist,
+	) {}
 
 	@Post('signup') /** POST /auth/signup */
 	register(@Body() registerDto: RegisterDto) {
@@ -87,5 +92,24 @@ export class AuthController {
 		return this.authService.deleteAccount(req.user.sub, dto);
 	}
 
+	@Post('logout') /** POST /auth/logout */
+	@UseGuards(JwtGuard)
+	@HttpCode(204)
+	logout(@Req() req) {
+		const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+		if (token) { this.denylist.add(token, req.user.exp); }
+	}
 
+	/** GET /auth/verify — called by nginx (auth_request) before it forwards a request
+	 *  to a service that has no auth of its own (reporting-svc). The ids are read from
+	 *  the verified token and sent back as headers; nginx passes them on, so a client
+	 *  can never choose which organization it reads. */
+	@Get('verify')
+	@UseGuards(JwtGuard)
+	@HttpCode(204)
+	verify(@Req() req, @Res({ passthrough: true }) res) {
+		res.setHeader('X-User-Id', req.user.sub);
+		res.setHeader('X-Org-Id', req.user.org_id);
+		res.setHeader('X-Role', req.user.role);
+	}
 }
