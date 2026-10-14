@@ -1,0 +1,54 @@
+name: ft-transcendence
+
+networks:
+  ft_network:
+    driver: bridge
+
+services:
+  reporting-svc:
+    build: ./
+    expose: ["3003"]
+    env_file: .env.example
+    ports:
+      - "3003:3003"
+    depends_on:
+      postgres: { condition: service_healthy }
+      minio: { condition: service_healthy }
+    volumes:
+      - /home/osouadi/goinfre/Downloads:/home/osouadi/goinfre/Downloads
+    networks: [ft_network]
+    restart: unless-stopped
+    # Owner: Oussama
+
+  # --- Data stores --------------------------------------------------------
+  postgres:
+    image: pgvector/pgvector:pg16
+    env_file: .env.example
+    expose: ["5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [ft_network]
+    restart: unless-stopped
+    # Owner: Oussama (schema/migrations across all services)
+  # --- MinIo -------------------------------------------------------------
+  minio:
+    image: soldevelo/minio:2026.7.17
+    restart: unless-stopped
+    env_file: .env.example
+    command: server /bitnami/minio/data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    volumes:
+      - /home/osouadi/goinfre/Downloads:/home/osouadi/goinfre/Downloads
+    networks: [ft_network]
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
