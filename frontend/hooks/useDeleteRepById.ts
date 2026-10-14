@@ -43,7 +43,7 @@ export function useDeleteRepById() {
 	}
 	const onError = (
 		_err: Error,
-		_id: String,
+		_id: string,
 		context?: { previous?: Report[] },
 	) => {
 		queryClient.invalidateQueries({ queryKey: ["reports"]});
@@ -51,6 +51,7 @@ export function useDeleteRepById() {
 
 	const onSettled = () => {
 		queryClient.invalidateQueries({ queryKey: ["reports"]});
+		queryClient.invalidateQueries({ queryKey: ["jobs"]});
 	}
 
 	const mutation = useMutation({

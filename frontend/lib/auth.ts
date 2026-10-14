@@ -132,6 +132,32 @@ export function saveToken(token: string, remember: boolean): void {
 	storage.setItem(TOKEN_KEY, token);
 }
 
+/** Header to send with every request to a protected route. */
+export function authHeaders(): Record<string, string> {
+	const token = getToken();
+	return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+/** The logged-in user, read from auth-svc (GET /api/auth/me). */
+export async function getMe(): Promise<User> {
+	const response = await fetch("/api/auth/me", { headers: authHeaders() });
+	if (!response.ok) {
+		throw new Error("Not logged in");
+	}
+	return response.json();
+}
+
+/** Log out: auth-svc blocks the token, then the browser forgets it.
+ *  The token is removed even if the server call fails, so the user is never stuck. */
+export async function logout(): Promise<void> {
+	try {
+		await fetch("/api/auth/logout", { method: "POST", headers: authHeaders() });
+	} finally {
+		localStorage.removeItem(TOKEN_KEY);
+		sessionStorage.removeItem(TOKEN_KEY);
+	}
+}
+
 export function getToken(): string | null {
 	return localStorage.getItem(TOKEN_KEY) ?? sessionStorage.getItem(TOKEN_KEY);
 }
