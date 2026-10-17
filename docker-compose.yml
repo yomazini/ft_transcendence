@@ -18,7 +18,7 @@ services:
   # --- Entry point -----------------------------------------------------
   nginx:
     build: ./nginx
-    ports: ["80:8080"]
+    ports: ["8080:8080"]
     environment:
       # The OWASP rules allow only GET HEAD POST OPTIONS by default; the API also
       # uses PATCH (change a role, edit the org) and DELETE (remove a member, a job, an account).
