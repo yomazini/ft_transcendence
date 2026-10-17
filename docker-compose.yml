@@ -3,20 +3,36 @@
 # nginx (80) and the dashboards meant for direct viewing (grafana, prometheus).
 name: ft-transcendence
 
+# Fixed names (name:), so Docker does not add the "ft-transcendence_" prefix.
 networks:
   ft_network:
+    name: ft_network
     driver: bridge
 
 volumes:
   postgres_data:
+    name: postgres_db
   redis_data:
+    name: redis_db
   grafana_data:
+    name: grafana_db
   minio_data:
+    name: minio_db
+  minio_certs:
+    name: minio_certs_db
+  prometheus_data:
+    name: prometheus_db
+  vault_data:
+    name: vault_db
+  vault_logs:
+    name: vault_logs_db
 
 services:
 
   # --- Entry point -----------------------------------------------------
   nginx:
+    container_name: nginx
+    image: nginx-waf
     build: ./nginx
     ports: ["80:8080"]
     environment:
@@ -34,6 +50,8 @@ services:
     restart: unless-stopped
 
   frontend:
+    container_name: frontend
+    image: frontend
     build: ./frontend
     expose: ["3000"]
     depends_on: [gateway-svc]
@@ -43,6 +61,8 @@ services:
 
   # --- Application services ---------------------------------------------
   gateway-svc:
+    container_name: gateway-svc
+    image: gateway-svc
     build: ./gateway-svc
     ports: ["3001:3001"]
     expose: ["3001"]
@@ -53,6 +73,8 @@ services:
     # Owner: Youssef
 
   auth-svc:
+    container_name: auth-svc
+    image: auth-svc
     build: ./auth-svc
     expose: ["3002"]
     env_file: .env
@@ -64,6 +86,8 @@ services:
     # Owner: Mehdi
 
   scraper-svc:
+    container_name: scraper-svc
+    image: scraper-svc
     build: ./scraper-svc
     expose: ["8000"]
     env_file: .env
@@ -75,6 +99,8 @@ services:
     # Owner: Madani
 
   analysis-svc:
+    container_name: analysis-svc
+    image: analysis-svc
     build: ./analysis-svc
     ports: ["8001:8001"]
     expose: ["8001"]
@@ -90,6 +116,8 @@ services:
     # Owner: Youssef
 
   reporting-svc:
+    container_name: reporting-svc
+    image: reporting-svc
     build: ./reporting-svc
     expose: ["3003"]
     env_file: .env
@@ -106,12 +134,13 @@ services:
 
   # Object storage for reporting-svc backups (it fails to start without it).
   minio:
+    container_name: minio
     image: soldevelo/minio:2026.7.17
     command: server /bitnami/minio/data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    volumes: ["minio_data:/bitnami/minio/data"]
+    volumes: ["minio_data:/bitnami/minio/data", "minio_certs:/certs"]
     expose: ["9000"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
@@ -125,6 +154,7 @@ services:
 
   # --- Data stores --------------------------------------------------------
   postgres:
+    container_name: postgres
     image: pgvector/pgvector:pg16
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -141,6 +171,7 @@ services:
     # Owner: Oussama (schema/migrations across all services)
 
   redis:
+    container_name: redis
     image: redis:7-alpine
     volumes: ["redis_data:/data"]
     healthcheck:
@@ -153,8 +184,11 @@ services:
 
   # --- Security & secrets -----------------------------------------------
   vault:
+    container_name: vault
+    image: vault-dev
     build: ./vault
     cap_add: [IPC_LOCK]
+    volumes: ["vault_data:/vault/file", "vault_logs:/vault/logs"]
     environment:
       VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN_ID}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -177,14 +211,16 @@ services:
 
   # --- Observability -------------------------------------------------------
   prometheus:
+    container_name: prometheus
     image: prom/prometheus:latest
-    volumes: ["./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
+    volumes: ["./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro", "prometheus_data:/prometheus"]
     ports: ["9090:9090"]
     networks: [ft_network]
     restart: unless-stopped
     # Owner: Hamza
 
   grafana:
+    container_name: grafana
     image: grafana/grafana:latest
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
@@ -197,6 +233,7 @@ services:
 
   # --- Mocked payment ------------------------------------------------------
   stripe-mock:
+    container_name: stripe-mock
     image: stripe/stripe-mock:latest
     ports: ["12111:12111", "12112:12112"]
     networks: [ft_network]
