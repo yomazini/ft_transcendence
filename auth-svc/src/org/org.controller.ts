@@ -53,4 +53,5 @@ export class OrgController {
 	removeMember(@Param('id') id: string, @Param('userId') userId: string, @Req() req) {
 		return this.orgService.removeMember(id, userId, req.user.org_id, req.user.role);
 	}
+	
 }

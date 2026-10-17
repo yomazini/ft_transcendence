@@ -63,64 +63,70 @@ services:
     restart: unless-stopped
     # Owner: Mehdi
 
-  scraper-svc:
-    build: ./scraper-svc
-    expose: ["8000"]
-    env_file: .env
-    depends_on:
-      redis: { condition: service_healthy }
-      postgres: { condition: service_healthy }
-    networks: [ft_network]
-    restart: unless-stopped
+  # scraper-svc:
+  #   build: ./scraper-svc
+  #   expose: ["8000"]
+  #   env_file: .env
+  #   depends_on:
+  #     redis: { condition: service_healthy }
+  #     postgres: { condition: service_healthy }
+  #   networks: [ft_network]
+  #   restart: unless-stopped
+
+
     # Owner: Madani
 
-  analysis-svc:
-    build: ./analysis-svc
-    ports: ["8001:8001"]
-    expose: ["8001"]
-    env_file: .env
-    environment:
-      # scraper-svc reads scrape-job and forwards the comments here.
-      QUEUE_NAME: analyze-job
-    depends_on:
-      redis: { condition: service_healthy }
-      postgres: { condition: service_healthy }
-    networks: [ft_network]
-    restart: unless-stopped
+  # analysis-svc:
+  #   build: ./analysis-svc
+  #   ports: ["8001:8001"]
+  #   expose: ["8001"]
+  #   env_file: .env
+  #   environment:
+  #     # scraper-svc reads scrape-job and forwards the comments here.
+  #     QUEUE_NAME: analyze-job
+  #   depends_on:
+  #     redis: { condition: service_healthy }
+  #     postgres: { condition: service_healthy }
+  #   networks: [ft_network]
+  #   restart: unless-stopped
+
     # Owner: Youssef
 
-  reporting-svc:
-    build: ./reporting-svc
-    expose: ["3003"]
-    env_file: .env
-    environment:
-      # The MinIO keys come from the root .env, so they match the minio service.
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-    depends_on:
-      postgres: { condition: service_healthy }
-      minio: { condition: service_healthy }
-    networks: [ft_network]
-    restart: unless-stopped
+  # reporting-svc:
+  #   build: ./reporting-svc
+  #   expose: ["3003"]
+  #   env_file: .env
+  #   environment:
+  #     # The MinIO keys come from the root .env, so they match the minio service.
+  #     MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+  #     MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+  #   depends_on:
+  #     postgres: { condition: service_healthy }
+  #     minio: { condition: service_healthy }
+  #   networks: [ft_network]
+  #   restart: unless-stopped
+
     # Owner: Oussama
 
   # Object storage for reporting-svc backups (it fails to start without it).
-  minio:
-    image: soldevelo/minio:2026.7.17
-    command: server /bitnami/minio/data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    volumes: ["minio_data:/bitnami/minio/data"]
-    expose: ["9000"]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
-    networks: [ft_network]
-    restart: unless-stopped
+  # minio:
+  #   image: soldevelo/minio:2026.7.17
+  #   command: server /bitnami/minio/data --console-address ":9001"
+  #   environment:
+  #     MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+  #     MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+  #   volumes: ["minio_data:/bitnami/minio/data"]
+  #   expose: ["9000"]
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 10
+  #     start_period: 10s
+  #   networks: [ft_network]
+  #   restart: unless-stopped
+
+
     # Owner: Oussama
 
   # --- Data stores --------------------------------------------------------
@@ -172,27 +178,29 @@ services:
     expose: ["8200"]
     networks: [ft_network]
     restart: unless-stopped
+
+
     # Owner: Madani. Dev-mode Vault — fine for this project's scope; a real
     # production Vault needs a proper unseal + storage backend.
 
   # --- Observability -------------------------------------------------------
-  prometheus:
-    image: prom/prometheus:latest
-    volumes: ["./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
-    ports: ["9090:9090"]
-    networks: [ft_network]
-    restart: unless-stopped
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   volumes: ["./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
+  #   ports: ["9090:9090"]
+  #   networks: [ft_network]
+  #   restart: unless-stopped
     # Owner: Hamza
 
-  grafana:
-    image: grafana/grafana:latest
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
-    volumes: ["grafana_data:/var/lib/grafana"]
-    ports: ["3030:3000"]
-    depends_on: [prometheus]
-    networks: [ft_network]
-    restart: unless-stopped
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   environment:
+  #     GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+  #   volumes: ["grafana_data:/var/lib/grafana"]
+  #   ports: ["3030:3000"]
+  #   depends_on: [prometheus]
+  #   networks: [ft_network]
+  #   restart: unless-stopped
     # Owner: Hamza
 
   # --- Mocked payment ------------------------------------------------------

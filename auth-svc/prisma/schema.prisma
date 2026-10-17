@@ -15,12 +15,42 @@ datasource db {
   provider = "postgresql"
 }
 
+/**
+{
+  "id": "org-uuid",
+  "name": "Acme",
+  "plan": "PREMIUM",
+  "subscription_status": "ACTIVE",
+  "stripe_customer_id": "cus_123",
+  "stripe_subscription_id": "sub_123",
+  "subscription_start": "2026-10-17T00:00:00Z",
+  "subscription_end": "2026-11-17T00:00:00Z",
+  "cancel_at_period_end": false
+}
+*/
+
 model Organization {
   id                String                  @id @default(uuid())
   name              String
   user_organization role_and_organization[]
   description       String
   created_at        DateTime                @default(now())
+
+
+  // Subscription
+  plan               PlanType @default(FREE)
+  subscription_status SubscriptionStatus @default(ACTIVE)
+
+  // Stripe references
+  stripe_customer_id     String? @unique
+  stripe_subscription_id String? @unique
+
+  // Billing period
+  subscription_start DateTime?
+  subscription_end   DateTime?
+
+  // Cancellation
+  cancel_at_period_end Boolean @default(false)
 }
 
 model User {
@@ -45,4 +75,125 @@ enum Roles {
   Analyst
   Viewer
 }
+
+enum PlanType {
+  FREE
+  PREMIUM
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  UNPAID
+}
+
+
+// generator client {
+//   provider = "prisma-client"
+//   output   = "../generated/prisma"
+// }
+
+// datasource db {
+//   provider = "postgresql"
+// }
+
+// model Organization {
+//   id                String @id @default(uuid())
+//   name              String
+//   description       String
+//   created_at        DateTime @default(now())
+
+//   user_organization role_and_organization[]
+
+//   stripe_customer_id String? @unique
+//   subscription       Subscription?
+//   billing_events     BillingEvent[]
+// }
+
+// model User {
+//   id         String   @id @default(uuid())
+//   email      String   @unique
+//   password   String
+//   created_at DateTime @default(now())
+
+//   user_roles_organization role_and_organization[]
+// }
+
+// model role_and_organization {
+//   id String @id @default(uuid())
+
+//   user    User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+//   user_id String
+
+//   organization Organization @relation( fields: [org_id], references: [id], onDelete: Cascade)
+
+//   org_id String
+
+//   role Roles @default(Viewer)
+
+//   @@unique([user_id, org_id])
+//   @@index([org_id])
+// }
+
+// model Subscription {
+//   id String @id @default(uuid())
+
+//   organization Organization @relation( fields: [org_id], references: [id], onDelete: Cascade)
+
+//   org_id String @unique
+
+//   plan   PlanType @default(FREE)
+//   status SubscriptionStatus @default(ACTIVE)
+
+//   stripe_subscription_id String? @unique
+//   stripe_price_id        String?
+
+//   current_period_start DateTime?
+//   current_period_end   DateTime?
+
+//   cancel_at_period_end Boolean @default(false)
+
+//   created_at DateTime @default(now())
+//   updated_at DateTime @updatedAt
+// }
+
+// model BillingEvent {
+//   id String @id @default(uuid())
+
+//   organization Organization? @relation( fields: [org_id], references: [id], onDelete: SetNull)
+
+//   org_id String?
+
+//   stripe_event_id String @unique
+//   event_type      String
+//   processed_at    DateTime @default(now())
+
+//   @@index([org_id])
+// }
+
+// enum Roles {
+//   Admin
+//   Analyst
+//   Viewer
+// }
+
+// enum PlanType {
+//   FREE
+//   PREMIUM
+//   ENTERPRISE
+// }
+
+// enum SubscriptionStatus {
+//   ACTIVE
+//   TRIALING
+//   PAST_DUE
+//   CANCELED
+//   INCOMPLETE
+//   UNPAID
+//   PAUSED
+// }
 
