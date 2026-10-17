@@ -100,11 +100,9 @@ export class AuthController {
 		if (token) { this.denylist.add(token, req.user.exp); }
 	}
 
-	/** GET /auth/verify — called by nginx (auth_request) before it forwards a request
-	 *  to a service that has no auth of its own (reporting-svc). The ids are read from
-	 *  the verified token and sent back as headers; nginx passes them on, so a client
-	 *  can never choose which organization it reads. */
-	@Get('verify')
+	@Get('verify') /** GET /auth/verify 
+	— called by nginx (auth_request) before it forwards a request
+	 *  to a service that has no auth of its own (reporting-svc). */
 	@UseGuards(JwtGuard)
 	@HttpCode(204)
 	verify(@Req() req, @Res({ passthrough: true }) res) {
