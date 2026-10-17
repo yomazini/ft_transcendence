@@ -26,7 +26,6 @@ volumes:
     name: vault_db
 
 services:
-
   # --- Entry point -----------------------------------------------------
   nginx:
     container_name: nginx
@@ -271,5 +270,20 @@ services:
     container_name: stripe-mock
     image: stripe/stripe-mock:latest
     ports: ["12111:12111", "12112:12112"]
+    networks: [ft_network]
+    restart: unless-stopped
+
+  # --- pgAdmin (database UI) -------------------------------------------
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: ft-transcendence-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks: [ft_network]
     restart: unless-stopped
