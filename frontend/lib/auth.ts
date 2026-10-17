@@ -168,6 +168,21 @@ export async function changePassword(current_password: string, new_password: str
 	}
 }
 
+/** PATCH /api/auth/email — needs the login token and the current password. */
+export async function changeEmail(new_email: string, password: string): Promise<{ id: string; email: string }> {
+	const response = await fetch("/api/auth/email", {
+		method: "PATCH",
+		headers: { "Content-Type": "application/json", ...authHeaders() },
+		body: JSON.stringify({ new_email, password }),
+	});
+
+	const data = await response.json().catch(() => null);
+	if (!response.ok) {
+		throw new Error(Array.isArray(data?.message) ? data.message.join(", ") : data?.message ?? "Could not change the email");
+	}
+	return data;
+}
+
 export function getToken(): string | null {
 	return localStorage.getItem(TOKEN_KEY) ?? sessionStorage.getItem(TOKEN_KEY);
 }
