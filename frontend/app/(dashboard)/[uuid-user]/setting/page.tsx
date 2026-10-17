@@ -1,18 +1,25 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { changePassword, MIN_PASSWORD_LENGTH } from "@/lib/auth";
+import { changeEmail, changePassword, isValidEmail, MIN_PASSWORD_LENGTH } from "@/lib/auth";
 
 export default function SettingsProfile() {
+	const queryClient = useQueryClient();
 	const { user } = useCurrentUser();
 	const currentEmail = user?.email ?? "";
 	const [newEmail, setNewEmail] = useState("");
+	const [emailPassword, setEmailPassword] = useState("");
+	const [emailError, setEmailError] = useState("");
+	const [emailNotice, setEmailNotice] = useState("");
+	const [savingEmail, setSavingEmail] = useState(false);
+	const [showEmailPassword, setShowEmailPassword] = useState(false);
 	const [currentPassword, setCurrentPassword] = useState("");
 	const [newPassword, setNewPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
@@ -25,8 +32,35 @@ export default function SettingsProfile() {
 
 	const initials = currentEmail.slice(0, 2).toUpperCase();
 
-	function handleEmailUpdate() {
-		console.log("Update email:", newEmail);
+	async function handleEmailUpdate() {
+		setEmailNotice("");
+
+		const email = newEmail.trim();
+		if (!isValidEmail(email)) {
+			setEmailError("Enter a valid email address.");
+			return;
+		}
+
+		if (!emailPassword) {
+			setEmailError("Enter your current password.");
+			return;
+		}
+
+		setEmailError("");
+		setSavingEmail(true);
+
+		try {
+			await changeEmail(email, emailPassword);
+			/** refetch GET /auth/me so the navbar and the profile show the new email */
+			await queryClient.invalidateQueries({ queryKey: ["me"] });
+			setEmailNotice("Email changed.");
+			setNewEmail("");
+			setEmailPassword("");
+		} catch (err) {
+			setEmailError(err instanceof Error ? err.message : "Something went wrong.");
+		} finally {
+			setSavingEmail(false);
+		}
 	}
 
 	async function handlePasswordUpdate() {
@@ -107,21 +141,55 @@ export default function SettingsProfile() {
 						</p>
 					</div>
 
-					<div className="flex flex-col gap-3 sm:flex-row">
-						<div className="relative flex-1">
-							<Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+					<div className="relative">
+						<Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+						<Input
+							id="email"
+							type="email"
+							placeholder={currentEmail}
+							value={newEmail}
+							onChange={(e) => setNewEmail(e.target.value)}
+							disabled={savingEmail}
+							className="pl-9"
+						/>
+					</div>
+
+					{/* Current password, separate from the Password section below */}
+					<div className="space-y-2">
+						<Label htmlFor="email-password">Current password</Label>
+
+						<div className="relative">
+							<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 
 							<Input
-								id="email"
-								type="email"
-								placeholder={currentEmail}
-								value={newEmail}
-								onChange={(e) => setNewEmail(e.target.value)}
-								className="pl-9"
+								id="email-password"
+								type={showEmailPassword ? "text" : "password"}
+								autoComplete="current-password"
+								value={emailPassword}
+								onChange={(e) => setEmailPassword(e.target.value)}
+								disabled={savingEmail}
+								className="pl-9 pr-10"
 							/>
-						</div>
 
-						<Button onClick={handleEmailUpdate}>Change email</Button>
+							<button
+								type="button"
+								onClick={() => setShowEmailPassword(!showEmailPassword)}
+								className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+							>
+								{showEmailPassword ? (
+									<EyeOff className="h-4 w-4" />
+								) : (
+									<Eye className="h-4 w-4" />
+								)}
+							</button>
+						</div>
+					</div>
+
+					{emailError && <p role="alert" className="text-sm text-destructive">{emailError}</p>}
+					{emailNotice && <p role="status" className="text-sm text-green-600">{emailNotice}</p>}
+					<div className="flex justify-end pt-2">
+						<Button onClick={handleEmailUpdate} disabled={savingEmail}>{savingEmail ? "Saving..." : "Change email"}</Button>
 					</div>
 				</div>
 			</section>
