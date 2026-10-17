@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-import { completeFortyTwoSignup, saveToken } from "@/lib/auth";
+import { completeFortyTwoSignup, saveToken, MIN_PASSWORD_LENGTH } from "@/lib/auth";
+import { PasswordInput } from "@/components/auth/password-input";
 
 const MIN_ORG_DESCRIPTION_CHARS = 100;
 const MAX_ORG_DESCRIPTION_CHARS = 200;
@@ -25,6 +26,8 @@ export default function FortyTwoCompletePage() {
 	const [signupToken, setSignupToken] = useState<string>("");
 	const [orgName, setOrgName] = useState<string>("");
 	const [orgDescription, setOrgDescription] = useState<string>("");
+	const [password, setPassword] = useState<string>("");
+	const [confirmPassword, setConfirmPassword] = useState<string>("");
 	const [error, setError] = useState<string>("");
 	const [loading, setLoading] = useState<boolean>(false);
 
@@ -42,6 +45,10 @@ export default function FortyTwoCompletePage() {
 		if (orgDescription.trim().length < MIN_ORG_DESCRIPTION_CHARS) {
 			return `Describe your organization in at least ${MIN_ORG_DESCRIPTION_CHARS} characters.`;
 		}
+		if (password.length < MIN_PASSWORD_LENGTH) {
+			return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
+		}
+		if (password !== confirmPassword) return "Passwords do not match.";
 		return "";
 	}
 
@@ -60,7 +67,8 @@ export default function FortyTwoCompletePage() {
 			const { access_token, user } = await completeFortyTwoSignup(
 				signupToken,
 				orgName.trim(),
-				orgDescription.trim()
+				orgDescription.trim(),
+				password,
 			);
 			saveToken(access_token, true);
 			router.replace(`/${user.id}/dashboard`);
@@ -115,6 +123,34 @@ export default function FortyTwoCompletePage() {
 							maxLength={MAX_ORG_DESCRIPTION_CHARS}
 							value={orgDescription}
 							onChange={(e) => setOrgDescription(e.target.value)}
+							disabled={loading}
+							required
+						/>
+					</div>
+
+					<div className="space-y-2">
+						<Label htmlFor="password">Password</Label>
+						<PasswordInput
+							id="password"
+							name="password"
+							placeholder="••••••••"
+							autoComplete="new-password"
+							value={password}
+							onChange={(e) => setPassword(e.target.value)}
+							disabled={loading}
+							required
+						/>
+					</div>
+
+					<div className="space-y-2">
+						<Label htmlFor="confirmPassword">Confirm Password</Label>
+						<PasswordInput
+							id="confirmPassword"
+							name="confirmPassword"
+							placeholder="••••••••"
+							autoComplete="new-password"
+							value={confirmPassword}
+							onChange={(e) => setConfirmPassword(e.target.value)}
 							disabled={loading}
 							required
 						/>

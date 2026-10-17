@@ -61,11 +61,13 @@ export function completeFortyTwoSignup(
 	signup_token: string,
 	org_name: string,
 	org_description: string,
+	password: string,
 ): Promise<AuthResponse> {
 	return post<AuthResponse>('/api/auth/42/complete', {
 		signup_token,
 		org_name,
 		org_description: org_description,
+		password,
 	});
 }
 
