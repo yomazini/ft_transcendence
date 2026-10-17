@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { changePassword, MIN_PASSWORD_LENGTH } from "@/lib/auth";
 
 export default function SettingsProfile() {
 	const { user } = useCurrentUser();
@@ -15,7 +16,9 @@ export default function SettingsProfile() {
 	const [currentPassword, setCurrentPassword] = useState("");
 	const [newPassword, setNewPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
-
+	const [passwordError, setPasswordError] = useState("");
+	const [passwordNotice, setPasswordNotice] = useState("");
+	const [savingPassword, setSavingPassword] = useState(false);
 	const [showCurrent, setShowCurrent] = useState(false);
 	const [showNew, setShowNew] = useState(false);
 	const [showConfirm, setShowConfirm] = useState(false);
@@ -26,13 +29,33 @@ export default function SettingsProfile() {
 		console.log("Update email:", newEmail);
 	}
 
-	function handlePasswordUpdate() {
-		if (newPassword !== confirmPassword) {
-			console.log("Passwords do not match");
+	async function handlePasswordUpdate() {
+		setPasswordNotice("");
+
+		if (newPassword.length < MIN_PASSWORD_LENGTH) {
+			setPasswordError(`New password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
 			return;
 		}
 
-		console.log("Update password");
+		if (newPassword !== confirmPassword) {
+			setPasswordError("Passwords do not match.");
+			return;
+		}
+
+		setPasswordError("");
+		setSavingPassword(true);
+
+		try {
+			await changePassword(currentPassword, newPassword);
+			setPasswordNotice("Password changed.");
+			setCurrentPassword("");
+			setNewPassword("");
+			setConfirmPassword("");
+		} catch (err) {
+			setPasswordError(err instanceof Error ? err.message : "Something went wrong.");
+		} finally {
+			setSavingPassword(false);
+		}
 	}
 
 	return (
@@ -202,9 +225,12 @@ export default function SettingsProfile() {
 							</button>
 						</div>
 					</div>
-
+					{passwordError && <p role="alert" className="text-sm text-destructive">{passwordError}</p>}
+					{passwordNotice && <p role="status" className="text-sm text-green-600">{passwordNotice}</p>}
 					<div className="flex justify-end pt-2">
-						<Button onClick={handlePasswordUpdate}>Update password</Button>
+						<Button onClick={handlePasswordUpdate} disabled={savingPassword}>{savingPassword ? "Saving..." : "Update password"}
+
+						</Button>
 					</div>
 				</div>
 			</section>
