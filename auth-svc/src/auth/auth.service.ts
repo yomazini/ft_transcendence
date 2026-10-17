@@ -3,7 +3,6 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import * as argon from 'argon2';
 import { AcceptInviteDto, ChangePasswordDto, Complete42Dto, DeleteAccountDto, ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from './dto';
 import { JwtService } from '@nestjs/jwt';
-import * as crypto from 'crypto';
 import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
@@ -166,7 +165,7 @@ export class AuthService {
 		}
 
 		try {
-			const hash = await argon.hash(crypto.randomUUID());
+			const hash = await argon.hash(dto.password);
 
 			/** ⚠️ Same rule as register(): one transaction, so a failed user
 			 *  does not leave an org without an Admin behind. */
