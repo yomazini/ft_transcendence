@@ -95,6 +95,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
           job.target,
           this.normalizeJobMode(job.mode),
           this.normalizeJobStatus(job.status),
+
           JSON.stringify(job.customer_persona),
           new Date(job.created_at),
         ]);
@@ -278,6 +279,20 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       created_at: new Date().toISOString(),
     };
 
+    this.inMemoryJobs.set(defaultJobId, {
+      id: defaultJobId,
+      org_id: '018f2d90-3b41-7e2a-9f12-111122223333',
+      created_by: '01111111-1111-7111-8111-111111111111',
+      target: 'r/freelance',
+      mode: 'Subreddit',
+      status: 'Done',
+      customer_persona: {
+        description: 'budget-conscious freelancers',
+        price_sensitivity: 'budget',
+        top_priority: 'speed',
+      },
+      created_at: new Date().toISOString(),
+    });
     this.inMemoryReports.set(defaultJobId, defaultReport);
     this.inMemoryReports.set(seedJobId, {
       ...defaultReport,
