@@ -5,7 +5,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 export class MailService {
 	private readonly logger = new Logger(MailService.name);
 
-	constructor(private readonly mailer: MailerService) {}
+	constructor(private readonly mailer: MailerService) { }
 
 	async sendInvite(email: string, link: string) {
 		await this.mailer.sendMail({
@@ -54,5 +54,35 @@ export class MailService {
 		} catch (error: any) {
 			this.logger.error(`Deletion receipt not sent: ${error.message}`);
 		}
+	}
+
+	async sendBillingRequest(
+		email: string,
+		organization: string,
+		action: string,
+		currentPlan: string,
+		targetPlan: string | null,
+		reviewUrl: string,
+	) {
+		await this.mailer.sendMail({
+			to: email,
+			subject: `Billing request: ${organization}`,
+			text: `
+				Organization: ${organization}
+				Action: ${action}
+				Current plan: ${currentPlan}
+				Requested plan: ${targetPlan ?? 'STARTER'}
+
+				Review request: ${reviewUrl}
+					`,
+			html: `
+					<h2>New subscription request</h2>
+					<p><strong>Organization:</strong> ${organization}</p>
+					<p><strong>Action:</strong> ${action}</p>
+					<p><strong>Current plan:</strong> ${currentPlan}</p>
+					<p><strong>Requested plan:</strong> ${targetPlan ?? 'STARTER'}</p>
+					<p><a href="${reviewUrl}">Review subscription request</a></p>
+					`,
+		});
 	}
 }
