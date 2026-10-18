@@ -170,7 +170,7 @@ export class ReportingService {
 			},
 		});
 		if (!report) {
-			throw new NotFoundException('there is no report with this id');
+			throw new NotFoundException('There is no report with this ID, or this report has no comments.');
 		}
 
 		const monthly = new Map<string, {total: number, count: number}>();
@@ -306,7 +306,7 @@ export class ReportingService {
 			},
 		});
 		if (!report) {
-			throw new NotFoundException('there is no report with this id');
+			throw new NotFoundException('There is no report with this ID, or this report has no comments.');
 		}
 
 		const monthly = new Map<string, {total: number, count: number}>();

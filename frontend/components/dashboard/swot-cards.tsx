@@ -1,20 +1,13 @@
-import { Button } from "@/components/ui/button"
 import {
 	Card,
-	CardAction,
 	CardContent,
-	CardDescription,
-	CardFooter,
 	CardHeader,
-	CardTitle,
 } from "@/components/ui/card"
-import { Lightbulb, Link, Link2, LucideIcon, ShieldCheck, TrendingUp, Zap } from "lucide-react"
-import { Icon } from "next/dist/lib/metadata/types/metadata-types";
+import { LucideIcon } from "lucide-react"
 
 
 export function Cards({ items, icon: Icon, title, description, iconColor }: { items: string[]; icon: LucideIcon; title: string, description: string, iconColor: string }) {
 	return (
-
 		<Card className="stat-card group flex flex-col ">
 			{/* Subtle orange glow */}
 			{/* <div className="stat-card-glow " /> */}
