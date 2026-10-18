@@ -1,0 +1,18 @@
+meta {
+  name: 21 Auth Login
+  type: http
+  seq: 21
+}
+
+post {
+  url: {{nginx_url}}/api/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "stack-test@example.com",
+    "password": "password123"
+  }
+}

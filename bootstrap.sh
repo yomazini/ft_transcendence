@@ -83,3 +83,25 @@ echo "🎉 Setup complete! All packages installed successfully."
 echo "💡 Neovim will follow the symlinks and provide autocomplete."
 echo "💾 Home directory quota saved!"
 echo "=========================================================="
+# -----------------------------------------------------------------
+# STEP 4: Install Bruno (AppImage) in Goinfre
+# -----------------------------------------------------------------
+echo ""
+echo "🐶 Step 4: Installing Bruno API client..."
+BRUNO_DIR="${GOINFRE_DIR}/bruno"
+BRUNO_BIN="${BRUNO_DIR}/bruno_4.2.1_x86_64_linux.AppImage"
+mkdir -p "${BRUNO_DIR}"
+
+if [ ! -f "${BRUNO_BIN}" ]; then
+  curl -L -o "${BRUNO_BIN}" \
+    https://github.com/usebruno/bruno/releases/download/v4.2.1/bruno_4.2.1_x86_64_linux.AppImage
+  chmod +x "${BRUNO_BIN}"
+else
+  echo "✅ Bruno already downloaded. Skipping..."
+fi
+
+ALIAS_LINE="alias bruno='${BRUNO_BIN} --appimage-extract-and-run --no-sandbox'"
+if ! grep -qF "alias bruno=" ~/.zshrc 2>/dev/null; then
+  echo "${ALIAS_LINE}" >>~/.zshrc
+  echo "🔗 Added 'bruno' alias to ~/.zshrc (run: source ~/.zshrc)"
+fi

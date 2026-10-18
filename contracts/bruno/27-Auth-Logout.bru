@@ -1,0 +1,15 @@
+meta {
+  name: 27 Auth Logout
+  type: http
+  seq: 27
+}
+
+post {
+  url: {{nginx_url}}/api/auth/logout
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

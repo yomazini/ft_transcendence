@@ -9,9 +9,6 @@ from bullmq import Queue
 from app.config import settings
 from app.fixtures import FIXTURE_COMMENTS
 
-SEED_ORG_ID = "018f2d90-3b41-7e2a-9f12-111122223333"
-SEED_USER_ID = "01111111-1111-7111-8111-111111111111"
-
 
 async def push_fake_job(target: str = "r/saas"):
     job_id = str(uuid.uuid4())
@@ -27,6 +24,14 @@ async def push_fake_job(target: str = "r/saas"):
         host=settings.postgres_host,
         port=settings.postgres_port,
     )
+    org_row = await conn.fetchrow('SELECT id FROM "Organization" LIMIT 1')
+    user_row = await conn.fetchrow('SELECT id FROM "User" LIMIT 1')
+    if not org_row or not user_row:
+        raise RuntimeError(
+            "No Organization/User found. Create one first (e.g. via signup)."
+        )
+    seed_org_id = str(org_row["id"])
+    seed_user_id = str(user_row["id"])
     try:
         await conn.execute(
             """
@@ -34,8 +39,8 @@ async def push_fake_job(target: str = "r/saas"):
             VALUES ($1, $2, $3, $4, 'Subreddit', 'Queued', $5::jsonb)
             """,
             job_id,
-            SEED_ORG_ID,
-            SEED_USER_ID,
+            seed_org_id,
+            seed_user_id,
             target,
             json.dumps(persona),
         )
@@ -53,8 +58,8 @@ async def push_fake_job(target: str = "r/saas"):
                 "id": job_id,
                 "target": target,
                 "mode": "subreddit",
-                "org_id": SEED_ORG_ID,
-                "created_by": SEED_USER_ID,
+                "org_id": seed_org_id,
+                "created_by": seed_user_id,
                 "comments": FIXTURE_COMMENTS,
             },
         )
