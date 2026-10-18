@@ -1,8 +1,2 @@
-allowBuilds:
-  '@scarf/scarf': true
-  msgpackr-extract: true
-  unrs-resolver: true
-onlyBuiltDependencies:
-  - msgpackr-extract
-  - unrs-resolver
-  - '@scarf/scarf'
+dangerouslyAllowAllBuilds: true
+virtualStoreDir: /goinfre/ymazini/pnpm-virtual-store/gateway-svc

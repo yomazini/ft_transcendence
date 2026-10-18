@@ -1,0 +1,15 @@
+meta {
+  name: 22 Auth Current User
+  type: http
+  seq: 22
+}
+
+get {
+  url: {{nginx_url}}/api/auth/me
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

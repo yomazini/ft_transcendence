@@ -1,0 +1,15 @@
+meta {
+  name: 23 Auth Forward Verification
+  type: http
+  seq: 23
+}
+
+get {
+  url: {{nginx_url}}/api/auth/verify
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
