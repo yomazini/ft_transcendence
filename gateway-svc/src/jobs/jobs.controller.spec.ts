@@ -61,7 +61,7 @@ describe('JobsController', () => {
       const result = await controller.createJob(dto, { user: mockUser });
       expect(result).toBeDefined();
       expect(result.id).toBeDefined();
-      expect(result.status).toBe('queued');
+      expect(result.status).toBe('Queued');
       expect(result.target).toBe('r/freelance');
     });
   });
