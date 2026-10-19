@@ -15,10 +15,17 @@ export class ProxyService {
     const headers: http.OutgoingHttpHeaders = { ...req.headers };
     delete headers['content-length'];
     headers['host'] = targetUrl.host;
+<<<<<<< HEAD
     const prior = req.headers['x-forwarded-for'];
     const remote = req.socket.remoteAddress || '';
     headers['x-forwarded-proto'] = req.protocol || 'http';
     headers['x-forwarded-for'] = prior ? `${prior}, ${remote}` : remote;
+=======
+    headers['x-forwarded-for'] =
+      (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '';
+    headers['x-forwarded-proto'] = req.protocol || 'http';
+
+>>>>>>> b60c46d (feat(gateway): proxy auth and orgs routes to auth-svc and route through nginx)
     const clientReq = http.request(
       {
         hostname: targetUrl.hostname,
@@ -39,9 +46,13 @@ export class ProxyService {
     );
 
     clientReq.on('error', (err) => {
+<<<<<<< HEAD
       this.logger.error(
         `Proxy error forwarding to ${targetPath}: ${err.message}`,
       );
+=======
+      this.logger.error(`Proxy error forwarding to ${targetPath}: ${err.message}`);
+>>>>>>> b60c46d (feat(gateway): proxy auth and orgs routes to auth-svc and route through nginx)
       if (!res.headersSent) {
         res.status(502).json({
           statusCode: 502,
@@ -50,12 +61,17 @@ export class ProxyService {
       }
     });
 
+<<<<<<< HEAD
     // Nest has already parsed the body, so it is re-sent as JSON.
     // Fine for /auth and /orgs (JSON only); switch to raw-body piping
     // if a form or file upload is ever proxied.
     if (req.body && Object.keys(req.body).length > 0) {
       const payload =
         typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+=======
+    if (req.body && Object.keys(req.body).length > 0) {
+      const payload = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+>>>>>>> b60c46d (feat(gateway): proxy auth and orgs routes to auth-svc and route through nginx)
       clientReq.setHeader('content-type', 'application/json');
       clientReq.setHeader('content-length', Buffer.byteLength(payload));
       clientReq.write(payload);
