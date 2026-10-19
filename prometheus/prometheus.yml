@@ -1,14 +1,36 @@
-#  Scrapes /metrics from every service every 15s. Owner: Hamza.
 global:
   scrape_interval: 15s
+  # evaluation_interval: 15s
+
+# controls how often Prometheus checks the alert rules define in rule_files
+# rule_files:
+#   - /etc/prometheus/alerts.yml
+
 scrape_configs:
-  - job_name: "gateway-svc"
-    static_configs: [{ targets: ["gateway-svc:3001"] }]
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
   - job_name: "auth-svc"
-    static_configs: [{ targets: ["auth-svc:3002"] }]
-  - job_name: "scraper-svc"
-    static_configs: [{ targets: ["scraper-svc:8000"] }]
-  - job_name: "analysis-svc"
-    static_configs: [{ targets: ["analysis-svc:8001"] }]
+    static_configs:
+      - targets: ["auth-svc:3002"]
+  - job_name: "gateway-svc"
+    static_configs:
+      - targets: ["gateway-svc:3001"]
   - job_name: "reporting-svc"
-    static_configs: [{ targets: ["reporting-svc:3003"] }]
+    static_configs:
+      - targets: ["reporting-svc:3003"]
+  - job_name: "analysis-svc"
+    static_configs:
+      - targets: ["analysis-svc:8001"]
+  - job_name: "scraper-svc"
+    static_configs:
+      - targets: ["scraper-svc:8000"]
+  - job_name: "postgres"
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+  - job_name: "redis"
+    static_configs:
+      - targets: ["redis-exporter:9121"]
+  - job_name: "node"
+    static_configs:
+      - targets: ["node-exporter:9100"]

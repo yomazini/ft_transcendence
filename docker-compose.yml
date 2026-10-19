@@ -1,9 +1,5 @@
-# ft_transcendence — full stack, one command: docker compose up
-# 13 services. Internal ports are never exposed to the host except through
-# nginx (80) and the dashboards meant for direct viewing (grafana, prometheus).
 name: ft-transcendence
 
-# Fixed names (name:), so Docker does not add the "ft-transcendence_" prefix.
 networks:
   ft_network:
     name: ft_network
@@ -29,19 +25,15 @@ volumes:
 
 services:
 
-  # --- Entry point -----------------------------------------------------
   nginx:
     container_name: nginx
     image: nginx-waf
     build: ./nginx
-    ports: ["80:8080"]
+    ports: ["8080:8080"]
     environment:
-      # The OWASP rules allow only GET HEAD POST OPTIONS by default; the API also
-      # uses PATCH (change a role, edit the org) and DELETE (remove a member, a job, an account).
       ALLOWED_METHODS: "GET HEAD POST OPTIONS PATCH DELETE"
     depends_on: [gateway-svc, frontend]
     healthcheck:
-      # The image's own check calls https on 8443; this project serves plain http on 8080.
       test: ["CMD-SHELL", "curl -fs http://localhost:8080/healthz || exit 1"]
       interval: 10s
       timeout: 3s
@@ -59,7 +51,6 @@ services:
     restart: unless-stopped
     # Owner: Hamza
 
-  # --- Application services ---------------------------------------------
   gateway-svc:
     container_name: gateway-svc
     image: gateway-svc
@@ -106,7 +97,6 @@ services:
     expose: ["8001"]
     env_file: .env
     environment:
-      # scraper-svc reads scrape-job and forwards the comments here.
       QUEUE_NAME: analyze-job
     depends_on:
       redis: { condition: service_healthy }
@@ -122,7 +112,6 @@ services:
     expose: ["3003"]
     env_file: .env
     environment:
-      # The MinIO keys come from the root .env, so they match the minio service.
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
     depends_on:
@@ -132,7 +121,6 @@ services:
     restart: unless-stopped
     # Owner: Oussama
 
-  # Object storage for reporting-svc backups (it fails to start without it).
   minio:
     container_name: minio
     image: soldevelo/minio:2026.7.17
@@ -152,7 +140,6 @@ services:
     restart: unless-stopped
     # Owner: Oussama
 
-  # --- Data stores --------------------------------------------------------
   postgres:
     container_name: postgres
     image: pgvector/pgvector:pg16
@@ -168,7 +155,7 @@ services:
       retries: 10
     networks: [ft_network]
     restart: unless-stopped
-    # Owner: Oussama (schema/migrations across all services)
+    # Owner: Oussama
 
   redis:
     container_name: redis
@@ -182,7 +169,6 @@ services:
     networks: [ft_network]
     restart: unless-stopped
 
-  # --- Security & secrets -----------------------------------------------
   vault:
     container_name: vault
     image: vault-dev
@@ -206,32 +192,54 @@ services:
     expose: ["8200"]
     networks: [ft_network]
     restart: unless-stopped
-    # Owner: Madani. Dev-mode Vault — fine for this project's scope; a real
-    # production Vault needs a proper unseal + storage backend.
+    # Owner: Madani.
 
-  # --- Observability -------------------------------------------------------
   prometheus:
     container_name: prometheus
     image: prom/prometheus:latest
-    volumes: ["./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro", "prometheus_data:/prometheus"]
+    volumes:
+      - "./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
+      - "./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro"
+      - "prometheus_data:/prometheus"
     ports: ["9090:9090"]
     networks: [ft_network]
     restart: unless-stopped
-    # Owner: Hamza
+    # Owner: Mehdi.
 
   grafana:
     container_name: grafana
     image: grafana/grafana:latest
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
-    volumes: ["grafana_data:/var/lib/grafana"]
+    volumes:
+      - "grafana_data:/var/lib/grafana"
+      - "./grafana/provisioning:/etc/grafana/provisioning:ro"
+      - "./grafana/dashboards:/var/lib/grafana/dashboards:ro"
     ports: ["3030:3000"]
     depends_on: [prometheus]
     networks: [ft_network]
     restart: unless-stopped
-    # Owner: Hamza
+    # Owner: Mehdi.
+  postgres-exporter:
+    container_name: postgres-exporter
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    environment:
+      DATA_SOURCE_NAME: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+    depends_on: [postgres]
+    networks: [ft_network]
 
-  # --- Mocked payment ------------------------------------------------------
+  redis-exporter:
+    container_name: redis-exporter
+    image: oliver006/redis_exporter:v1.62.0
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    networks: [ft_network]
+
+  node-exporter:
+    container_name: node-exporter
+    image: prom/node-exporter:v1.8.2
+    networks: [ft_network]
+
   stripe-mock:
     container_name: stripe-mock
     image: stripe/stripe-mock:latest
