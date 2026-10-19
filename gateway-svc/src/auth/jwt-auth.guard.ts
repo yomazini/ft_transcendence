@@ -21,7 +21,7 @@ export class JwtAuthGuard implements CanActivate {
 
   constructor(private readonly reflector: Reflector) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -47,8 +47,6 @@ export class JwtAuthGuard implements CanActivate {
       );
     }
 
-    // The token must be signed by auth-svc with the shared JWT_SECRET.
-    // Tokens that carry a `purpose` (signup, invite, reset) are not login tokens.
     let payload: any;
     try {
       payload = this.jwt.verify(token);
@@ -57,6 +55,21 @@ export class JwtAuthGuard implements CanActivate {
     }
     if (payload.purpose || !payload.sub || !payload.org_id) {
       throw new UnauthorizedException('Invalid token');
+    }
+
+    const authSvcUrl = process.env.AUTH_SVC_URL || 'http://auth-svc:3002';
+    try {
+      const verifyRes = await fetch(`${authSvcUrl}/auth/verify`, {
+        headers: { authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(1500),
+      });
+      if (verifyRes.status === 401 || verifyRes.status === 403) {
+        throw new UnauthorizedException('Token has been revoked or logged out');
+      }
+    } catch (err: any) {
+      if (err instanceof UnauthorizedException) {
+        throw err;
+      }
     }
 
     request.user = {
