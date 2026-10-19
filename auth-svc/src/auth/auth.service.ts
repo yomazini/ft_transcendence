@@ -4,6 +4,7 @@ import * as argon from 'argon2';
 import { AcceptInviteDto, ChangeEmailDto, ChangePasswordDto, Complete42Dto, DeleteAccountDto, ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from 'src/mail/mail.service';
+import { MetricsService } from 'src/metrics/metrics.service';
 
 @Injectable()
 export class AuthService {
@@ -11,6 +12,7 @@ export class AuthService {
 		private readonly prisma: PrismaService,
 		private readonly jwt: JwtService,
 		private readonly mail: MailService,
+		private readonly metrics: MetricsService,
 	) {}
 
 	async register(dto: RegisterDto) {
@@ -42,6 +44,9 @@ export class AuthService {
 				});
 				return { org, user, role };
 			});
+
+			this.metrics.signups.inc({ source: 'email' });
+
 			const access_token = await this.jwt.signAsync({
 				sub: user.id,
 				org_id: org.id,
@@ -84,6 +89,9 @@ export class AuthService {
 			org_id: role.org_id,
 			role: role.role,
 		});
+
+		this.metrics.logins.inc({ method: 'password', result: 'success' });
+
 		return {
 			access_token,
 			token_type: 'Bearer',
@@ -139,6 +147,9 @@ export class AuthService {
 			org_id: role.org_id,
 			role: role.role,
 		});
+
+		this.metrics.logins.inc({ method: '42', result: 'success' });
+
 		return {
 			access_token,
 			token_type: 'Bearer',
@@ -194,6 +205,8 @@ export class AuthService {
 
 				return { org, user, role };
 			});
+
+			this.metrics.signups.inc({ source: '42' });
 
 			const access_token = await this.jwt.signAsync({
 				sub: user.id,
@@ -256,6 +269,8 @@ export class AuthService {
 				return { user, role };
 			});
 
+			this.metrics.signups.inc({ source: 'invite' });
+
 			const access_token = await this.jwt.signAsync({
 				sub: user.id,
 				org_id: payload.org_id,
@@ -300,7 +315,10 @@ export class AuthService {
 
 		await this.prisma.user.update({
 			where: { id: userId }, data: { password: hash },
-		}) 
+		})
+
+		this.metrics.passwordChanges.inc({ kind: 'change' });
+
 		return { message: 'Password changed'};
 	}
 
@@ -372,6 +390,9 @@ export class AuthService {
 			}
 			throw error;
 		}
+
+		this.metrics.passwordChanges.inc({ kind: 'reset' })
+		
 		return { message: 'Password changed' };
 	}
 
