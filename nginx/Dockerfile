@@ -5,3 +5,4 @@ FROM owasp/modsecurity-crs:nginx
 # /etc/nginx/templates/ at start (envsubst). Copying straight into conf.d makes
 # that step fail with "Permission denied", so the config goes in as a template.
 COPY nginx.conf /etc/nginx/templates/conf.d/default.conf.template
+USER nginx
