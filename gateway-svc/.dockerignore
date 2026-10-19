@@ -4,3 +4,6 @@ dist
 *.log
 .DS_Store
 pnpm-lock.yaml
+*drill*
+*practice*
+NOTE*
