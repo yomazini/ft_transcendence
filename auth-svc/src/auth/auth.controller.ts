@@ -5,12 +5,14 @@ import { JwtGuard } from './guard/jwt.guard';
 import { FortyTwoGuard } from './guard/42.guard';
 import { TokenDenylist } from './token-denylist.service';
 import { ExtractJwt } from 'passport-jwt';
+import { MetricsService } from 'src/metrics/metrics.service';
 
 @Controller('auth')
 export class AuthController {
 	constructor(
 		private readonly authService: AuthService,
 		private readonly denylist: TokenDenylist,
+		private readonly metrics: MetricsService,
 	) {}
 
 	@Post('signup') /** POST /auth/signup */
@@ -104,6 +106,7 @@ export class AuthController {
 	logout(@Req() req) {
 		const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
 		if (token) { this.denylist.add(token, req.user.exp); }
+		this.metrics.logouts.inc();
 	}
 
 	@Get('verify') /** GET /auth/verify 
