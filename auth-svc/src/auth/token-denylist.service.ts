@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 
-/** Tokens that were logged out before they expired.
- *  A JWT cannot be "deleted", so logout puts it on this list until its own expiry.
- *  Kept in memory: a restart of auth-svc empties the list (tokens live 1 hour at most). */
+/** 
+ * ⚠️ A JWT can't be cancelled, so logout writes it on a "blocked" list, and every protected request checks that list until the token would have expired anyway. 
+ * @Bug read file ?/bugs.md
+ */
 @Injectable()
 export class TokenDenylist {
-	private readonly tokens = new Map<string, number>(); // token -> expiry (ms)
+	private readonly tokens = new Map<string, number>();
 
 	add(token: string, expSeconds: number) {
 		this.tokens.set(token, expSeconds * 1000);
@@ -14,7 +15,7 @@ export class TokenDenylist {
 	has(token: string): boolean {
 		const now = Date.now();
 		for (const [t, exp] of this.tokens) {
-			if (exp < now) this.tokens.delete(t); // expired anyway: forget it
+			if (exp < now) this.tokens.delete(t);
 		}
 		return this.tokens.has(token);
 	}

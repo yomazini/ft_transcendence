@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, Length} from 'class-validator';
+import { IsNotEmpty, IsString, Length, MinLength} from 'class-validator';
 
 export class Complete42Dto {
 	@IsString()
@@ -13,4 +13,8 @@ export class Complete42Dto {
 	@IsNotEmpty()
 	@Length(100, 200)
 	org_description!: string;
+
+	@IsString()
+	@MinLength(8)
+	password!: string;
 }

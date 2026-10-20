@@ -1,9 +1,8 @@
 import { BadRequestException, Injectable,UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as argon from 'argon2';
-import { AcceptInviteDto, ChangePasswordDto, Complete42Dto, DeleteAccountDto, ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from './dto';
+import { AcceptInviteDto, ChangeEmailDto, ChangePasswordDto, Complete42Dto, DeleteAccountDto, ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from './dto';
 import { JwtService } from '@nestjs/jwt';
-import * as crypto from 'crypto';
 import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
@@ -166,7 +165,7 @@ export class AuthService {
 		}
 
 		try {
-			const hash = await argon.hash(crypto.randomUUID());
+			const hash = await argon.hash(dto.password);
 
 			/** ⚠️ Same rule as register(): one transaction, so a failed user
 			 *  does not leave an org without an Admin behind. */
@@ -303,6 +302,30 @@ export class AuthService {
 			where: { id: userId }, data: { password: hash },
 		}) 
 		return { message: 'Password changed'};
+	}
+
+	async changeEmail(userId: string, dto: ChangeEmailDto) {
+		const user = await this.prisma.user.findUnique({
+			where: { id: userId },
+		});
+		if (!user) { throw new UnauthorizedException(); }
+
+		const passwordMatches = await argon.verify(user.password, dto.password);
+		if (!passwordMatches) {
+			throw new UnauthorizedException('Invalid credentials');
+		}
+
+		try {
+			const update = await this.prisma.user.update({
+				where: { id:userId }, data: { email: dto.new_email },
+			});
+			return { id: update.id, email: update.email };
+		} catch(error: any) {
+			if (error.code === 'P2002') {
+				throw new BadRequestException('Email already in use');
+			}
+			throw error;
+		}
 	}
 
 	async forgotPassword(dto: ForgotPasswordDto) {
