@@ -77,10 +77,12 @@ export class AuthService {
 			include: { user_roles_organization: true },
 		});
 		if (!user) {
+			this.metrics.logins.inc({ method: 'password', result: 'failure' });
 			throw new UnauthorizedException('Invalid credentials');
 		}
 		const passwordMatches = await argon.verify(user.password, dto.password);
 		if (!passwordMatches) {
+			this.metrics.logins.inc({ method: 'password', result: 'failure' });
 			throw new UnauthorizedException('Invalid credentials');
 		}
 		const role = user.user_roles_organization[0];
