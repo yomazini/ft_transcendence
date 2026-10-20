@@ -1,10 +1,12 @@
+# Scrapes /metrics from every service and exporter every 15 s, and checks the
+# alert rules every 15 s. Owner: Mehdi.
 global:
   scrape_interval: 15s
-  # evaluation_interval: 15s
+  evaluation_interval: 15s
 
-# controls how often Prometheus checks the alert rules define in rule_files
-# rule_files:
-#   - /etc/prometheus/alerts.yml
+# The alert rules (path inside the container, mounted from ./prometheus/alerts.yml).
+rule_files:
+  - /etc/prometheus/alerts.yml
 
 scrape_configs:
   - job_name: "prometheus"
