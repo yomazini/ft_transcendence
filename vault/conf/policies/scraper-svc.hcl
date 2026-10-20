@@ -1,7 +1,7 @@
-path "secret/scraper-svc" {
+path "secret/data/scraper-svc" {
 	capabilities = ["read"]
 }
 
-path "secret/database" {
+path "secret/data/database" {
 	capabilities = ["read"]
 }

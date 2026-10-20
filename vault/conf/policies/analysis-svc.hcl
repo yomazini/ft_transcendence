@@ -1,7 +1,7 @@
-path "secret/analysis-svc" {
+path "secret/data/analysis-svc" {
 	capabilities = ["read"]
 }
 
-path "secret/database" {
+path "secret/data/database" {
 	capabilities = ["read"]
 }

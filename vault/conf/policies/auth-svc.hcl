@@ -1,7 +1,7 @@
-path "secret/auth-svc" {
+path "secret/data/auth-svc" {
 	capabilities = ["read"]
 }
 
-path "secret/database" {
+path "secret/data/database" {
 	capabilities = ["read"]
 }

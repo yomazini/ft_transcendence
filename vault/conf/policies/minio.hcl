@@ -1,7 +1,7 @@
-path "secret/minio" {
+path "secret/data/minio" {
 	capabilities = ["read"]
 }
 
-path "secret/database" {
+path "secret/data/database" {
 	capabilities = ["read"]
 }

@@ -1,7 +1,7 @@
-path "secret/grafana" {
+path "secret/data/grafana" {
 	capabilities = ["read"]
 }
 
-path "secret/database" {
+path "secret/data/database" {
 	capabilities = ["read"]
 }
