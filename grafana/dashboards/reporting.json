@@ -1,0 +1,53 @@
+{
+  "uid": "ft-reporting",
+  "title": "Reporting & backups",
+  "description": "Exports and backups of reporting-svc. To be filled once reporting-svc exposes its metrics.",
+  "tags": [
+    "ft_transcendence"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "graphTooltip": 1,
+  "refresh": "15s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "links": [
+    {
+      "type": "dashboards",
+      "tags": [
+        "ft_transcendence"
+      ],
+      "asDropdown": true,
+      "title": "Dashboards",
+      "includeVars": false,
+      "keepTime": true
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "To do",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 11
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "### Waiting for metrics from reporting-svc\n\nThis dashboard will answer: **do exports work, and when was the last good backup?**\n\n| Panel to build | Metric needed | Owner |\n|---|---|---|\n| Exports today by format | `reporting_exports_total{format}` | Oussama |\n| Time since last backup (red after 24 h) | `reporting_last_backup_timestamp_seconds` | Oussama |\n| Backup duration | `reporting_backup_duration_seconds` | Oussama |\n| Failed backups | `reporting_backups_total{result}` | Oussama |\n\nFull spec: `Study/monitoring/102-metrics-per-service.md` \u00a73.3 and the GitHub issue *\"Monitoring: add /metrics\"*.\nHow to fill it: build the panels in the UI, Export \u2192 Export as JSON (classic, \"use in another instance\"), replace `grafana/dashboards/reporting.json`."
+      }
+    }
+  ]
+}
