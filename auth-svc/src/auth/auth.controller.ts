@@ -18,8 +18,7 @@ export class AuthController {
 	) {}
 
 	@ApiResponse({ status: 201, description: 'User created' })
-	@ApiResponse({ status: 400, description: 'Invalid body' })
-	@ApiResponse({ status: 409, description: 'Email already used' })
+	@ApiResponse({ status: 400, description: 'Invalid body or user already exists' })
 	@Post('signup') /** POST /auth/signup */
 	register(@Body() registerDto: RegisterDto) {
 		return this.authService.register(registerDto);
@@ -68,7 +67,8 @@ export class AuthController {
 	}
 
 	@ApiResponse({ status: 201, description: 'Invite accepted' })
-	@ApiResponse({ status: 400, description: 'Invalid or expired invite' })
+	@ApiResponse({ status: 400, description: 'User already exists or organization deleted' })
+	@ApiResponse({ status: 401, description: 'Invalid or expired invite token' })
 	@Post('invite/accept') /** POST /auth/invite/accept */
 	acceptInvitation(@Body() dto: AcceptInviteDto) {
 		return this.authService.acceptInvite(dto);
@@ -93,7 +93,7 @@ export class AuthController {
 	@UseGuards(JwtGuard)
 	@ApiResponse({ status: 200, description: 'Email changed' })
 	@ApiResponse({ status: 401, description: 'Bad token or password' })
-	@ApiResponse({ status: 409, description: 'Email already used' })
+	@ApiResponse({ status: 400, description: 'Invalid email or email already in use' })
 	changeEmail(@Body() dto: ChangeEmailDto, @Req() req) {
 		return this.authService.changeEmail(req.user.sub, dto);
 	}
@@ -108,7 +108,8 @@ export class AuthController {
 	@Post('reset-password') /** POST /auth/reset-password */
 	@HttpCode(200)
 	@ApiResponse({ status: 200, description: 'Password reset' })
-	@ApiResponse({ status: 400, description: 'Invalid or expired reset token' })
+	@ApiResponse({ status: 400, description: 'Invalid body (new password too short)' })
+	@ApiResponse({ status: 401, description: 'Invalid or expired reset token' })
 	resetPassword(@Body() dto: ResetPasswordDto) {
 		return this.authService.resetPassword(dto);
 	}
@@ -128,6 +129,7 @@ export class AuthController {
 	@UseGuards(JwtGuard)
 	@HttpCode(204)
 	@ApiResponse({ status: 204, description: 'Account deleted' })
+	@ApiResponse({ status: 400, description: 'Last Admin of an organization that still has members' })
 	@ApiResponse({ status: 401, description: 'Bad token or password' })
 	deleteAccount(@Req() req, @Body() dto: DeleteAccountDto) {
 		return this.authService.deleteAccount(req.user.sub, dto);
