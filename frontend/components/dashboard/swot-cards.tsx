@@ -1,25 +1,16 @@
-import { Button } from "@/components/ui/button"
 import {
 	Card,
-	CardAction,
 	CardContent,
-	CardDescription,
-	CardFooter,
 	CardHeader,
-	CardTitle,
 } from "@/components/ui/card"
-import { Lightbulb, Link, Link2, LucideIcon, ShieldCheck, TrendingUp, Zap } from "lucide-react"
-import { Icon } from "next/dist/lib/metadata/types/metadata-types";
+import { LucideIcon } from "lucide-react"
 
 
-export function Cards({ items, icon: Icon, title, description, iconColor }: { items: string[]; icon: LucideIcon; title: string, description: string, iconColor: string }) {
+export function Cards({ items, icon: Icon, title, description, iconColor }: { items: string[] | string | null; icon: LucideIcon; title: string, description: string, iconColor: string }) {
 	return (
+		<Card className={`stat-card group flex flex-col`}> {/*$*/}
 
-		<Card className="stat-card group flex flex-col ">
-			{/* Subtle orange glow */}
-			{/* <div className="stat-card-glow " /> */}
-
-			<CardHeader className="relative  flex flex-col  pb-3">
+			<CardHeader className="relative flex flex-col">
 				<div className=" flex items-center justify-between w-full ">
 					<div className="text-base font-semibold text-slate-800">
 						{title}
@@ -37,18 +28,27 @@ export function Cards({ items, icon: Icon, title, description, iconColor }: { it
 				</p>
 			</CardHeader>
 
-			<CardContent className="relative max-h-[150px] overflow-y-auto pr-3">
+			<CardContent className={`relative overflow-y-auto pr-3 ${typeof items === "string" ? "max-h-[300px]" : "h-[100px]"}`}>
 				<ul>
-					{items.length === 0 ? (
-						<li className="text-xs text-muted-foreground">Nothing found for this job.</li>
-					) : (
-						items.map((item) => (
-							<li key={item} className="stat-list-item group">
-								<span className="stat-list-dot" />
-								<span className="leading-relaxed">{item}</span>
-							</li>
-						))
-					)}
+					{
+						items === null ? (
+							<li className="text-xs text-muted-foreground">Nothing found for this job.</li>
+						) : typeof items === "string" ? (
+								<li key={items} className="stat-list-items group">
+									<span className="stat-list-dot" />
+									<span className="leading-relaxed">{items}</span>
+								</li>
+						) : items.length === 0 ? (
+							<li className="text-xs text-muted-foreground">Nothing found for this job.</li>
+						) : (
+							items.map((item) => (
+								<li key={item} className="stat-list-item group">
+									<span className="stat-list-dot" />
+									<span className="leading-relaxed">{item}</span>
+								</li>
+							))
+						)
+					}
 				</ul>
 			</CardContent>
 		</Card>
