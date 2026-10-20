@@ -7,6 +7,7 @@ import { JwtStrategy } from './strategy/jwt.strategy';
 import { FortyTwoStrategy } from './strategy/42.strategy';
 import { MailModule } from '../mail/mail.module';
 import { TokenDenylist } from './token-denylist.service';
+import { MetricsModule } from '../metrics/metrics.module';
 
 @Module({
   controllers: [AuthController],
@@ -14,6 +15,7 @@ import { TokenDenylist } from './token-denylist.service';
   imports: [
     PrismaModule,
     MailModule,
+	MetricsModule,
     JwtModule.register({
 		secret: process.env.JWT_SECRET!,
 		signOptions: { expiresIn: '1h' }

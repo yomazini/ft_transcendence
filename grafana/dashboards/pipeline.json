@@ -1,0 +1,53 @@
+{
+  "uid": "ft-pipeline",
+  "title": "Job pipeline",
+  "description": "gateway \u2192 scraper \u2192 analysis. To be filled once those services expose their metrics.",
+  "tags": [
+    "ft_transcendence"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "graphTooltip": 1,
+  "refresh": "15s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "links": [
+    {
+      "type": "dashboards",
+      "tags": [
+        "ft_transcendence"
+      ],
+      "asDropdown": true,
+      "title": "Dashboards",
+      "includeVars": false,
+      "keepTime": true
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "To do",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 14
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "### Waiting for metrics from gateway-svc, scraper-svc and analysis-svc\n\nThis dashboard will answer: **where is a job stuck \u2014 queue, scraping, analysis, or the LLM?**\n\n| Panel to build | Metric needed | Owner |\n|---|---|---|\n| Jobs created / min | `gateway_jobs_created_total{mode}` | Youssef |\n| Jobs waiting in queue | `gateway_queue_waiting_jobs{queue}` | Youssef |\n| WebSockets open | `gateway_websocket_connections` | Youssef |\n| Scrape duration p95 | `scraper_job_duration_seconds` | Madani |\n| Reddit 429s | `scraper_reddit_requests_total{status}` | Madani |\n| Analysis time per stage | `analysis_stage_duration_seconds{stage}` | Youssef |\n| LLM calls by status | `analysis_llm_requests_total{model,status}` | Youssef |\n| Jobs done vs failed | `analysis_jobs_total{result}` | Youssef |\n\nFull spec: `Study/monitoring/102-metrics-per-service.md` and the GitHub issue *\"Monitoring: add /metrics\"*.\nHow to fill it: build the panels in the UI, Export \u2192 Export as JSON (classic, \"use in another instance\"), replace `grafana/dashboards/pipeline.json`."
+      }
+    }
+  ]
+}
