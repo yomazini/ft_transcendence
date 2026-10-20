@@ -1,0 +1,51 @@
+# Alert rules — visible on http://localhost:9090/alerts (inactive → pending → firing).
+# Checked every evaluation_interval (15 s). `for:` = how long the condition must stay
+# true before the alert fires, so a 1-second blip does not fire anything.
+groups:
+  - name: ft_transcendence
+    rules:
+      # A target stopped answering. Demo: docker stop auth-svc, wait ~1 minute.
+      # gateway, reporting, analysis and scraper are excluded until they expose /metrics
+      # (GitHub issue "Monitoring: every service exposes /metrics"); then use `up == 0`.
+      - alert: ServiceDown
+        expr: up{job!~"gateway-svc|reporting-svc|analysis-svc|scraper-svc"} == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "{{ $labels.job }} is not answering"
+          description: "Prometheus could not scrape {{ $labels.instance }} for 1 minute."
+
+      # More than 5% of a service's requests end in a 5xx error.
+      - alert: HighErrorRate
+        expr: |
+          sum by (job) (rate(http_requests_total{status=~"5.."}[5m]))
+            / sum by (job) (rate(http_requests_total[5m])) > 0.05
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.job }} returns more than 5% errors"
+
+      # Many failed logins in a short time: possible password guessing.
+      # Demo: 11 wrong logins, wait ~1 minute.
+      - alert: ManyFailedLogins
+        expr: sum(increase(auth_logins_total{result="failure"}[5m])) > 10
+        for: 1m
+        labels: { severity: warning }
+        annotations:
+          summary: "More than 10 failed logins in 5 minutes"
+
+      # The host (Docker VM) is almost out of memory.
+      - alert: HighMemoryUsage
+        expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.10
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Less than 10% memory left on the host"
+
+      # Postgres is close to its connection limit (every service shares it).
+      - alert: PostgresTooManyConnections
+        expr: sum(pg_stat_activity_count) / max(pg_settings_max_connections) > 0.8
+        for: 2m
+        labels: { severity: warning }
+        annotations:
+          summary: "Postgres uses more than 80% of its connections"
