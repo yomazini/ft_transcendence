@@ -15,17 +15,10 @@ export class ProxyService {
     const headers: http.OutgoingHttpHeaders = { ...req.headers };
     delete headers['content-length'];
     headers['host'] = targetUrl.host;
-<<<<<<< HEAD
     const prior = req.headers['x-forwarded-for'];
     const remote = req.socket.remoteAddress || '';
     headers['x-forwarded-proto'] = req.protocol || 'http';
     headers['x-forwarded-for'] = prior ? `${prior}, ${remote}` : remote;
-=======
-    headers['x-forwarded-for'] =
-      (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '';
-    headers['x-forwarded-proto'] = req.protocol || 'http';
-
->>>>>>> b60c46d (feat(gateway): proxy auth and orgs routes to auth-svc and route through nginx)
     const clientReq = http.request(
       {
         hostname: targetUrl.hostname,
