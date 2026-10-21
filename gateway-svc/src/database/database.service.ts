@@ -232,6 +232,9 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   }
 
   private seedDefaultStubData() {
+    // Never expose demo jobs/reports in production.
+    if (process.env.NODE_ENV === 'production') return;
+
     const defaultJobId = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
     const seedJobId = 'a18f2d90-3b41-4e2a-9f12-987654321abc';
 
