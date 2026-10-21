@@ -9,11 +9,12 @@
 ### Setup
 
 1. **Environment**: copy `.env.example` to `.env` and replace every placeholder with a real value. Never commit `.env`.
-2. **Persistent data**: the container needs two mounts.
+2. **Persistent data**: the container needs three mounts.
 
    | Mount | Type | Container path | Contents |
    |---|---|---|---|
-   | `vault-data` | named volume | `/vault` | Vault data, `credentials.json` (unseal key and root token) |
+   | `vault-data` | named volume | `/vault` | Vault data and config |
+   | `./vault/secret` | bind mount | `/secret` | `credentials.json` (unseal key and root token) |
    | `./vault/creds` | bind mount | `/credentials` | one `{service-name}.json` per service (AppRole login data) |
 
 3. **Run**:
@@ -23,6 +24,7 @@
      --cap-add IPC_LOCK \
      --env-file .env \
      -v vault-data:/vault \
+     -v ./vault/secret:/secret \
      -v ./vault/creds:/credentials \
      vault
    ```
@@ -36,16 +38,16 @@
 > [!IMPORTANT]
 > Secrets are seeded **only if they do not exist yet**. Changing a value in `.env` later does not update the secret already stored in Vault. To change one, write it by hand with `vault kv put secret/<service> ...`, or reset (see below).
 
-**Reset:** delete the container, the volume, **and** the credentials folder together. Deleting only one leaves credential files that no longer match Vault.
+**Reset:** delete the container, the volume, **and** both folders together. Deleting only some of them leaves credential files that no longer match Vault.
 
 ```sh
 docker rm -f vault
 docker volume rm vault-data
-sudo rm -rf vault/creds/*
+sudo rm -rf vault/secret/* vault/creds/*
 ```
 
 > [!WARNING]
-> `credentials.json` in the `vault-data` volume holds the unseal key. Keep that volume private: do not commit it, share it, or back it up together with other data.
+> `credentials.json` in the `/secret` mount holds the unseal key and root token. Keep it separate from the `vault-data` volume: never commit it, and never back it up together with the data. Anyone holding both can unseal Vault.
 
 ### Configuration
 
