@@ -18,6 +18,8 @@ echo "=========================================================="
 # -----------------------------------------------------------------
 echo "🟢 Step 1: Creating directories in unlimited storage..."
 mkdir -p "${GOINFRE_DIR}/pnpm-virtual-store/gateway-svc"
+mkdir -p "${GOINFRE_DIR}/pnpm-virtual-store/frontend"
+mkdir -p "${GOINFRE_DIR}/pnpm-store"
 mkdir -p "${GOINFRE_DIR}/envs/analysis-svc-env"
 mkdir -p "${GOINFRE_DIR}/.uv-cache"
 
@@ -33,20 +35,39 @@ if [ -d "gateway-svc" ]; then
   echo "🧹 Wiping old gateway node_modules..."
   rm -rf node_modules
 
-  # Write pnpm-workspace.yaml dynamically to bypass build blocks and symlink bugs
-  echo "✍️  Writing pnpm-workspace.yaml..."
-  cat <<EOF >pnpm-workspace.yaml
-dangerouslyAllowAllBuilds: true
-virtualStoreDir: ${GOINFRE_DIR}/pnpm-virtual-store/gateway-svc
-EOF
-
-  # Trigger fresh install
-  echo "⚡ Running pnpm install..."
-  pnpm install
+  # Keep the tracked pnpm-workspace.yaml untouched. Override the virtual store
+  # and build policy via CLI flags instead (avoids dirtying git).
+  echo "⚡ Running pnpm install with goinfre virtual store..."
+  pnpm install \
+    --store-dir "${GOINFRE_DIR}/pnpm-store" \
+    --config.virtual-store-dir="${GOINFRE_DIR}/pnpm-virtual-store/gateway-svc" \
+    --config.dangerously-allow-all-builds=true
 
   cd ..
 else
   echo "⚠️  Directory 'gateway-svc' not found. Skipping..."
+fi
+
+# -----------------------------------------------------------------
+# STEP 2b: Configure Frontend (Next.js) with PNPM
+# -----------------------------------------------------------------
+echo ""
+echo "🖥️  Step 2b: Configuring Frontend (Next.js) with PNPM..."
+if [ -d "frontend" ]; then
+  cd frontend
+
+  echo "🧹 Wiping old frontend node_modules..."
+  rm -rf node_modules
+
+  echo "⚡ Running pnpm install with goinfre virtual store..."
+  pnpm install \
+    --store-dir "${GOINFRE_DIR}/pnpm-store" \
+    --config.virtual-store-dir="${GOINFRE_DIR}/pnpm-virtual-store/frontend" \
+    --config.dangerously-allow-all-builds=true
+
+  cd ..
+else
+  echo "⚠️  Directory 'frontend' not found. Skipping..."
 fi
 
 # -----------------------------------------------------------------
