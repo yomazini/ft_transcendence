@@ -3,7 +3,10 @@ import { OrgService } from './org.service';
 import { JwtGuard } from 'src/auth/guard/jwt.guard';
 import { InviteMemberDto, UpdateOrgDto } from './dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiTags('orgs')
+@ApiBearerAuth()
 @Controller('orgs')
 export class OrgController {
 	constructor(private readonly orgService: OrgService) {}

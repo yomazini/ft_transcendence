@@ -1,6 +1,8 @@
 import { Controller, Get, Res } from '@nestjs/common';
 import { MetricsService } from './metrics.service';
+import { ApiExcludeController } from '@nestjs/swagger';
 
+@ApiExcludeController()
 @Controller('metrics')
 export class MetricsController {
 	constructor(
