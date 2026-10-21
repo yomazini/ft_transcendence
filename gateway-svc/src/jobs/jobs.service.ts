@@ -9,6 +9,7 @@ import {
 import { Queue } from 'bullmq';
 import { randomUUID } from 'crypto';
 import { CreateJobDto } from './dto/create-job.dto';
+import { ServiceUnavailableException } from '@nestjs/common';
 import { GatewayTimeoutException } from '@nestjs/common';
 import {
   DatabaseService,
@@ -88,9 +89,14 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     await this.databaseService.saveJob(jobRecord);
 
     // 2. Push task to Redis BullMQ queue (consumed by Madani's scraper-svc)
-    if (this.scrapeQueue) {
-      try {
-        await this.scrapeQueue.add(
+    if (!this.scrapeQueue) {
+      await this.databaseService.updateJobStatus(jobId, 'failed');
+      throw new ServiceUnavailableException('scrape queue unavailable');
+    }
+
+    try {
+      await Promise.race([
+        this.scrapeQueue.add(
           'scrape',
           {
             id: jobId,
@@ -107,13 +113,16 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
               delay: 2000,
             },
           },
-        );
-        this.logger.log(`Enqueued job ${jobId} to BullMQ queue [scrape-job]`);
-      } catch (err: any) {
-        this.logger.warn(
-          `Failed to push job ${jobId} to BullMQ: ${err.message}. Safe fallback active.`,
-        );
-      }
+        ),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('queue timeout')), 3000),
+        ),
+      ]);
+      this.logger.log(`Enqueued job ${jobId} to BullMQ queue [scrape-job]`);
+    } catch (err: any) {
+      this.logger.warn(`Failed to enqueue job ${jobId}: ${err.message}`);
+      await this.databaseService.updateJobStatus(jobId, 'failed');
+      throw new ServiceUnavailableException('could not enqueue job');
     }
 
     // 3. Broadcast real-time WebSocket event (to Next.js frontend)
