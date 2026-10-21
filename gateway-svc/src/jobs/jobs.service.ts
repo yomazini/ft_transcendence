@@ -117,20 +117,29 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
             },
           },
         ),
+<<<<<<< HEAD
         new Promise((_, reject) => {
           queueTimer = setTimeout(
             () => reject(new Error('queue timeout')),
             3000,
           );
         }),
+=======
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('queue timeout')), 3000),
+        ),
+>>>>>>> 501577f (fix(gateway): fail fast when Redis cannot enqueue a job)
       ]);
       this.logger.log(`Enqueued job ${jobId} to BullMQ queue [scrape-job]`);
     } catch (err: any) {
       this.logger.warn(`Failed to enqueue job ${jobId}: ${err.message}`);
       await this.databaseService.updateJobStatus(jobId, 'failed');
       throw new ServiceUnavailableException('could not enqueue job');
+<<<<<<< HEAD
     } finally {
       if (queueTimer) clearTimeout(queueTimer);
+=======
+>>>>>>> 501577f (fix(gateway): fail fast when Redis cannot enqueue a job)
     }
 
     // 3. Broadcast real-time WebSocket event (to Next.js frontend)
