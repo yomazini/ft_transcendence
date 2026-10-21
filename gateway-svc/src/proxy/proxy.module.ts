@@ -36,7 +36,6 @@ export class ProxyModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply((req: Request, res: Response, next: NextFunction) => {
-<<<<<<< HEAD
         if (
           req.originalUrl.startsWith('/api/auth') ||
           req.originalUrl.startsWith('/api/orgs')
@@ -50,9 +49,6 @@ export class ProxyModule implements NestModule {
             return;
           }
 
-=======
-        if (req.originalUrl.startsWith('/api/auth') || req.originalUrl.startsWith('/api/orgs')) {
->>>>>>> b60c46d (feat(gateway): proxy auth and orgs routes to auth-svc and route through nginx)
           this.proxyService.forward(req, res);
         } else {
           next();
