@@ -24,12 +24,10 @@ export type ReportDetails = {
   // As written by analysis-svc: the four actions are under `strategy`.
   blue_ocean: {
 	factors?: Record<string, { importance: number; satisfaction: number }>;
-	strategy: {
-	  eliminate: string[];
-	  reduce: string[];
-	  raise: string[];
-	  create: string[];
-	};
+	eliminate: string[];
+	reduce: string[];
+	raise: string[];
+	create: string[];
   };
 
   conclusion?: string;
