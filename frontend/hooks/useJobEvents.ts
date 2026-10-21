@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getToken } from "@/lib/auth";
 import { io, Socket } from "socket.io-client";
 
 export type JobStatus = "idle" | "queued" | "running" | "done" | "failed";
@@ -22,6 +23,7 @@ export function useJobEvents(targetJobId?: string) {
 
     const socket: Socket = io(gatewayUrl, {
       transports: ["websocket", "polling"],
+      auth: { token: getToken() },
       reconnectionAttempts: 5,
     });
 

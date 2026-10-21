@@ -3,6 +3,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { DatabaseModule } from './database/database.module';
 import { EventsModule } from './events/events.module';
 import { JobsModule } from './jobs/jobs.module';
+import { ProxyModule } from './proxy/proxy.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { JobsModule } from './jobs/jobs.module';
     DatabaseModule,
     EventsModule,
     JobsModule,
+    ProxyModule,
   ],
 })
 export class AppModule {}

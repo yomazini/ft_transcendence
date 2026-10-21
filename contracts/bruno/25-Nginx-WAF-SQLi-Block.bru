@@ -1,0 +1,11 @@
+meta {
+  name: 25 Nginx WAF SQLi Block
+  type: http
+  seq: 25
+}
+
+get {
+  url: {{nginx_url}}/api/health?id=1'%20OR%20'1'='1
+  body: none
+  auth: none
+}

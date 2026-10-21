@@ -9,6 +9,8 @@ import {
 import { Queue } from 'bullmq';
 import { randomUUID } from 'crypto';
 import { CreateJobDto } from './dto/create-job.dto';
+import { ServiceUnavailableException } from '@nestjs/common';
+import { GatewayTimeoutException } from '@nestjs/common';
 import {
   DatabaseService,
   JobRecord,
@@ -87,9 +89,15 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     await this.databaseService.saveJob(jobRecord);
 
     // 2. Push task to Redis BullMQ queue (consumed by Madani's scraper-svc)
-    if (this.scrapeQueue) {
-      try {
-        await this.scrapeQueue.add(
+    if (!this.scrapeQueue) {
+      await this.databaseService.updateJobStatus(jobId, 'failed');
+      throw new ServiceUnavailableException('scrape queue unavailable');
+    }
+
+    let queueTimer: NodeJS.Timeout | undefined;
+    try {
+      await Promise.race([
+        this.scrapeQueue.add(
           'scrape',
           {
             id: jobId,
@@ -106,17 +114,25 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
               delay: 2000,
             },
           },
-        );
-        this.logger.log(`Enqueued job ${jobId} to BullMQ queue [scrape-job]`);
-      } catch (err: any) {
-        this.logger.warn(
-          `Failed to push job ${jobId} to BullMQ: ${err.message}. Safe fallback active.`,
-        );
-      }
+        ),
+        new Promise((_, reject) => {
+          queueTimer = setTimeout(
+            () => reject(new Error('queue timeout')),
+            3000,
+          );
+        }),
+      ]);
+      this.logger.log(`Enqueued job ${jobId} to BullMQ queue [scrape-job]`);
+    } catch (err: any) {
+      this.logger.warn(`Failed to enqueue job ${jobId}: ${err.message}`);
+      await this.databaseService.updateJobStatus(jobId, 'failed');
+      throw new ServiceUnavailableException('could not enqueue job');
+    } finally {
+      if (queueTimer) clearTimeout(queueTimer);
     }
 
     // 3. Broadcast real-time WebSocket event (to Next.js frontend)
-    this.eventsGateway.broadcastJobStatus(jobId, 'queued');
+    void this.eventsGateway.broadcastJobStatus(jobId, 'queued');
 
     return jobRecord;
   }
@@ -126,11 +142,21 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   async ragQuery(jobId: string, query: string, user: AuthenticatedUser) {
     await this.getJobById(jobId, user); // 404 for a job of another organization
     const base = process.env.ANALYSIS_SVC_URL || 'http://analysis-svc:8001';
-    const response = await fetch(`${base}/rag/query`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ job_id: jobId, query }),
-    });
+
+    let response: Response;
+    try {
+      response = await fetch(`${base}/rag/query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job_id: jobId, query }),
+        signal: AbortSignal.timeout(10_000),
+      });
+    } catch (err: any) {
+      if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
+        throw new GatewayTimeoutException('analysis-svc timed out');
+      }
+      throw new HttpException('analysis-svc unreachable', 502);
+    }
     const data = await response.json().catch(() => null);
     if (!response.ok) {
       throw new HttpException(

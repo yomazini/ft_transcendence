@@ -33,6 +33,11 @@ describe('JobsController', () => {
 
     controller = module.get<JobsController>(JobsController);
     service = module.get<JobsService>(JobsService);
+
+    // createJob now fails fast when the queue is unavailable.
+    (service as any).scrapeQueue = {
+      add: jest.fn().mockResolvedValue({ id: 'queue-job-1' }),
+    };
   });
 
   it('should be defined', () => {
@@ -61,7 +66,7 @@ describe('JobsController', () => {
       const result = await controller.createJob(dto, { user: mockUser });
       expect(result).toBeDefined();
       expect(result.id).toBeDefined();
-      expect(result.status).toBe('queued');
+      expect(result.status).toBe('Queued');
       expect(result.target).toBe('r/freelance');
     });
   });
@@ -87,13 +92,18 @@ describe('JobsController', () => {
   });
 
   describe('EventsGateway', () => {
-    it('should emit job:done and job:update events with extra payload', () => {
-      const gateway = new EventsGateway();
+    it('should emit job:done and job:update events to the org room', async () => {
+      const database = {
+        findJobById: jest.fn().mockResolvedValue({ id: 'job-123', org_id: 'org-1' }),
+      } as any;
+      const gateway = new EventsGateway(database);
       const emitMock = jest.fn();
-      gateway.server = { emit: emitMock } as any;
+      const toMock = jest.fn().mockReturnValue({ emit: emitMock });
+      gateway.server = { to: toMock } as any;
 
-      gateway.broadcastJobStatus('job-123', 'done', { report_id: 'rep-456' });
+      await gateway.broadcastJobStatus('job-123', 'done', { report_id: 'rep-456' });
 
+      expect(toMock).toHaveBeenCalledWith('org-1');
       expect(emitMock).toHaveBeenCalledWith('job:done', {
         job_id: 'job-123',
         status: 'done',
