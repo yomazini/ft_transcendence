@@ -12,7 +12,6 @@ import { IS_PUBLIC_KEY } from './public.decorator';
 export interface AuthenticatedUser {
   id: string;
   org_id: string;
-  email: string;
   role: string;
 }
 
@@ -77,7 +76,6 @@ export class JwtAuthGuard implements CanActivate {
     request.user = {
       id: payload.sub,
       org_id: payload.org_id,
-      email: payload.email ?? '',
       role: payload.role,
     } as AuthenticatedUser;
 
