@@ -87,13 +87,18 @@ describe('JobsController', () => {
   });
 
   describe('EventsGateway', () => {
-    it('should emit job:done and job:update events with extra payload', () => {
-      const gateway = new EventsGateway();
+    it('should emit job:done and job:update events to the org room', async () => {
+      const database = {
+        findJobById: jest.fn().mockResolvedValue({ id: 'job-123', org_id: 'org-1' }),
+      } as any;
+      const gateway = new EventsGateway(database);
       const emitMock = jest.fn();
-      gateway.server = { emit: emitMock } as any;
+      const toMock = jest.fn().mockReturnValue({ emit: emitMock });
+      gateway.server = { to: toMock } as any;
 
-      gateway.broadcastJobStatus('job-123', 'done', { report_id: 'rep-456' });
+      await gateway.broadcastJobStatus('job-123', 'done', { report_id: 'rep-456' });
 
+      expect(toMock).toHaveBeenCalledWith('org-1');
       expect(emitMock).toHaveBeenCalledWith('job:done', {
         job_id: 'job-123',
         status: 'done',
