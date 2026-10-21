@@ -1,8 +1,19 @@
 #!/bin/bash
 
-cp -f /config/server.hcl /vault/config/server.hcl
+set -e
 
-export CREDS_FILE="/vault/credentials.json"
+mv /config/server.hcl /vault/config/server.hcl
+
+umask 077
+
+if [[ ! -f "$CREDS_FILE" ]]; then
+	echo test
+	jq -n '{unseal_key: null, token: null, roles: {}, ready: false}' >"$CREDS_FILE.tmp"
+	mv "$CREDS_FILE.tmp" "$CREDS_FILE"
+else
+	jq '.ready = false' "$CREDS_FILE" > "$CREDS_FILE.tmp"
+	mv "$CREDS_FILE.tmp" "$CREDS_FILE"
+fi
 
 /configuration.sh &
 

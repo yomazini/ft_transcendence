@@ -12,9 +12,9 @@ until vault status >/dev/null 2>&1; [ $? -ne 1 ]; do
 	sleep 1
 done
 
-if [[ ! -f "${CREDS_FILE}" ]] && ! vault operator init -status >/dev/null 2>&1; then
+if ! vault operator init -status >/dev/null 2>&1; then
     credentials="$(vault operator init -key-shares=1 -key-threshold=1 -format=json)"
-	jq -r '{unseal_key: .unseal_keys_b64[0], token: .root_token, roles: {}}' <<< "$credentials" >"$CREDS_FILE.tmp"
+	jq --arg ukey "$(jq -r '.unseal_keys_b64[0]' <<< "$credentials")" --arg root "$(jq -r '.root_token' <<< "$credentials")" '.unseal_key = $ukey | .token = $root' "$CREDS_FILE" >"$CREDS_FILE.tmp"
 	mv "$CREDS_FILE.tmp" "$CREDS_FILE"
 fi
 
@@ -31,7 +31,7 @@ for policy in "${services[@]}"; do
 	vault policy write "$policy" /policies/"$policy".hcl
 done
 
-if [ "$(vault auth list -format=json | jq -r 'has("approle/")')" != "true" ];then
+if [[ "$(vault auth list -format=json | jq -r 'has("approle/")')" != "true" ]];then
 	vault auth enable approle
 fi
 
@@ -67,7 +67,6 @@ vault_put (){
 	vault kv put "secret/$1" "${@:2}"
 }
 
-
 vault_put scraper-svc \
 	sessions="${REDDIT_SESSIONS}"
 
@@ -98,5 +97,7 @@ unset REDDIT_SESSIONS POSTGRES_PASSWORD JWT_SECRET FORTYTWO_CLIENT_ID \
 	GRAFANA_ADMIN_PASSWORD MINIO_ROOT_PASSWORD MINIO_ROOT_USER MAIL_USER \
 	POSTGRES_USER
 
+jq '.ready = true' "$CREDS_FILE" > "$CREDS_FILE.tmp"
+mv "$CREDS_FILE.tmp" "$CREDS_FILE"
 
 exec /secret_update.sh
