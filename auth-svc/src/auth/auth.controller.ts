@@ -1,16 +1,18 @@
-import { Body, Controller, Get, HttpCode, Post, Req, UseGuards, Res, Delete } from '@nestjs/common';
-import { AcceptInviteDto, ChangePasswordDto, Complete42Dto, DeleteAccountDto, ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from './dto';
+import { Body, Controller, Get, HttpCode, Post, Req, UseGuards, Res, Delete, Patch } from '@nestjs/common';
+import { AcceptInviteDto, ChangeEmailDto, ChangePasswordDto, Complete42Dto, DeleteAccountDto, ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from './dto';
 import { AuthService } from './auth.service';
 import { JwtGuard } from './guard/jwt.guard';
 import { FortyTwoGuard } from './guard/42.guard';
 import { TokenDenylist } from './token-denylist.service';
 import { ExtractJwt } from 'passport-jwt';
+import { MetricsService } from 'src/metrics/metrics.service';
 
 @Controller('auth')
 export class AuthController {
 	constructor(
 		private readonly authService: AuthService,
 		private readonly denylist: TokenDenylist,
+		private readonly metrics: MetricsService,
 	) {}
 
 	@Post('signup') /** POST /auth/signup */
@@ -66,6 +68,12 @@ export class AuthController {
 		*/
 	}
 
+	@Patch('email') /** PATCH /auth/email */
+	@UseGuards(JwtGuard)
+	changeEmail(@Body() dto: ChangeEmailDto, @Req() req) {
+		return this.authService.changeEmail(req.user.sub, dto);
+	}
+
 	@Post('forgot-password') /** POST /auth/forgot-password */
 	@HttpCode(200)
 	forgotPassword(@Body() dto: ForgotPasswordDto) {
@@ -98,13 +106,12 @@ export class AuthController {
 	logout(@Req() req) {
 		const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
 		if (token) { this.denylist.add(token, req.user.exp); }
+		this.metrics.logouts.inc();
 	}
 
-	/** GET /auth/verify — called by nginx (auth_request) before it forwards a request
-	 *  to a service that has no auth of its own (reporting-svc). The ids are read from
-	 *  the verified token and sent back as headers; nginx passes them on, so a client
-	 *  can never choose which organization it reads. */
-	@Get('verify')
+	@Get('verify') /** GET /auth/verify 
+	— called by nginx (auth_request) before it forwards a request
+	 *  to a service that has no auth of its own (reporting-svc). */
 	@UseGuards(JwtGuard)
 	@HttpCode(204)
 	verify(@Req() req, @Res({ passthrough: true }) res) {
