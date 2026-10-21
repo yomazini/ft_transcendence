@@ -5,7 +5,8 @@ import http from 'http';
 @Injectable()
 export class ProxyService {
   private readonly logger = new Logger(ProxyService.name);
-  private readonly authSvcUrl = process.env.AUTH_SVC_URL || 'http://auth-svc:3002';
+  private readonly authSvcUrl =
+    process.env.AUTH_SVC_URL || 'http://auth-svc:3002';
 
   forward(req: Request, res: Response): void {
     const targetUrl = new URL(this.authSvcUrl);
@@ -14,10 +15,10 @@ export class ProxyService {
     const headers: http.OutgoingHttpHeaders = { ...req.headers };
     delete headers['content-length'];
     headers['host'] = targetUrl.host;
-    headers['x-forwarded-for'] =
-      (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '';
+    const prior = req.headers['x-forwarded-for'];
+    const remote = req.socket.remoteAddress || '';
     headers['x-forwarded-proto'] = req.protocol || 'http';
-
+    headers['x-forwarded-for'] = prior ? `${prior}, ${remote}` : remote;
     const clientReq = http.request(
       {
         hostname: targetUrl.hostname,
@@ -38,7 +39,9 @@ export class ProxyService {
     );
 
     clientReq.on('error', (err) => {
-      this.logger.error(`Proxy error forwarding to ${targetPath}: ${err.message}`);
+      this.logger.error(
+        `Proxy error forwarding to ${targetPath}: ${err.message}`,
+      );
       if (!res.headersSent) {
         res.status(502).json({
           statusCode: 502,
@@ -48,7 +51,8 @@ export class ProxyService {
     });
 
     if (req.body && Object.keys(req.body).length > 0) {
-      const payload = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+      const payload =
+        typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
       clientReq.setHeader('content-type', 'application/json');
       clientReq.setHeader('content-length', Buffer.byteLength(payload));
       clientReq.write(payload);
