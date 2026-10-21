@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
+import { ServiceUnavailableException } from '@nestjs/common';
 import { IS_PUBLIC_KEY } from './public.decorator';
 
 export interface AuthenticatedUser {
@@ -66,10 +67,11 @@ export class JwtAuthGuard implements CanActivate {
       if (verifyRes.status === 401 || verifyRes.status === 403) {
         throw new UnauthorizedException('Token has been revoked or logged out');
       }
+      if (!verifyRes.ok)
+        throw new ServiceUnavailableException('auth-svc verify failed');
     } catch (err: any) {
-      if (err instanceof UnauthorizedException) {
-        throw err;
-      }
+      if (err instanceof UnauthorizedException) throw err;
+      throw new ServiceUnavailableException('auth-svc unreachable');
     }
 
     request.user = {
