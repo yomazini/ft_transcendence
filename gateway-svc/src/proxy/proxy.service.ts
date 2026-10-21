@@ -50,6 +50,9 @@ export class ProxyService {
       }
     });
 
+    // Nest has already parsed the body, so it is re-sent as JSON.
+    // Fine for /auth and /orgs (JSON only); switch to raw-body piping
+    // if a form or file upload is ever proxied.
     if (req.body && Object.keys(req.body).length > 0) {
       const payload =
         typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
