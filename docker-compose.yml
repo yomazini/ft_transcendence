@@ -24,8 +24,6 @@ volumes:
     name: prometheus_db
   vault_data:
     name: vault_db
-  vault_logs:
-    name: vault_logs_db
 
 services:
 
@@ -187,29 +185,26 @@ services:
   # --- Security & secrets -----------------------------------------------
   vault:
     container_name: vault
-    image: vault-dev
+    image: vault-prod
     build: ./vault
     cap_add: [IPC_LOCK]
-    volumes: ["vault_data:/vault/file", "vault_logs:/vault/logs"]
+    env_file: .env                          # every secret configuration.sh puts into Vault
     environment:
-      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN_ID}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      REDDIT_SESSIONS: ${REDDIT_SESSIONS}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_DB: ${POSTGRES_DB}
+      CREDS_FILE: /secret/credentials.json  # unseal key + root token, kept outside the data volume
+    volumes:
+      - "vault_data:/vault"                 # Vault data + config (server.hcl stores in /vault/data)
+      - "./vault/secret:/secret"            # credentials.json — git-ignored
+      - "./vault/creds:/credentials"        # one <service>.json login per service — git-ignored
     healthcheck:
-      test:
-        - CMD-SHELL
-        - VAULT_ADDR=http://127.0.0.1:8200 VAULT_TOKEN="$VAULT_DEV_ROOT_TOKEN_ID" vault kv get secret/database >/dev/null 2>&1
+      test: ["CMD", "/health_check.sh"]     # unsealed AND setup finished
       interval: 5s
       timeout: 3s
-      retries: 10
-      start_period: 10s
+      retries: 20
+      start_period: 15s
     expose: ["8200"]
     networks: [ft_network]
     restart: unless-stopped
-    # Owner: Madani. Dev-mode Vault — fine for this project's scope; a real
-    # production Vault needs a proper unseal + storage backend.
+    # Owner: Madani. Production mode: file storage, auto-unseal, one AppRole + policy per service.
 
   # --- Observability (Prometheus + Grafana module) --------------------------
   # Prometheus scrapes /metrics from the services and the exporters every 15 s

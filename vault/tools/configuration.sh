@@ -67,6 +67,13 @@ vault_put (){
 	vault kv put "secret/$1" "${@:2}"
 }
 
+# Refuse to seed an empty secret: each path is written only once (vault_put skips existing ones),
+# so an empty value would stay empty forever.
+for v in POSTGRES_USER POSTGRES_PASSWORD JWT_SECRET FORTYTWO_CLIENT_ID FORTYTWO_CLIENT_SECRET \
+	MAIL_USER MAIL_PASS GRAFANA_ADMIN_PASSWORD MINIO_ROOT_USER MINIO_ROOT_PASSWORD; do
+	[[ -n "${!v}" ]] || { echo "$v is empty in .env" >&2; exit 1; }
+done
+
 vault_put scraper-svc \
 	sessions="${REDDIT_SESSIONS}"
 

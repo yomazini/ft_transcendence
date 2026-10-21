@@ -2,12 +2,12 @@
 
 set -e
 
-mv /config/server.hcl /vault/config/server.hcl
+# cp, not mv: a restart reuses the container's filesystem, where a moved file would be gone.
+cp -f /config/server.hcl /vault/config/server.hcl
 
 umask 077
 
 if [[ ! -f "$CREDS_FILE" ]]; then
-	echo test
 	jq -n '{unseal_key: null, token: null, roles: {}, ready: false}' >"$CREDS_FILE.tmp"
 	mv "$CREDS_FILE.tmp" "$CREDS_FILE"
 else
