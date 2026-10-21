@@ -2,8 +2,10 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Headers, Query, Res,
 import { ReportingService } from './reporting.service';
 import { ReportingHeadersDto } from './dto/headers/reporting-headers.dto';
 import type { Response } from 'express';
-import { Parser } from '@json2csv/plainjs';
+import { ApiSecurity, ApiTags } from '@nestjs/swagger';
 
+@ApiSecurity('basic')
+@ApiTags('Public API Reporting')
 @Controller('reporting')
 export class ReportingController {
 	constructor(private readonly reportingService: ReportingService) {}

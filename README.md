@@ -15,7 +15,7 @@ fill in real values, then:
 docker compose up
 ```
 
-Frontend at `http://localhost:8080`. See `contracts/openapi.yaml` for the API.
+Frontend at `http://localhost:8080` (port set by `HTTP_PORT` in `.env`). See `contracts/openapi.yaml` for the API.
 
 ## Team
 

@@ -1,14 +1,12 @@
 import { exportReport } from "@/lib/api/exportReport";
-import { error } from "console";
 import { useState } from "react";
-import { setLayout } from "recharts/types/state/layoutSlice";
 
 export function useExportReport() {
-	const [ expReport, setExpReport ] = useState(null);
+	const [ expReport, setExpReport ] = useState<Blob | null>(null);
 	const [ expLoading, setExpLoading ] = useState(false);
 	const [ expError, setExpError ] = useState<Error | null>(null);
 
-	const exportRep = async (id: string, format: string) => {
+	const exportRep = async (id: string | null, format: string) => {
 		try {
 			setExpLoading(true);
 			setExpError(null);
@@ -17,6 +15,7 @@ export function useExportReport() {
 			setExpReport(data);
 		} catch (error) {
 			setExpError(error as Error)
+			throw error
 		} finally {
 			setExpLoading(false);
 		}

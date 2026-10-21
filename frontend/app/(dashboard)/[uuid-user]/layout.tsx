@@ -7,6 +7,7 @@ import {
   SidebarTrigger,
   SidebarInset,
 } from "@/components/ui/sidebar"
+import { Toaster } from "sonner";
 
 export default function Layout({
   children,
@@ -22,6 +23,7 @@ export default function Layout({
 
         <SidebarInset className="border " >
           <DashboardNavbar />
+          <Toaster position="bottom-right" theme="dark" richColors />
 
           <main className="flex-1 p-3">
             {children}
