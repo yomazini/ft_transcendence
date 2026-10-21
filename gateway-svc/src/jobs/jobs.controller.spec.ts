@@ -33,6 +33,11 @@ describe('JobsController', () => {
 
     controller = module.get<JobsController>(JobsController);
     service = module.get<JobsService>(JobsService);
+
+    // createJob now fails fast when the queue is unavailable.
+    (service as any).scrapeQueue = {
+      add: jest.fn().mockResolvedValue({ id: 'queue-job-1' }),
+    };
   });
 
   it('should be defined', () => {
