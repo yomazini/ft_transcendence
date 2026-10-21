@@ -24,7 +24,6 @@ volumes:
     name: prometheus_db
   vault_data:
     name: vault_db
-
 services:
 
   # --- Entry point -----------------------------------------------------
@@ -185,10 +184,10 @@ services:
   # --- Security & secrets -----------------------------------------------
   vault:
     container_name: vault
-    image: vault-prod
+    image: vault-dev
     build: ./vault
     cap_add: [IPC_LOCK]
-    env_file: .env                          # every secret configuration.sh puts into Vault
+    volumes: ["vault_data:/vault/file", "vault_logs:/vault/logs"]
     environment:
       CREDS_FILE: /secret/credentials.json  # unseal key + root token, kept outside the data volume
     volumes:
