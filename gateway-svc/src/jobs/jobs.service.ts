@@ -9,6 +9,7 @@ import {
 import { Queue } from 'bullmq';
 import { randomUUID } from 'crypto';
 import { CreateJobDto } from './dto/create-job.dto';
+import { GatewayTimeoutException } from '@nestjs/common';
 import {
   DatabaseService,
   JobRecord,
@@ -116,7 +117,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     }
 
     // 3. Broadcast real-time WebSocket event (to Next.js frontend)
-    this.eventsGateway.broadcastJobStatus(jobId, 'queued');
+    void this.eventsGateway.broadcastJobStatus(jobId, 'queued');
 
     return jobRecord;
   }
@@ -126,11 +127,21 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   async ragQuery(jobId: string, query: string, user: AuthenticatedUser) {
     await this.getJobById(jobId, user); // 404 for a job of another organization
     const base = process.env.ANALYSIS_SVC_URL || 'http://analysis-svc:8001';
-    const response = await fetch(`${base}/rag/query`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ job_id: jobId, query }),
-    });
+
+    let response: Response;
+    try {
+      response = await fetch(`${base}/rag/query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job_id: jobId, query }),
+        signal: AbortSignal.timeout(10_000),
+      });
+    } catch (err: any) {
+      if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
+        throw new GatewayTimeoutException('analysis-svc timed out');
+      }
+      throw new HttpException('analysis-svc unreachable', 502);
+    }
     const data = await response.json().catch(() => null);
     if (!response.ok) {
       throw new HttpException(
