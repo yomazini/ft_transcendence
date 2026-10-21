@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import sys
 import uuid
 
@@ -24,14 +25,20 @@ async def push_fake_job(target: str = "r/saas"):
         host=settings.postgres_host,
         port=settings.postgres_port,
     )
-    org_row = await conn.fetchrow('SELECT id FROM "Organization" LIMIT 1')
-    user_row = await conn.fetchrow('SELECT id FROM "User" LIMIT 1')
-    if not org_row or not user_row:
-        raise RuntimeError(
-            "No Organization/User found. Create one first (e.g. via signup)."
-        )
-    seed_org_id = str(org_row["id"])
-    seed_user_id = str(user_row["id"])
+    org_id_env = os.getenv("SEED_ORG_ID")
+    user_id_env = os.getenv("SEED_USER_ID")
+    if org_id_env and user_id_env:
+        seed_org_id = org_id_env
+        seed_user_id = user_id_env
+    else:
+        org_row = await conn.fetchrow('SELECT id FROM "Organization" LIMIT 1')
+        user_row = await conn.fetchrow('SELECT id FROM "User" LIMIT 1')
+        if not org_row or not user_row:
+            raise RuntimeError(
+                "No Organization/User found. Create one first (e.g. via signup)."
+            )
+        seed_org_id = str(org_row["id"])
+        seed_user_id = str(user_row["id"])
     try:
         await conn.execute(
             """
