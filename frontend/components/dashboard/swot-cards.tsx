@@ -12,7 +12,11 @@ import { Lightbulb, Link, Link2, LucideIcon, ShieldCheck, TrendingUp, Zap } from
 import { Icon } from "next/dist/lib/metadata/types/metadata-types";
 
 
-export function Cards({ items, icon: Icon, title, description, iconColor }: { items: string[]; icon: LucideIcon; title: string, description: string, iconColor: string }) {
+export function Cards({ items, icon: Icon, title, description, iconColor }: { items: any[]; icon: LucideIcon; title: string, description: string, iconColor: string }) {
+	const textOf = (item: any): string =>
+		typeof item === 'string'
+			? item
+			: (item?.point ?? item?.action ?? item?.text ?? JSON.stringify(item));
 	return (
 
 		<Card className="stat-card group flex flex-col ">
@@ -42,10 +46,10 @@ export function Cards({ items, icon: Icon, title, description, iconColor }: { it
 					{items.length === 0 ? (
 						<li className="text-xs text-muted-foreground">Nothing found for this job.</li>
 					) : (
-						items.map((item) => (
-							<li key={item} className="stat-list-item group">
+						items.map((item, index) => (
+							<li key={`${title}-${index}`} className="stat-list-item group">
 								<span className="stat-list-dot" />
-								<span className="leading-relaxed">{item}</span>
+								<span className="leading-relaxed">{textOf(item)}</span>
 							</li>
 						))
 					)}
