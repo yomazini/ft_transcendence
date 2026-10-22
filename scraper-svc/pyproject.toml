@@ -9,7 +9,14 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "bullmq>=3.2.2",
+    "hvac>=2.4.0",
+    "pgvector>=0.5.1",
+    "pip>=26.2.2",
+    "psycopg[binary]>=3.3.6",
+    "pydantic>=2.14.1",
     "requests>=2.34.2",
+    "sqlalchemy>=2.1.6",
+    "types-hvac>=2.4.0.20260731",
 ]
 
 [project.scripts]
@@ -18,3 +25,9 @@ scraper-svc = "scraper_svc:main"
 [build-system]
 requires = ["uv_build>=0.12.7,<0.13.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "sqlacodegen[pgvector]==4.0.4",
+]
+
