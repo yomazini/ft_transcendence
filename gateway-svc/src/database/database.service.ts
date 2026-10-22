@@ -40,7 +40,13 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.seedDefaultStubData();
   }
 
+  private retryTimer?: NodeJS.Timeout;
+
   async onModuleInit() {
+    await this.connect();
+  }
+
+  private async connect() {
     const host = process.env.POSTGRES_HOST || 'postgres';
     const port = parseInt(process.env.POSTGRES_PORT || '5432', 10);
     const user = process.env.POSTGRES_USER || 'ft_transcendence';
@@ -56,7 +62,6 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
         database,
         connectionTimeoutMillis: 3000,
       });
-
       const client = await this.pool.connect();
       this.isConnected = true;
       client.release();
@@ -64,15 +69,14 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     } catch (err: any) {
       this.isConnected = false;
       this.logger.warn(
-        `PostgreSQL not reachable at ${host}:${port} (${err.message}). Using resilient in-memory stub storage.`,
+        `PostgreSQL not reachable (${err.message}); retrying in 5s`,
       );
+      this.retryTimer = setTimeout(() => void this.connect(), 5000);
     }
-
-    // Seed default demo report in stub store
-    this.seedDefaultStubData();
   }
 
   async onModuleDestroy() {
+    if (this.retryTimer) clearTimeout(this.retryTimer);
     if (this.pool) {
       await this.pool.end();
     }
