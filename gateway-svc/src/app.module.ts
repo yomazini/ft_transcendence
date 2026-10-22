@@ -17,10 +17,7 @@ import { ProxyModule } from './proxy/proxy.module';
     DatabaseModule,
     EventsModule,
     JobsModule,
-<<<<<<< HEAD
     MetricsModule,
-=======
->>>>>>> b60c46d (feat(gateway): proxy auth and orgs routes to auth-svc and route through nginx)
     ProxyModule,
   ],
 })

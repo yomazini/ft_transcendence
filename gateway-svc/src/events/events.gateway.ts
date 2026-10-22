@@ -101,10 +101,7 @@ export class EventsGateway
       }
       client.data.user = payload;
       await client.join(payload.org_id);
-<<<<<<< HEAD
       wsConnections.inc();
-=======
->>>>>>> 7439806 (fix(gateway): authenticate WebSocket clients and use org rooms)
       this.logger.log(`Client connected: ${client.id}`);
     } catch {
       client.disconnect();
