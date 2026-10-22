@@ -26,7 +26,6 @@ volumes:
     name: vault_db
 
 services:
-
   # --- Entry point -----------------------------------------------------
   nginx:
     container_name: nginx
@@ -187,16 +186,17 @@ services:
     container_name: vault
     image: vault-prod
     build: ./vault
+    ports: ["127.0.0.1:8200:8200"]
     cap_add: [IPC_LOCK]
-    env_file: .env                          # every secret configuration.sh puts into Vault
+    env_file: .env # every secret configuration.sh puts into Vault
     environment:
-      CREDS_FILE: /secret/credentials.json  # unseal key + root token, kept outside the data volume
+      CREDS_FILE: /secret/credentials.json # unseal key + root token, kept outside the data volume
     volumes:
-      - "vault_data:/vault"                 # Vault data + config (server.hcl stores in /vault/data)
-      - "./vault/secret:/secret"            # credentials.json — git-ignored
-      - "./vault/creds:/credentials"        # one <service>.json login per service — git-ignored
+      - "vault_data:/vault" # Vault data + config (server.hcl stores in /vault/data)
+      - "./vault/secret:/secret" # credentials.json — git-ignored
+      - "./vault/creds:/credentials" # one <service>.json login per service — git-ignored
     healthcheck:
-      test: ["CMD", "/health_check.sh"]     # unsealed AND setup finished
+      test: ["CMD", "/health_check.sh"] # unsealed AND setup finished
       interval: 5s
       timeout: 3s
       retries: 20
@@ -229,8 +229,8 @@ services:
     image: grafana/grafana:13.2.4
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
-      GF_AUTH_ANONYMOUS_ENABLED: "false"   # no access without login
-      GF_USERS_ALLOW_SIGN_UP: "false"      # nobody can create an account
+      GF_AUTH_ANONYMOUS_ENABLED: "false" # no access without login
+      GF_USERS_ALLOW_SIGN_UP: "false" # nobody can create an account
     volumes:
       - "grafana_data:/var/lib/grafana"
       - "./grafana/provisioning:/etc/grafana/provisioning:ro"
