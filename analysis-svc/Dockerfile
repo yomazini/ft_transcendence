@@ -8,7 +8,7 @@ COPY pyproject.toml ./
 RUN pip install --no-cache-dir --default-timeout=1000 \
     fastapi "uvicorn[standard]" vaderSentiment textblob sentence-transformers \
     google-generativeai pgvector asyncpg redis pydantic pydantic-settings \
-    httpx pytest pytest-asyncio numpy bullmq
+    httpx pytest pytest-asyncio numpy bullmq prometheus-client
 
 COPY . .
 
