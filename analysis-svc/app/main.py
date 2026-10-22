@@ -1,27 +1,23 @@
 import logging
+import time
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import List
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel
 
 from .canvas import build_rag_prompt
-from .database import (
-    close_pool,
-    get_comments_by_job,
-    get_job,
-    get_report_by_job,
-    insert_comment,
-    insert_report,
-    search_comments_by_vector,
-    update_job_status,
-)
+from .database import (close_pool, get_comments_by_job, get_job,
+                       get_report_by_job, insert_comment, insert_report,
+                       search_comments_by_vector, update_job_status)
 from .embeddings import generate_embedding
 from .events import close_redis, publish_job_event
 from .fixtures import get_fixture_comments
 from .llm import call_openrouter_text
+from .metrics import http_duration, http_requests
 from .ranking import rerank_for_rag
 from .sentiment import compute_sentiment_summary, score_comments
 from .synthesis import synthesize_full_report
@@ -45,6 +41,24 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="analysis-svc", version="0.2.0", lifespan=lifespan)
 
+
+@app.get("/metrics")
+def metrics():
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
+@app.middleware("http")
+async def metrics_middleware(request, call_next):
+    if request.url.path == "/metrics":
+        return await call_next(request)
+    start = time.perf_counter()
+    response = await call_next(request)
+    route = request.scope.get("route")
+    path = getattr(route, "path", request.url.path)
+    labels = {"method": request.method, "route": path}
+    http_requests.labels(method=request.method, route=path, status=str(response.status_code)).inc()
+    http_duration.labels(**labels).observe(time.perf_counter() - start)
+    return response
 
 class HealthResponse(BaseModel):
     status: str

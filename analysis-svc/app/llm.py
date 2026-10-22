@@ -1,11 +1,13 @@
 import json
 import logging
 import re
+import time
 from typing import Any
 
 import httpx
 
 from .config import settings
+from .metrics import analysis_llm_duration, analysis_llm_requests
 
 logger = logging.getLogger("analysis-llm")
 
@@ -17,6 +19,11 @@ FALLBACK_MODELS = [
     "google/gemma-4-26b-a4b-it:free",
     "openrouter/free",
 ]
+
+
+def _record_llm(model: str, status: str, started: float) -> None:
+    analysis_llm_requests.labels(model=model, status=status).inc()
+    analysis_llm_duration.labels(model=model).observe(time.perf_counter() - started)
 
 
 def _get_model_chain() -> list[str]:
@@ -92,6 +99,7 @@ async def call_openrouter_json(
     async with httpx.AsyncClient(timeout=settings.openrouter_timeout) as client:
         for model in models:
             for attempt in range(2):
+                started = time.perf_counter()
                 try:
                     raw = await _post_completion(
                         client=client,
@@ -102,9 +110,11 @@ async def call_openrouter_json(
                         json_mode=True,
                     )
                     parsed = extract_json_object(raw)
+                    _record_llm(model, "success", started)
                     logger.info("OpenRouter JSON synthesis succeeded with %s", model)
                     return parsed
                 except httpx.HTTPStatusError as e:
+                    _record_llm(model, "error", started)
                     status = e.response.status_code
                     logger.warning(
                         "OpenRouter HTTP %s on %s (attempt %d)",
@@ -114,6 +124,7 @@ async def call_openrouter_json(
                     )
                     break
                 except Exception as e:
+                    _record_llm(model, "error", started)
                     logger.warning(
                         "OpenRouter parse/error on %s (attempt %d): %s",
                         model,
@@ -135,6 +146,7 @@ async def call_openrouter_text(
     models = _get_model_chain()
     async with httpx.AsyncClient(timeout=settings.openrouter_timeout) as client:
         for model in models:
+            started = time.perf_counter()
             try:
                 raw = await _post_completion(
                     client=client,
@@ -144,7 +156,9 @@ async def call_openrouter_text(
                     temperature=temperature,
                     json_mode=False,
                 )
+                _record_llm(model, "success", started)
                 return strip_thinking(raw)
             except Exception as e:
+                _record_llm(model, "error", started)
                 logger.warning("OpenRouter text call failed on %s: %s", model, e)
     return None
