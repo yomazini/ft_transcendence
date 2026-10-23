@@ -65,7 +65,7 @@ These are all the secret paths and what each one holds:
 | `secret/data/scraper-svc` | `sessions` | `REDDIT_SESSIONS` |
 | `secret/data/database` | `user` | `POSTGRES_USER` |
 | | `password` | `POSTGRES_PASSWORD` |
-| | `database` | `POSTGRES_DP` |
+| | `database` | `POSTGRES_DB` |
 | `secret/data/auth-svc` | `forty_two_client_id` | `FORTYTWO_CLIENT_ID` |
 | | `forty_two_client_secret` | `FORTYTWO_CLIENT_SECRET` |
 | | `mail_user` | `MAIL_USER` |
