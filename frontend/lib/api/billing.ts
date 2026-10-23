@@ -1,0 +1,120 @@
+
+import { authHeaders } from "@/lib/auth";
+
+export type PlanTier = "free" | "premium" | "extra";
+export type PaidPlan = Exclude<PlanTier, "free">;
+
+export type PaymentStatus = "pending" | "succeeded" | "failed";
+
+export interface Billing {
+  organization_id: string;
+  plan: PlanTier;
+  status: "free" | "active" | "canceled" | "expired";
+  member_count: number;
+  max_users: number;
+  price_cents: number;
+  subscription_end: string | null;
+  cancel_at_period_end: boolean;
+}
+
+export interface Payment {
+  id: string;
+  plan: PlanTier;
+  amount_cents: number;
+  currency: string;
+  status: PaymentStatus;
+  failure_reason: string | null;
+  created_at: string;
+}
+
+export interface CheckoutResponse {
+  payment_id: string;
+  url: string;
+}
+
+export interface VerifyResponse {
+  payment_id: string;
+  status: PaymentStatus;
+}
+
+export interface CancelResponse {
+  message: string;
+  ends_at: string;
+}
+
+async function send<T>(
+  path: string,
+  init: RequestInit = {},
+): Promise<T> {
+  const response = await fetch(path, {
+    ...init,
+    cache: "no-store",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+      ...(init.headers ?? {}),
+    },
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(
+      Array.isArray(data?.message)
+        ? data.message.join(", ")
+        : data?.message ??
+            `Request failed (${response.status})`,
+    );
+  }
+
+  return data as T;
+}
+
+// GET /api/orgs/billing
+export function getBilling(): Promise<Billing> {
+  return send<Billing>("/api/orgs/billing");
+}
+
+// GET /api/orgs/billing/payments
+export function getPayments(): Promise<Payment[]> {
+  return send<Payment[]>("/api/orgs/billing/payments");
+}
+
+// POST /api/orgs/billing/checkout
+export function createCheckout(
+  plan: PaidPlan,
+  idempotencyKey: string,
+): Promise<CheckoutResponse> {
+  return send<CheckoutResponse>(
+    "/api/orgs/billing/checkout",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        plan,
+        idempotency_key: idempotencyKey,
+      }),
+    },
+  );
+}
+
+// POST /api/orgs/billing/verify/:paymentId
+export function verifyCheckout(
+  paymentId: string,
+): Promise<VerifyResponse> {
+  return send<VerifyResponse>(
+    `/api/orgs/billing/verify/${encodeURIComponent(paymentId)}`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+// POST /api/orgs/billing/cancel
+export function cancelSubscription(): Promise<CancelResponse> {
+  return send<CancelResponse>(
+    "/api/orgs/billing/cancel",
+    {
+      method: "POST",
+    },
+  );
+}

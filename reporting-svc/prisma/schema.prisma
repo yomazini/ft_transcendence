@@ -12,15 +12,111 @@ datasource db {
 	provider = "postgresql"
 }
 
-model	Organization {
-	id					String		@id @default(uuid())
-	name				String
-	script_jobs			Job[]
-	user_organization	role_and_organization[]
-	messages			Messages[]
-	description			String 		@db.VarChar(200)
-	created_at			DateTime	@default(now())
+// model	Organization {
+// 	id					String		@id @default(uuid())
+// 	name				String
+// 	script_jobs			Job[]
+// 	user_organization	role_and_organization[]
+// 	messages			Messages[]
+// 	description			String 		@db.VarChar(200)
+// 	created_at			DateTime	@default(now())
+// }
+
+//===========================
+enum PlanTier {
+  free
+  premium
+  extra
 }
+
+enum SubscriptionStatus {
+  active
+  canceled
+  expired
+}
+
+model Subscription {
+  id                   String             @id @default(uuid())
+
+  org_id               String
+  organization         Organization       @relation(fields: [org_id], references: [id], onDelete: Cascade)
+
+  plan                 PlanTier
+  status               SubscriptionStatus @default(active)
+
+  started_at           DateTime           @default(now())
+  ends_at              DateTime
+
+  cancel_at_period_end Boolean            @default(false)
+
+  created_at           DateTime           @default(now())
+  updated_at           DateTime           @updatedAt
+
+  payments             Payment[]
+
+  @@index([org_id, status])
+  @@index([ends_at])
+}
+
+model Organization {
+  id                String                  @id @default(uuid())
+  name              String
+  script_jobs       Job[]
+  user_organization role_and_organization[]
+  messages          Messages[]
+  description       String                  @db.VarChar(200)
+  created_at        DateTime                @default(now())
+
+  // Billing
+  plan              PlanTier                @default(free)
+  subscriptions     Subscription[]
+  payments          Payment[]
+}
+
+enum PaymentStatus {
+  pending
+  succeeded
+  failed
+}
+
+model Payment {
+  id                 String         @id @default(uuid())
+
+  org_id             String
+  organization       Organization   @relation(fields: [org_id], references: [id], onDelete: Cascade)
+
+  subscription_id    String?
+  subscription       Subscription?  @relation(fields: [subscription_id], references: [id], onDelete: SetNull)
+
+  // Requested plan
+  plan               PlanTier
+
+  // Server-calculated amount
+  amount_cents       Int
+  currency           String         @default("USD")
+
+  // Payment state
+  status             PaymentStatus  @default(pending)
+
+  // Fake-bank payment identifier
+  provider_reference String?        @unique
+
+  // Prevent duplicate checkout requests
+  idempotency_key    String?        @unique
+
+  failure_reason     String?
+
+  created_at         DateTime       @default(now())
+  updated_at         DateTime       @updatedAt
+
+  @@index([org_id, created_at])
+  @@index([subscription_id])
+}
+
+
+//=================
+
+
 
 enum PriceSensitivity {
 	budget

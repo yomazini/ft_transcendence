@@ -51,7 +51,9 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
+  Subscription: 'Subscription',
   Organization: 'Organization',
+  Payment: 'Payment',
   User: 'User',
   role_and_organization: 'role_and_organization',
   Comments: 'Comments',
@@ -77,14 +79,48 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
+export const SubscriptionScalarFieldEnum = {
+  id: 'id',
+  org_id: 'org_id',
+  plan: 'plan',
+  status: 'status',
+  started_at: 'started_at',
+  ends_at: 'ends_at',
+  cancel_at_period_end: 'cancel_at_period_end',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type SubscriptionScalarFieldEnum = (typeof SubscriptionScalarFieldEnum)[keyof typeof SubscriptionScalarFieldEnum]
+
+
 export const OrganizationScalarFieldEnum = {
   id: 'id',
   name: 'name',
   description: 'description',
-  created_at: 'created_at'
+  created_at: 'created_at',
+  plan: 'plan'
 } as const
 
 export type OrganizationScalarFieldEnum = (typeof OrganizationScalarFieldEnum)[keyof typeof OrganizationScalarFieldEnum]
+
+
+export const PaymentScalarFieldEnum = {
+  id: 'id',
+  org_id: 'org_id',
+  subscription_id: 'subscription_id',
+  plan: 'plan',
+  amount_cents: 'amount_cents',
+  currency: 'currency',
+  status: 'status',
+  provider_reference: 'provider_reference',
+  idempotency_key: 'idempotency_key',
+  failure_reason: 'failure_reason',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum]
 
 
 export const UserScalarFieldEnum = {

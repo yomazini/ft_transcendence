@@ -9,6 +9,33 @@
 * 🟢 You can import this file directly.
 */
 
+export const PlanTier = {
+  free: 'free',
+  premium: 'premium',
+  extra: 'extra'
+} as const
+
+export type PlanTier = (typeof PlanTier)[keyof typeof PlanTier]
+
+
+export const SubscriptionStatus = {
+  active: 'active',
+  canceled: 'canceled',
+  expired: 'expired'
+} as const
+
+export type SubscriptionStatus = (typeof SubscriptionStatus)[keyof typeof SubscriptionStatus]
+
+
+export const PaymentStatus = {
+  pending: 'pending',
+  succeeded: 'succeeded',
+  failed: 'failed'
+} as const
+
+export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus]
+
+
 export const PriceSensitivity = {
   budget: 'budget',
   midMarket: 'midMarket',

@@ -29,8 +29,8 @@ export * from "./enums.js"
  * const prisma = new PrismaClient({
  *   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL })
  * })
- * // Fetch zero or more Organizations
- * const organizations = await prisma.organization.findMany()
+ * // Fetch zero or more Subscriptions
+ * const subscriptions = await prisma.subscription.findMany()
  * ```
  * 
  * Read more in our [docs](https://pris.ly/d/client).
@@ -40,10 +40,20 @@ export type PrismaClient<LogOpts extends Prisma.LogLevel = never, OmitOpts exten
 export { Prisma }
 
 /**
+ * Model Subscription
+ * 
+ */
+export type Subscription = Prisma.SubscriptionModel
+/**
  * Model Organization
  * 
  */
 export type Organization = Prisma.OrganizationModel
+/**
+ * Model Payment
+ * 
+ */
+export type Payment = Prisma.PaymentModel
 /**
  * Model User
  * 
