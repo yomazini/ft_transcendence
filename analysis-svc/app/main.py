@@ -1,3 +1,4 @@
+import json
 import logging
 import time
 import uuid
@@ -5,14 +6,24 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import List
 
+import hvac
 from fastapi import FastAPI, HTTPException, Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel
 
+from .config import settings
+
 from .canvas import build_rag_prompt
-from .database import (close_pool, get_comments_by_job, get_job,
-                       get_report_by_job, insert_comment, insert_report,
-                       search_comments_by_vector, update_job_status)
+from .database import (
+    close_pool,
+    get_comments_by_job,
+    get_job,
+    get_report_by_job,
+    insert_comment,
+    insert_report,
+    search_comments_by_vector,
+    update_job_status,
+)
 from .embeddings import generate_embedding
 from .events import close_redis, publish_job_event
 from .fixtures import get_fixture_comments
@@ -29,6 +40,25 @@ logger = logging.getLogger("analysis-svc")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    try:
+        with open("/run/vault/login.json") as f:
+            creds = json.load(f)
+        client = hvac.Client(url="http://vault:8200")
+        client.auth.approle.login(
+            role_id=creds["role_id"], secret_id=creds["secret_id"]
+        )
+        db = client.secrets.kv.v2.read_secret_version(
+            path="database", mount_point="secret"
+        )["data"]["data"]
+        ai = client.secrets.kv.v2.read_secret_version(
+            path="analysis-svc", mount_point="secret"
+        )["data"]["data"]
+        settings.postgres_password = db["password"]
+        settings.openrouter_api_key = ai["openrouter_api_key"]
+        logger.info("Loaded secrets from Vault")
+    except Exception as e:
+        logger.warning("Vault unavailable; using .env: %s", e)
+
     try:
         await start_worker()
     except Exception as e:
@@ -56,9 +86,12 @@ async def metrics_middleware(request, call_next):
     route = request.scope.get("route")
     path = getattr(route, "path", request.url.path)
     labels = {"method": request.method, "route": path}
-    http_requests.labels(method=request.method, route=path, status=str(response.status_code)).inc()
+    http_requests.labels(
+        method=request.method, route=path, status=str(response.status_code)
+    ).inc()
     http_duration.labels(**labels).observe(time.perf_counter() - start)
     return response
+
 
 class HealthResponse(BaseModel):
     status: str
