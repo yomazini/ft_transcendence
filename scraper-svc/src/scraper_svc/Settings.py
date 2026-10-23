@@ -1,10 +1,10 @@
-import hvac
+import os, hvac
 from scraper_svc.Login import Login
 from sqlalchemy import URL
 
-POSTGRES_DRIVER="postgresql+psycopg"
-POSTGRES_DNS="localhost"
-VAULT_DNS="localhost"
+DB_DRIVER=os.getenv('DB_DRIVER', "postgresql+psycopg") 
+DB_DNS=os.getenv('DB_DNS', "postgres")
+VAULT_DNS=os.getenv('VAULT_DNS', "vault")
 PORT=5432
 
 class Settings:
@@ -26,7 +26,7 @@ class Settings:
 			secret_id=self.credentials.secret_id
 		)
 
-	async def get_sessions(self) -> None:
+	async def init_sessions(self) -> None:
 		secret = self.client.secrets.kv.v2.read_secret_version(
 			path='scraper-svc',
 			mount_point='secret',
@@ -36,7 +36,7 @@ class Settings:
 		data = secret["data"]["data"]["sessions"]
 		self.sessions = data.split(',')
 
-	async def get_database(self) -> None:
+	async def init_database(self) -> None:
 		secret = self.client.secrets.kv.v2.read_secret_version(
 			path='database',
 			mount_point='secret',
@@ -48,14 +48,14 @@ class Settings:
 			username=data["user"],
 			database=data["database"],
 			password=data["password"],
-			host=POSTGRES_DNS,
+			host=DB_DNS,
 			port=PORT
 		)
 
-	async def get_settings(self):
+	async def init_settings(self):
 		await self.login()
-		await self.get_sessions()
-		await self.get_database()
+		await self.init_sessions()
+		await self.init_database()
 
 	
 		
