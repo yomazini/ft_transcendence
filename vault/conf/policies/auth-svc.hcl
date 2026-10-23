@@ -2,7 +2,7 @@ path "secret/data/auth-svc" {
 	capabilities = ["read"]
 }
 
-path "secret/data/gataway-svc" {
+path "secret/data/gateway-svc" {
 	capabilities = ["read"]
 }
 
