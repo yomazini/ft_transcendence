@@ -14,9 +14,16 @@ from pydantic import BaseModel
 from .config import settings
 
 from .canvas import build_rag_prompt
-from .database import (close_pool, get_comments_by_job, get_job,
-                       get_report_by_job, insert_comment, insert_report,
-                       search_comments_by_vector, update_job_status)
+from .database import (
+    close_pool,
+    get_comments_by_job,
+    get_job,
+    get_report_by_job,
+    insert_comment,
+    insert_report,
+    search_comments_by_vector,
+    update_job_status,
+)
 from .embeddings import generate_embedding
 from .events import close_redis, publish_job_event
 from .fixtures import get_fixture_comments
