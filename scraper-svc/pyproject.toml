@@ -8,7 +8,7 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "bullmq>=3.2.2",
+    "bullmq>=3.2.3",
     "hvac>=2.4.0",
     "pgvector>=0.5.1",
     "pip>=26.2.2",

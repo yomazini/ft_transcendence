@@ -1,49 +1,45 @@
-import asyncio, json, os, logging
+import os, json
 from bullmq import Queue, Worker, Job
-import redis.asyncio as aioredis
+from typing import Any, cast
+from collections.abc import Callable
 from scraper_svc.scrapers import scrape_mode
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("scraper-worker")
+from scraper_svc.Settings import Settings
+from scraper_svc.models import Jobmodes
+from asyncio import Future
+from uuid import UUID
 
 REDIS_URL = f"redis://{os.getenv('REDIS_HOST', 'redis')}:{os.getenv('REDIS_PORT', '6379')}"
-SCRAPE_QUEUE = os.getenv('SCRAPE_QUEUE', 'scrape-job')      # filled by gateway-svc
-ANALYZE_QUEUE = os.getenv('ANALYZE_QUEUE', 'analyze-job')   # read by analysis-svc
-EVENTS_CHANNEL = os.getenv('EVENTS_CHANNEL', 'job-events')  # relayed to the browser by gateway-svc
+JOB_QUEUE=os.getenv('JOB_QUEUE','scrape-job')
+ANALYSIS_QUEUE=os.getenv("ANALYSIS_QUEUE", 'analyze-job')
+
+
 
 class ScrapingWorker:
+    settings: Settings
+    worker: Worker | None
+    queue: Queue | None
+
     def __init__(self):
-        #TODO! create a session handler.
-        # A Reddit session cookie is optional: public JSON pages work without one.
-        sessions = os.getenv('SESSION_IDS') or os.getenv('REDDIT_SESSIONS') or ''
-        self.session_ids = [s for s in sessions.split(',') if s and s != 'changeme']
+        self.settings = Settings()
         self.worker = None
         self.queue = None
-        self.events = None
 
-    async def scrape(self, job: Job, token: str) -> dict:
-        data = job.data
-        job_id = data.get('id')
-        session_id = self.session_ids[0] if self.session_ids else None
-        logger.info("Scraping job %s (%s %s)", job_id, data.get('mode'), data.get('target'))
+    async def scrape(self, job: Job, token: str) -> None:
         try:
-            # requests is blocking: run it in a thread so the event loop stays free.
-            comments = await asyncio.to_thread(scrape_mode, session_id, data['target'], mode=data['mode'])
+            print("started", flush=True)
+            data = job.data
+            id: UUID = UUID(data["id"])
+            mode_str: str = data["mode"]
+            mode: Jobmodes = Jobmodes(mode_str.capitalize())
+            target: str = data["target"]
+            print(data, flush=True)
+            body = scrape_mode(self.settings.sessions[0], target, mode)
+            print(body, flush=True)
         except Exception as e:
-            logger.error("Scraping failed for job %s: %s", job_id, e)
-            # BullMQ retries the job (attempts set by gateway-svc): report the failure only after the last try.
-            if job.attemptsMade + 1 >= int((job.opts or {}).get('attempts', 1)):
-                await self.events.publish(EVENTS_CHANNEL, json.dumps({
-                    'job_id': job_id, 'status': 'failed', 'error': f'scraping failed: {e}',
-                }))
-            raise
-        logger.info("Job %s: %d comments, sending to %s", job_id, len(comments), ANALYZE_QUEUE)
-        await self.queue.add('analyze', {**data, 'comments': comments})
-        return {'job_id': job_id, 'comments': len(comments)}
+            print(e, flush=True)
 
     async def start(self):
-        self.queue = Queue(ANALYZE_QUEUE, {'connection': REDIS_URL})
-        self.events = aioredis.from_url(REDIS_URL, decode_responses=True)
-        self.worker = Worker(SCRAPE_QUEUE, self.scrape, {'connection': REDIS_URL, 'autorun': False})
-        logger.info("Listening on %s, forwarding to %s", SCRAPE_QUEUE, ANALYZE_QUEUE)
+        await self.settings.init_settings()
+        self.worker = Worker(JOB_QUEUE, cast(Callable[..., Future[Any]], self.scrape), {'connection': REDIS_URL, 'autorun': False})
+        self.queue = Queue(ANALYSIS_QUEUE, {'connection': REDIS_URL})
         await self.worker.run()
