@@ -25,7 +25,7 @@ vault operator unseal $(jq -r '.unseal_key' $CREDS_FILE)
 
 export VAULT_TOKEN=$(jq -r '.token' $CREDS_FILE)
 
-services=("analysis-svc" "database" "minio" "auth-svc" "grafana" "scraper-svc")
+services=("analysis-svc" "database" "minio" "auth-svc" "grafana" "scraper-svc" "gateway-svc")
 
 for policy in "${services[@]}"; do
 	vault policy write "$policy" /policies/"$policy".hcl
@@ -43,12 +43,13 @@ for role in ${services[@]}; do
 		secret_id_ttl=4h \
 		secret_id_num_uses=0
 
+	mkdir -p /credentials/$role/
 	old="$(jq -r --arg role "$role" '.roles[$role] // empty' "$CREDS_FILE")"
 	role_id="$(vault read -field=role_id "auth/approle/role/$role/role-id")"
 	secret_data="$(vault write -f -format=json "auth/approle/role/$role/secret-id" | jq '{secret_id: .data.secret_id, accessor_id: .data.secret_id_accessor}')"
-	jq -n --arg role_id "$role_id" --arg secret_id "$(jq -r '.secret_id' <<< "$secret_data")" '{role_id: $role_id, secret_id: $secret_id}' > /credentials/"$role".json
+	jq -n --arg role_id "$role_id" --arg secret_id "$(jq -r '.secret_id' <<< "$secret_data")" '{role_id: $role_id, secret_id: $secret_id}' > "/credentials/$role/login.json"
 	if [ -n "$old" ]; then
-		vault write auth/approle/role/"$role"/secret-id-accessor/destroy secret_id_accessor="$old" || true 
+		vault write auth/approle/role/"$role"/secret-id-accessor/destroy secret_id_accessor="$old" >/dev/null 2>&1 || true 
 	fi
 	jq --arg role "$role" --arg accessor "$(jq -r '.accessor_id' <<< "$secret_data")" '.roles[$role] = $accessor' "$CREDS_FILE" > "$CREDS_FILE.tmp"
 	mv "$CREDS_FILE.tmp" "$CREDS_FILE"
@@ -80,9 +81,12 @@ vault_put scraper-svc \
 vault_put database \
 	user="${POSTGRES_USER}" \
 	password="${POSTGRES_PASSWORD}" \
+	database="${POSTGRES_DB}"
+
+vault_put gateway-svc \
+	jwt_secret="${JWT_SECRET}"
 
 vault_put auth-svc \
-	jwt_secret="${JWT_SECRET}" \
 	forty_two_client_id="${FORTYTWO_CLIENT_ID}" \
 	forty_two_client_secret="${FORTYTWO_CLIENT_SECRET}" \
 	mail_user="${MAIL_USER}" \
