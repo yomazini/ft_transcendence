@@ -20,6 +20,7 @@ dependencies = [
   "numpy",
   "bullmq",
   "prometheus-client>=0.26.0",
+  "hvac>=2.4.0",
 ]
 
 [tool.pytest.ini_options]

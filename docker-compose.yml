@@ -65,7 +65,11 @@ services:
     ports: ["127.0.0.1:3001:3001"]
     expose: ["3001"]
     env_file: .env
-    depends_on: [redis, postgres]
+    depends_on:
+      postgres: { condition: service_healthy }
+      vault: { condition: service_healthy }
+    volumes:
+      - "./vault/creds/gateway-svc:/run/vault:ro"
     networks: [ft_network]
     restart: unless-stopped
     # Owner: Youssef
@@ -110,6 +114,9 @@ services:
     depends_on:
       redis: { condition: service_healthy }
       postgres: { condition: service_healthy }
+      vault: { condition: service_healthy }
+    volumes:
+      - "./vault/creds/analysis-svc:/run/vault:ro"
     networks: [ft_network]
     restart: unless-stopped
     # Owner: Youssef
