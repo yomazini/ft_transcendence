@@ -7,6 +7,8 @@ cp -f /config/server.hcl /vault/config/server.hcl
 
 umask 077
 
+export CREDS_FILE="${CREDS_FILE:-/secret/credentials.json}"
+
 if [[ ! -f "$CREDS_FILE" ]]; then
 	jq -n '{unseal_key: null, token: null, roles: {}, ready: false}' >"$CREDS_FILE.tmp"
 	mv "$CREDS_FILE.tmp" "$CREDS_FILE"
