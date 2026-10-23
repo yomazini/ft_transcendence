@@ -15,7 +15,7 @@
    |---|---|---|---|
    | `vault-data` | named volume | `/vault` | Vault data and config |
    | `./vault/secret` | bind mount | `/secret` | `credentials.json` (unseal key and root token) |
-   | `./vault/creds` | bind mount | `/credentials` | one `{service-name}.json` per service (AppRole login data) |
+   | `./vault/creds` | bind mount | `/credentials` | one folder per service, `{service-name}/login.json` (AppRole login data) |
 
 3. **Run**:
 
@@ -56,6 +56,8 @@ sudo rm -rf vault/secret/* vault/creds/*
 
 Changes to either file apply after you rebuild the image and restart the container.
 
+Services with a role and policy: `analysis-svc`, `auth-svc`, `database`, `gateway-svc`, `grafana`, `minio`, `scraper-svc`.
+
 These are all the secret paths and what each one holds:
 
 | Path | Key | Source variable |
@@ -63,8 +65,8 @@ These are all the secret paths and what each one holds:
 | `secret/data/scraper-svc` | `sessions` | `REDDIT_SESSIONS` |
 | `secret/data/database` | `user` | `POSTGRES_USER` |
 | | `password` | `POSTGRES_PASSWORD` |
-| `secret/data/auth-svc` | `jwt_secret` | `JWT_SECRET` |
-| | `forty_two_client_id` | `FORTYTWO_CLIENT_ID` |
+| | `database` | `POSTGRES_DB` |
+| `secret/data/auth-svc` | `forty_two_client_id` | `FORTYTWO_CLIENT_ID` |
 | | `forty_two_client_secret` | `FORTYTWO_CLIENT_SECRET` |
 | | `mail_user` | `MAIL_USER` |
 | | `mail_pass` | `MAIL_PASS` |
@@ -73,23 +75,24 @@ These are all the secret paths and what each one holds:
 | `secret/data/grafana` | `password` | `GRAFANA_ADMIN_PASSWORD` |
 | `secret/data/minio` | `user` | `MINIO_ROOT_USER` |
 | | `password` | `MINIO_ROOT_PASSWORD` |
+| `secret/data/gateway-svc` | `jwt_secret` | `JWT_SECRET` |
 
 Each service can read **only its own path**. Reading any other path returns `permission denied`.
 
 ### How to use
 
-1. **Mount your login file** read-only into your service. Vault creates it as `{service-name}.json` in the credentials bind mount. It contains `role_id` and `secret_id`, which is exactly the body the login request needs.
+1. **Mount your login folder** read-only into your service. Vault creates one folder per service, named after it, and puts `login.json` inside. Mount the whole folder, not the single file, so updates to the file are always visible inside your container. `login.json` contains `role_id` and `secret_id`, which is exactly the body the login request needs.
 
    ```yaml
    services:
      database:
        volumes:
-         - ./vault/creds/database.json:/run/vault/login.json:ro
+         - ./vault/creds/database:/run/vault:ro
    ```
 
-   Services start only after Vault is healthy, so the file already exists when they start.
+   Your service then reads `/run/vault/login.json`. Services start only after Vault is healthy, so the folder and file already exist when they start.
 
-2. **Log in** by posting the file content to `http://vault:8200/v1/auth/approle/login`. The only part of the response you need is `client_token`:
+2. **Log in** by posting the content of `login.json` to `http://vault:8200/v1/auth/approle/login`. The only part of the response you need is `client_token`:
 
    ```json
    {
@@ -115,7 +118,7 @@ Any HTTP client in your service's language works, since both requests are plain 
 
 **Rules for services:**
 
-- **Re-read the file every time you log in.** The `secret_id` inside it is replaced about every hour and on every Vault restart. Do not cache the old value.
+- **Re-read `login.json` every time you log in.** The `secret_id` inside it is replaced about every hour and on every Vault restart. Do not cache the old value.
 - **Tokens expire** after about 1 hour (4 hours at most). If a request returns `403`, log in again.
 - **Retry the login** a few times with a short delay. Vault may be restarting or still starting up.
 - A `permission denied` on a path you are not allowed to read is expected. Do not retry it.
