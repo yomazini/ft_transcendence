@@ -6,7 +6,13 @@ import {
 import { LucideIcon } from "lucide-react"
 
 
-export function Cards({ items, icon: Icon, title, description, iconColor }: { items: string[] | string | null; icon: LucideIcon; title: string, description: string, iconColor: string }) {
+export function Cards({ items, icon: Icon, title, description, iconColor }: { items: any[] | string | null; icon: LucideIcon; title: string, description: string, iconColor: string }) {
+	/** The AI can return a list of strings or of objects ({ point } / { action } / { text }): always show text. */
+	const textOf = (item: any): string =>
+		typeof item === 'string'
+			? item
+			: (item?.point ?? item?.action ?? item?.text ?? JSON.stringify(item));
+
 	return (
 		<Card className={`stat-card group flex flex-col`}> {/*$*/}
 
@@ -41,10 +47,10 @@ export function Cards({ items, icon: Icon, title, description, iconColor }: { it
 						) : items.length === 0 ? (
 							<li className="text-xs text-muted-foreground">Nothing found for this job.</li>
 						) : (
-							items.map((item) => (
-								<li key={item} className="stat-list-item group">
+							items.map((item, index) => (
+								<li key={`${title}-${index}`} className="stat-list-item group">
 									<span className="stat-list-dot" />
-									<span className="leading-relaxed">{item}</span>
+									<span className="leading-relaxed">{textOf(item)}</span>
 								</li>
 							))
 						)

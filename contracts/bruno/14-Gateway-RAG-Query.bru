@@ -1,0 +1,22 @@
+meta {
+  name: 14 Gateway RAG Query
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{gateway_url}}/api/rag/query
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "job_id": "fb1e7a06-e9ff-4b64-8e43-a3584c7c5392",
+    "query": "What are users complaining about regarding pricing?"
+  }
+}
