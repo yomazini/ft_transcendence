@@ -10,6 +10,7 @@ import { Server, Socket } from 'socket.io';
 import Redis from 'ioredis';
 import { DatabaseService } from '../database/database.service';
 import { JwtService } from '@nestjs/jwt';
+import { wsConnections } from '../metrics/metrics';
 
 @WebSocketGateway({
   cors: {
@@ -100,6 +101,7 @@ export class EventsGateway
       }
       client.data.user = payload;
       await client.join(payload.org_id);
+      wsConnections.inc();
       this.logger.log(`Client connected: ${client.id}`);
     } catch {
       client.disconnect();

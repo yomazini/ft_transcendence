@@ -1,11 +1,17 @@
+import json
 import logging
+import time
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import List
 
-from fastapi import FastAPI, HTTPException
+import hvac
+from fastapi import FastAPI, HTTPException, Response
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel
+
+from .config import settings
 
 from .canvas import build_rag_prompt
 from .database import (
@@ -22,6 +28,7 @@ from .embeddings import generate_embedding
 from .events import close_redis, publish_job_event
 from .fixtures import get_fixture_comments
 from .llm import call_openrouter_text
+from .metrics import http_duration, http_requests
 from .ranking import rerank_for_rag
 from .sentiment import compute_sentiment_summary, score_comments
 from .synthesis import synthesize_full_report
@@ -34,6 +41,25 @@ logger = logging.getLogger("analysis-svc")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
+        with open("/run/vault/login.json") as f:
+            creds = json.load(f)
+        client = hvac.Client(url="http://vault:8200")
+        client.auth.approle.login(
+            role_id=creds["role_id"], secret_id=creds["secret_id"]
+        )
+        db = client.secrets.kv.v2.read_secret_version(
+            path="database", mount_point="secret"
+        )["data"]["data"]
+        ai = client.secrets.kv.v2.read_secret_version(
+            path="analysis-svc", mount_point="secret"
+        )["data"]["data"]
+        settings.postgres_password = db["password"]
+        settings.openrouter_api_key = ai["openrouter_api_key"]
+        logger.info("Loaded secrets from Vault")
+    except Exception as e:
+        logger.warning("Vault unavailable; using .env: %s", e)
+
+    try:
         await start_worker()
     except Exception as e:
         logger.warning("BullMQ worker failed to start: %s", e)
@@ -44,6 +70,27 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="analysis-svc", version="0.2.0", lifespan=lifespan)
+
+
+@app.get("/metrics")
+def metrics():
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
+@app.middleware("http")
+async def metrics_middleware(request, call_next):
+    if request.url.path == "/metrics":
+        return await call_next(request)
+    start = time.perf_counter()
+    response = await call_next(request)
+    route = request.scope.get("route")
+    path = getattr(route, "path", request.url.path)
+    labels = {"method": request.method, "route": path}
+    http_requests.labels(
+        method=request.method, route=path, status=str(response.status_code)
+    ).inc()
+    http_duration.labels(**labels).observe(time.perf_counter() - start)
+    return response
 
 
 class HealthResponse(BaseModel):
