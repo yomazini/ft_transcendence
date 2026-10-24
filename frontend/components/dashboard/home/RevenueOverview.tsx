@@ -11,7 +11,7 @@ export default function RevenueOverview() {
 
     return (
         
-        <section className=" min-w-0  overflow-hidden border ">
+        <section className="   border h-137.75">
                 <VisualizerCard report={report} />
         </section>
     )

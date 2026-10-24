@@ -9,8 +9,8 @@ import { BillingService } from './billing.service';
 
 @Module({
   controllers: [OrgController, BillingController],
-  providers: [OrgService],
-  imports: [PrismaModule, MailModule,BillingService,
+  providers: [OrgService, BillingService],
+  imports: [PrismaModule, MailModule,
 	JwtModule.register({ secret: process.env.JWT_SECRET!})],
 })
 export class OrgModule {}

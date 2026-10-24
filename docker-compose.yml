@@ -168,6 +168,7 @@ services:
       retries: 10
     networks: [ft_network]
     restart: unless-stopped
+    ports: ["5432:5432"]
     # Owner: Oussama (schema/migrations across all services)
 
   redis:

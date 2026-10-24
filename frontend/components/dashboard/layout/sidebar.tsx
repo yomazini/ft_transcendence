@@ -71,14 +71,14 @@ export function AppSidebar() {
 		>
 			{/* Logo */}
 			<SidebarHeader className="border-b">
-				<div className="flex h-14 items-center gap-3 px-3">
+				<div className="flex h-14 items-center gap-3 ">
 					<div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-black text-white">
 						<span className="text-lg font-bold">
 							I
 						</span>
 					</div>
 
-					<div className="flex flex-1 flex-col">
+					<div className="flex flex-1 flex-col pl-5">
 						<span className="text-sm font-semibold">
 							InsightFlow
 						</span>
@@ -87,10 +87,6 @@ export function AppSidebar() {
 							Dashboard
 						</span>
 					</div>
-
-					<span className="rounded border px-1.5 py-0.5 text-[10px] font-medium">
-						V1.0
-					</span>
 				</div>
 			</SidebarHeader>
 

@@ -117,7 +117,7 @@ export default function Strategic() {
 	}
 
 	return (
-		<div className="min-w-0 xl:col-span-2">
+		<div className="min-w-0 2xl:col-span-2 overflow-y-auto">
 			<SectionTitle icon={Megaphone}>
 				<span>Strategic Analysis</span>
 			</SectionTitle>
