@@ -94,6 +94,9 @@ services:
     depends_on:
       redis: { condition: service_healthy }
       postgres: { condition: service_healthy }
+      vault: { condition: service_healthy }
+    volumes:
+      - "./vault/creds/scraper-svc:/run/vault:ro"
     networks: [ft_network]
     restart: unless-stopped
     # Owner: Madani

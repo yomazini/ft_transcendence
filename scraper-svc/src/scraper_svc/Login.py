@@ -1,7 +1,8 @@
 import json
+import os
 from pydantic import BaseModel
 
-CREDS_FILE: str = "/login.json"
+CREDS_FILE: str = os.getenv("VAULT_LOGIN_FILE", "/run/vault/login.json")
 
 class Login(BaseModel):
 	role_id: str = ""

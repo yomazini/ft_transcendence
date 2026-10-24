@@ -9,14 +9,21 @@ TODO
 > [!NOTE]
 > This service requires Redis to be running on port `6379`.
 
-To run and test the scraping script, you need to add a `.env` file to this directory.
+The worker reads its AppRole credentials and Reddit sessions from Vault.
 
-Add the `SESSION_IDS` environment variable to the `.env` file and set it to your Reddit session cookie.
+Mount the login folder read-only:
 
-To run the script, use:
+```yaml
+volumes:
+  - "./vault/creds/scraper-svc:/run/vault:ro"
+```
+
+It reads `/run/vault/login.json`, logs in to Vault, then reads `secret/data/scraper-svc` and `secret/data/database`.
+
+To run locally with the Vault file path:
 
 ```bash
-uv run --active --env-file .env scrapper-svc
+VAULT_LOGIN_FILE=/path/to/login.json uv run --active scraper-svc
 ```
 
 The scraper will listen to Redis for new jobs in the scrape-job queue.
