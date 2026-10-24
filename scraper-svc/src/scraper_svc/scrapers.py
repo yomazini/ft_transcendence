@@ -1,4 +1,4 @@
-import requests
+from curl_cffi import requests
 from typing import Any
 from scraper_svc.models import Jobmodes
 from urllib.parse import urlparse, ParseResult
