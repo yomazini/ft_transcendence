@@ -1,14 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Headers, Query, Res, StreamableFile, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Delete, Headers, Query, Res, StreamableFile, BadRequestException } from '@nestjs/common';
 import { ReportingService } from './reporting.service';
 import { ReportingHeadersDto } from './dto/headers/reporting-headers.dto';
 import type { Response } from 'express';
-import { ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { MetricsService } from 'src/metrics/metrics.service';
 
-@ApiSecurity('basic')
-@ApiTags('Public API Reporting')
 @Controller('reporting')
 export class ReportingController {
-	constructor(private readonly reportingService: ReportingService) {}
+	constructor(private readonly reportingService: ReportingService, private readonly metrics: MetricsService) { }
+
 
 	@Get()
 	findAll(@Headers() header: ReportingHeadersDto) {
@@ -27,7 +26,7 @@ export class ReportingController {
 		if (!['JSON', 'CSV', 'XLSX'].includes(fmt)) {
 			throw new BadRequestException('format must be JSON, CSV or XLSX');
 		}
-
+		this.metrics.totalExport.inc({ format });
 		const data = await this.reportingService.exportReport(id, header);
 		switch (fmt) {
 			case 'JSON':
@@ -35,6 +34,7 @@ export class ReportingController {
 					'Content-Type': 'application/json',
 					'Content-Disposition': `attachment; filename="report-${id}.json"`,
 				});
+				this.metrics.totalExport.inc({ format });
 				return new StreamableFile(Buffer.from(JSON.stringify(data, null, 2)));
 
 			case 'CSV':
@@ -42,6 +42,7 @@ export class ReportingController {
 					'Content-Type': 'text/csv; charset=utf-8',
 					'Content-Disposition': `attachment; filename="report-${id}.csv"`,
 				});
+				this.metrics.totalExport.inc({ format });
 				return new StreamableFile(
 					Buffer.from('\uFEFF' + this.reportingService.buildCsv(data)),
 				);
@@ -52,25 +53,26 @@ export class ReportingController {
 						'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 					'Content-Disposition': `attachment; filename="report-${id}.xlsx"`,
 				});
+				this.metrics.totalExport.inc({ format });
 				return new StreamableFile(await this.reportingService.buildXlsx(data));
 		}
 	}
 
 	@Get(':id')
 	findOne(@Param('id') id: string,
-			@Headers() header: ReportingHeadersDto) {
+		@Headers() header: ReportingHeadersDto) {
 		return this.reportingService.findOne(id, header);
 	}
 
 	@Patch(':id')
 	update(@Param('id') id: string,
-			@Headers() header: ReportingHeadersDto) {
+		@Headers() header: ReportingHeadersDto) {
 		return this.reportingService.update(id, header);
 	}
 
 	@Delete(':id')
 	remove(@Param('id') id: string,
-			@Headers() header: ReportingHeadersDto) {
+		@Headers() header: ReportingHeadersDto) {
 		return this.reportingService.remove(id, header);
 	}
 }
