@@ -1,11 +1,17 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
+import { loadVaultSecrets } from './vault';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  try {
+    await loadVaultSecrets();
+  } catch (e) {
+    Logger.warn(`Vault unavailable; using .env: ${e}`);
+  }
 
+  const app = await NestFactory.create(AppModule);
   // The browser reaches the gateway through nginx on the frontend's own origin,
   // so only that origin may call it cross-site (FRONTEND_URL, e.g. http://localhost).
   app.enableCors({

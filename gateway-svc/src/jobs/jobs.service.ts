@@ -18,6 +18,7 @@ import {
 } from '../database/database.service';
 import { EventsGateway } from '../events/events.gateway';
 import { AuthenticatedUser } from '../auth/jwt-auth.guard';
+import { jobCreated } from '../metrics/metrics';
 
 /** Values of the JobModes enum in the shared database (owned by reporting-svc). */
 const JOB_MODES: Record<string, string> = {
@@ -87,6 +88,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
 
     // 1. Persist to PostgreSQL (or in-memory fallback)
     await this.databaseService.saveJob(jobRecord);
+    jobCreated.inc();
 
     // 2. Push task to Redis BullMQ queue (consumed by Madani's scraper-svc)
     if (!this.scrapeQueue) {
