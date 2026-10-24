@@ -4,9 +4,10 @@ import { BackupsController } from './backups.controller';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MinioModule } from 'src/minio/minio.module';
 import { MinioService } from 'src/minio/minio.service';
+import { MetricsModule } from 'src/metrics/metrics.module';
 
 @Module({
-  imports: [MinioModule],
+  imports: [MinioModule, MetricsModule],
   controllers: [BackupsController],
   providers: [BackupsService, PrismaService, MinioService],
 })
