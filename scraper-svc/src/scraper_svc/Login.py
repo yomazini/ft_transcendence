@@ -1,7 +1,7 @@
 import json
 from pydantic import BaseModel
 
-CREDS_FILE: str = "/login.json"
+CREDS_FILE: str = "/creds/login.json"
 
 class Login(BaseModel):
 	role_id: str = ""
