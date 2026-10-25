@@ -1,4 +1,4 @@
-import { PlanTier } from '../generated/prisma/client';
+import { PlanTier } from '../../generated/prisma/client';
 
 export const PLAN_LIMITS: Record<PlanTier, number> = {
   free: 5,

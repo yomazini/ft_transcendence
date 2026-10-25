@@ -1,4 +1,3 @@
-
 import {
   Injectable,
   BadRequestException,
@@ -12,7 +11,7 @@ import {
   PlanTier,
   PaymentStatus,
   SubscriptionStatus,
-} from '../generated/prisma/client';
+} from '../../generated/prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CheckoutDto } from './dto/checkout.dto';

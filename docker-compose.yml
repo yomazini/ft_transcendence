@@ -24,6 +24,8 @@ volumes:
     name: prometheus_db
   vault_data:
     name: vault_db
+  fake_bank_data:
+    name: fake_bank_db
 
 services:
 
@@ -168,7 +170,6 @@ services:
       retries: 10
     networks: [ft_network]
     restart: unless-stopped
-    ports: ["5432:5432"]
     # Owner: Oussama (schema/migrations across all services)
 
   redis:
@@ -272,6 +273,81 @@ services:
     container_name: stripe-mock
     image: stripe/stripe-mock:latest
     ports: ["12111:12111", "12112:12112"]
+    networks: [ft_network]
+    restart: unless-stopped
+
+  fake-bank-db:
+    container_name: fake-bank-db
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: fake_bank
+      POSTGRES_USER: fake_bank
+      POSTGRES_PASSWORD: ${FAKE_BANK_DB_PASSWORD}
+    volumes: ["fake_bank_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fake_bank -d fake_bank"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [ft_network]
+    restart: unless-stopped
+
+  fake-bank-migrate:
+    container_name: fake-bank-migrate
+    image: fake-bank-api
+    build:
+      context: ./fake-bank
+      dockerfile: docker/Dockerfile.api
+    environment:
+      DATABASE_URL: postgres://fake_bank:${FAKE_BANK_DB_PASSWORD}@fake-bank-db:5432/fake_bank
+    command: ["pnpm", "--filter", "@fake-bank/api", "db:migrate"]
+    depends_on:
+      fake-bank-db: { condition: service_healthy }
+    networks: [ft_network]
+    restart: "no"
+
+  fake-bank-api:
+    container_name: fake-bank-api
+    image: fake-bank-api
+    build:
+      context: ./fake-bank
+      dockerfile: docker/Dockerfile.api
+    environment:
+      API_HOST: 0.0.0.0
+      API_PORT: 8080
+      API_PUBLIC_BASE_URL: http://127.0.0.1:18080
+      CHECKOUT_PUBLIC_BASE_URL: http://127.0.0.1:15173
+      DATABASE_URL: postgres://fake_bank:${FAKE_BANK_DB_PASSWORD}@fake-bank-db:5432/fake_bank
+    expose: ["8080"]
+    ports: ["127.0.0.1:18080:8080"]
+    depends_on:
+      fake-bank-migrate: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/health').then((r)=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      ft_network:
+        aliases: [api]
+    restart: unless-stopped
+
+  fake-bank-checkout:
+    container_name: fake-bank-checkout
+    image: fake-bank-checkout
+    build:
+      context: ./fake-bank
+      dockerfile: docker/Dockerfile.checkout-ui
+    ports: ["127.0.0.1:15173:5173"]
+    depends_on:
+      fake-bank-api: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--output-document=-", "http://127.0.0.1:5173/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
     networks: [ft_network]
     restart: unless-stopped
 
