@@ -1,4 +1,5 @@
 import logging
+import time
 import uuid
 from typing import Any, cast
 
@@ -16,6 +17,7 @@ from .database import (
 from .embeddings import generate_embedding
 from .events import publish_job_event
 from .fixtures import get_fixture_comments
+from .metrics import analysis_jobs, analysis_stage_duration
 from .sentiment import compute_sentiment_summary, score_comments
 from .synthesis import synthesize_full_report
 
@@ -62,8 +64,10 @@ async def process_job(job, token):
             comments = get_fixture_comments()
             from_db = False
 
+        started = time.perf_counter()
         scored = score_comments(comments)
         summary = compute_sentiment_summary(scored)
+        analysis_stage_duration.labels("sentiment").observe(time.perf_counter() - started)
 
         for comment in scored:
             embedding = generate_embedding(comment["text"])
@@ -84,7 +88,9 @@ async def process_job(job, token):
                     embedding=embedding,
                 )
 
+        started = time.perf_counter()
         report_data = await synthesize_full_report(job_row, summary, scored)
+        analysis_stage_duration.labels("synthesis").observe(time.perf_counter() - started)
         report_id = str(uuid.uuid4())
 
         await insert_report(
@@ -96,6 +102,7 @@ async def process_job(job, token):
         )
 
         await update_job_status(job_id, "Done")
+        analysis_jobs.labels("done").inc()
         await publish_job_event(job_id, "done", {"report_id": report_id})
         logger.info("Job %s completed", job_id)
 
@@ -108,6 +115,7 @@ async def process_job(job, token):
 
     except Exception as e:
         logger.exception("Job %s failed: %s", job_id, e)
+        analysis_jobs.labels("failed").inc()
         try:
             await update_job_status(job_id, "Failed")
             await publish_job_event(job_id, "failed", {"error": str(e)})

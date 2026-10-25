@@ -9,11 +9,12 @@ import { BackupStatus } from 'src/generated/prisma/enums';
 import { MinioService } from 'src/minio/minio.service';
 import { ConfigService } from '@nestjs/config';
 import { createHash, createHmac } from 'crypto';
+import { MetricsService } from 'src/metrics/metrics.service';
 
 @Injectable()
 export class BackupsService {
 	private readonly logger = new Logger(BackupsService.name);
-	constructor(private readonly prisma: PrismaService, private readonly minioService: MinioService, private readonly configService: ConfigService) {
+	constructor(private readonly prisma: PrismaService, private readonly minioService: MinioService, private readonly configService: ConfigService, private readonly metrics: MetricsService) {
 		if (!fs.existsSync(this.configService.getOrThrow<string>("BACKUP_DIR", "/home/osouadi/Desktop/Downloads"))) {
 			fs.mkdirSync(this.configService.getOrThrow<string>("BACKUP_DIR", "/home/osouadi/Desktop/Downloads"), { recursive: true });
 		}
@@ -97,11 +98,16 @@ export class BackupsService {
 
 	@Cron(CronExpression.EVERY_DAY_AT_10AM)
 	async handleScheduledBackup() {
+		const currentTime = performance.now();
 		try {
 			await this.createBackup();
+			this.metrics.lastBackup.set(Date.now() / 1000);
+			this.metrics.backupTotale.inc();
 		}
 		catch (err) {
 			this.logger.error('Scheduled backup failed', err);
+		} finally {
+			this.metrics.backupDuration.observe(Math.floor(Date.now() / 1000) - currentTime);
 		}
 	}
 

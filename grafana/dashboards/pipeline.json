@@ -1,13 +1,13 @@
 {
   "uid": "ft-pipeline",
   "title": "Job pipeline",
-  "description": "gateway \u2192 scraper \u2192 analysis. To be filled once those services expose their metrics.",
+  "description": "gateway -> scraper -> analysis. Gateway and analysis metrics are live; scraper panels await Madani's metrics.",
   "tags": [
     "ft_transcendence"
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "editable": false,
   "graphTooltip": 1,
   "refresh": "15s",
@@ -36,17 +36,262 @@
   "panels": [
     {
       "id": 1,
-      "type": "text",
-      "title": "To do",
+      "type": "timeseries",
+      "title": "Jobs created / min",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "gridPos": {
         "x": 0,
         "y": 0,
+        "w": 8,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(gateway_jobs_created_total[5m]))",
+          "legendFormat": "",
+          "range": true,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "WebSocket connections (total)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 8,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "expr": "gateway_ws_connections_total",
+          "legendFormat": "",
+          "range": true,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Jobs done vs failed / 5m",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 0,
+        "w": 8,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "expr": "sum by (result) (increase(analysis_jobs_total[5m]))",
+          "legendFormat": "{{result}}",
+          "range": true,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Analysis stage p95",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by (le, stage) (rate(analysis_stage_duration_seconds_bucket[5m])))",
+          "legendFormat": "{{stage}}",
+          "range": true,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "LLM calls / s by model and status",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "expr": "sum by (model, status) (rate(analysis_llm_requests_total[5m]))",
+          "legendFormat": "{{model}} {{status}}",
+          "range": true,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "text",
+      "title": "Scraper panels pending",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
         "w": 24,
-        "h": 14
+        "h": 4
       },
       "options": {
         "mode": "markdown",
-        "content": "### Waiting for metrics from gateway-svc, scraper-svc and analysis-svc\n\nThis dashboard will answer: **where is a job stuck \u2014 queue, scraping, analysis, or the LLM?**\n\n| Panel to build | Metric needed | Owner |\n|---|---|---|\n| Jobs created / min | `gateway_jobs_created_total{mode}` | Youssef |\n| Jobs waiting in queue | `gateway_queue_waiting_jobs{queue}` | Youssef |\n| WebSockets open | `gateway_websocket_connections` | Youssef |\n| Scrape duration p95 | `scraper_job_duration_seconds` | Madani |\n| Reddit 429s | `scraper_reddit_requests_total{status}` | Madani |\n| Analysis time per stage | `analysis_stage_duration_seconds{stage}` | Youssef |\n| LLM calls by status | `analysis_llm_requests_total{model,status}` | Youssef |\n| Jobs done vs failed | `analysis_jobs_total{result}` | Youssef |\n\nFull spec: `Study/monitoring/102-metrics-per-service.md` and the GitHub issue *\"Monitoring: add /metrics\"*.\nHow to fill it: build the panels in the UI, Export \u2192 Export as JSON (classic, \"use in another instance\"), replace `grafana/dashboards/pipeline.json`."
+        "content": "### Scraper panels pending\n\nWaiting for Madani's metrics:\n\n- `scraper_job_duration_seconds`\n- `scraper_reddit_requests_total{status}`"
       }
     }
   ]

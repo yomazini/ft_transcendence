@@ -1,26 +1,23 @@
 -- CreateEnum
-CREATE TYPE "PlanTier" AS ENUM ('free', 'premium', 'extra');
+CREATE TYPE "PlanTier" AS ENUM ('Free', 'Premium', 'Extra');
 
 -- CreateEnum
-CREATE TYPE "SubscriptionStatus" AS ENUM ('active', 'canceled', 'expired');
+CREATE TYPE "PaymentStatus" AS ENUM ('Pending', 'Succeeded', 'Failed');
 
 -- CreateEnum
-CREATE TYPE "PaymentStatus" AS ENUM ('pending', 'succeeded', 'failed');
-
--- AlterTable
-ALTER TABLE "Organization" ADD COLUMN     "plan" "PlanTier" NOT NULL DEFAULT 'free';
+CREATE TYPE "SubscriptionStatus" AS ENUM ('Active', 'Canceled', 'Expired');
 
 -- CreateTable
 CREATE TABLE "Subscription" (
     "id" TEXT NOT NULL,
     "org_id" TEXT NOT NULL,
     "plan" "PlanTier" NOT NULL,
-    "status" "SubscriptionStatus" NOT NULL DEFAULT 'active',
+    "status" "SubscriptionStatus" NOT NULL DEFAULT 'Active',
     "started_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "ends_at" TIMESTAMP(3) NOT NULL,
+    "updated_at" TIMESTAMP(3) NOT NULL,
     "cancel_at_period_end" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Subscription_pkey" PRIMARY KEY ("id")
 );
@@ -33,9 +30,9 @@ CREATE TABLE "Payment" (
     "plan" "PlanTier" NOT NULL,
     "amount_cents" INTEGER NOT NULL,
     "currency" TEXT NOT NULL DEFAULT 'USD',
-    "status" "PaymentStatus" NOT NULL DEFAULT 'pending',
-    "provider_reference" TEXT,
+    "status" "PaymentStatus" NOT NULL DEFAULT 'Pending',
     "idempotency_key" TEXT,
+    "provider_reference" TEXT,
     "failure_reason" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -50,10 +47,10 @@ CREATE INDEX "Subscription_org_id_status_idx" ON "Subscription"("org_id", "statu
 CREATE INDEX "Subscription_ends_at_idx" ON "Subscription"("ends_at");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Payment_provider_reference_key" ON "Payment"("provider_reference");
+CREATE UNIQUE INDEX "Payment_idempotency_key_key" ON "Payment"("idempotency_key");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Payment_idempotency_key_key" ON "Payment"("idempotency_key");
+CREATE UNIQUE INDEX "Payment_provider_reference_key" ON "Payment"("provider_reference");
 
 -- CreateIndex
 CREATE INDEX "Payment_org_id_created_at_idx" ON "Payment"("org_id", "created_at");

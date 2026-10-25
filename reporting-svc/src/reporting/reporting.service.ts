@@ -4,6 +4,7 @@ import { ReportingHeadersDto } from './dto/headers/reporting-headers.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Parser } from '@json2csv/plainjs/index.js';
 	import * as ExcelJS from 'exceljs';
+import { MetricsService } from 'src/metrics/metrics.service';
 
 
 @Injectable()
