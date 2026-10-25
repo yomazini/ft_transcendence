@@ -8,12 +8,19 @@ import {
   Req,
   UseGuards,
   ParseUUIDPipe,
-  ForbiddenException,
+  UnauthorizedException,
 } from '@nestjs/common';
 
 import { BillingService } from './billing.service';
 import { CheckoutDto } from './dto/checkout.dto';
 import { JwtGuard } from '../auth/guard/jwt.guard';
+
+interface AuthenticatedRequest {
+  user?: {
+    sub?: string;
+    id?: string;
+  };
+}
 
 @Controller('orgs/billing')
 @UseGuards(JwtGuard)
@@ -22,28 +29,39 @@ export class BillingController {
     private readonly billingService: BillingService,
   ) {}
 
-  private getIdentity(req: any) {
+  // Get authenticated user ID from JWT
+  private getIdentity(req: AuthenticatedRequest): string {
     const userId = req.user?.sub ?? req.user?.id;
 
     if (!userId) {
-      throw new ForbiddenException('Invalid user identity');
+      throw new UnauthorizedException(
+        'Invalid or missing user identity',
+      );
     }
 
-    return userId as string;
+    return userId;
   }
 
+  // ==========================================
   // GET /orgs/billing
+  // Get current organization billing details
+  // ==========================================
+
   @Get()
-  getBilling(@Req() req: any) {
+  async getBilling(@Req() req: AuthenticatedRequest) {
     return this.billingService.getBilling(
       this.getIdentity(req),
     );
   }
 
+  // ==========================================
   // POST /orgs/billing/checkout
+  // Create Fake Bank checkout session
+  // ==========================================
+
   @Post('checkout')
-  checkout(
-    @Req() req: any,
+  async checkout(
+    @Req() req: AuthenticatedRequest,
     @Body() dto: CheckoutDto,
   ) {
     return this.billingService.checkout(
@@ -52,10 +70,14 @@ export class BillingController {
     );
   }
 
+  // ==========================================
   // POST /orgs/billing/verify/:paymentId
+  // Verify payment after Fake Bank redirect
+  // ==========================================
+
   @Post('verify/:paymentId')
-  verify(
-    @Req() req: any,
+  async verify(
+    @Req() req: AuthenticatedRequest,
     @Param('paymentId', ParseUUIDPipe) paymentId: string,
   ) {
     return this.billingService.verify(
@@ -64,17 +86,25 @@ export class BillingController {
     );
   }
 
+  // ==========================================
   // GET /orgs/billing/payments
+  // Get organization payment history
+  // ==========================================
+
   @Get('payments')
-  getPayments(@Req() req: any) {
+  async getPayments(@Req() req: AuthenticatedRequest) {
     return this.billingService.getPayments(
       this.getIdentity(req),
     );
   }
 
+  // ==========================================
   // POST /orgs/billing/cancel
+  // Cancel subscription at period end
+  // ==========================================
+
   @Post('cancel')
-  cancel(@Req() req: any) {
+  async cancel(@Req() req: AuthenticatedRequest) {
     return this.billingService.cancel(
       this.getIdentity(req),
     );

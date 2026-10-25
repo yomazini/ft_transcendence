@@ -10,7 +10,6 @@ import {
   Users,
   CalendarDays,
   ArrowUpRight,
-  XCircle,
   Clock3,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -19,12 +18,11 @@ import {
   getBilling,
   getPayments,
   createCheckout,
-  verifyCheckout,
+  verifyCheckoutUntilComplete,
   cancelSubscription,
   type Billing,
   type Payment,
   type PaidPlan,
-  type PlanTier,
 } from "@/lib/api/billing";
 
 import { getMe, type User } from "@/lib/auth";
@@ -116,6 +114,8 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(true);
   const [processingPlan, setProcessingPlan] = useState<PaidPlan | null>(null);
   const [verifying, setVerifying] = useState(false);
+  const [verificationRetry, setVerificationRetry] = useState(0);
+  const [needsRetry, setNeedsRetry] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -173,45 +173,52 @@ export default function BillingPage() {
   useEffect(() => {
     if (loading || !isAdmin) return;
 
-    const params = new URLSearchParams(window.location.search);
-    const paymentId = params.get("payment_id");
-
+    const paymentId = new URLSearchParams(window.location.search).get("payment_id");
     if (!paymentId) return;
 
+    const controller = new AbortController();
     let active = true;
 
     async function checkPayment() {
       setVerifying(true);
+      setNeedsRetry(false);
 
       try {
-        const result = await verifyCheckout(paymentId!);
+        const result = await verifyCheckoutUntilComplete(paymentId!, {
+          maxAttempts: 6,
+          intervalMs: 1500,
+          signal: controller.signal,
+        });
 
         if (!active) return;
 
         if (result.status === "succeeded") {
+          await Promise.all([loadBilling(), loadPayments()]);
+          if (!active) return;
           toast.success("Payment successful! Your plan is active.");
         } else if (result.status === "failed") {
+          await loadPayments();
+          if (!active) return;
           toast.error("Payment failed. Please try again.");
         } else {
-          toast.info("Your payment is still pending.");
+          setNeedsRetry(true);
+          toast.info("The bank has not confirmed the payment yet. Please retry verification.");
         }
 
-        await Promise.all([loadBilling(), loadPayments()]);
-      } catch (err) {
-        if (active) {
-          toast.error(
-            err instanceof Error
-              ? err.message
-              : "Unable to verify payment.",
-          );
-        }
-      } finally {
-        if (active) {
-          setVerifying(false);
+        // Only remove the ID when verification reached a final result.
+        if (result.status !== "pending") {
           const url = new URL(window.location.href);
           url.searchParams.delete("payment_id");
-          window.history.replaceState({}, "", url.toString());
+          window.history.replaceState(window.history.state, "", url.toString());
         }
+      } catch (err) {
+        if (!active || controller.signal.aborted) return;
+        setNeedsRetry(true);
+        toast.error(
+          err instanceof Error ? err.message : "Unable to verify payment.",
+        );
+      } finally {
+        if (active) setVerifying(false);
       }
     }
 
@@ -219,8 +226,9 @@ export default function BillingPage() {
 
     return () => {
       active = false;
+      controller.abort();
     };
-  }, [loading, isAdmin, loadBilling, loadPayments]);
+  }, [loading, isAdmin, loadBilling, loadPayments, verificationRetry]);
 
   async function handleCheckout(plan: PaidPlan) {
     if (!isAdmin) {
@@ -345,6 +353,19 @@ export default function BillingPage() {
         </div>
       )}
 
+      {needsRetry && !verifying && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4">
+          <p className="text-sm">Payment confirmation is not complete yet.</p>
+          <button
+            type="button"
+            onClick={() => setVerificationRetry((count) => count + 1)}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
+            Check payment again
+          </button>
+        </div>
+      )}
+
       {/* Current subscription */}
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-xl border bg-card p-6">
@@ -435,7 +456,8 @@ export default function BillingPage() {
               paid &&
               !current &&
               billing.status !== "active" &&
-              !verifying;
+              !verifying &&
+              !needsRetry;
 
             return (
               <div

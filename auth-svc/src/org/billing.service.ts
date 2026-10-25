@@ -6,10 +6,7 @@ import {
   NotFoundException,
   ConflictException,
   ServiceUnavailableException,
-  InternalServerErrorException,
 } from '@nestjs/common';
-
-import { randomUUID } from 'node:crypto';
 
 import {
   PlanTier,
@@ -17,9 +14,7 @@ import {
   SubscriptionStatus,
 } from '../generated/prisma/client';
 
-// Adjust this import to your existing PrismaService location.
 import { PrismaService } from '../prisma/prisma.service';
-
 import { CheckoutDto } from './dto/checkout.dto';
 
 const PLANS = {
@@ -56,16 +51,13 @@ export class BillingService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  // --------------------------------------------------
-  // Resolve organization from authenticated user
-  // --------------------------------------------------
-
   private async getOrganization(userId: string, admin = false) {
-    const memberships = await this.prisma.role_and_organization.findMany({
-      where: { user_id: userId },
-      include: { organization: true },
-      take: 2,
-    });
+    const memberships =
+      await this.prisma.role_and_organization.findMany({
+        where: { user_id: userId },
+        include: { organization: true },
+        take: 2,
+      });
 
     if (memberships.length === 0) {
       throw new NotFoundException('Organization not found');
@@ -73,7 +65,7 @@ export class BillingService {
 
     if (memberships.length > 1) {
       throw new BadRequestException(
-        'Multiple organizations found. An active organization must be selected.',
+        'Multiple organizations found. Select an active organization.',
       );
     }
 
@@ -87,10 +79,6 @@ export class BillingService {
 
     return membership.organization;
   }
-
-  // --------------------------------------------------
-  // Request Fake-bank API
-  // --------------------------------------------------
 
   private async bankRequest<T>(
     path: string,
@@ -110,38 +98,32 @@ export class BillingService {
       });
     } catch {
       throw new ServiceUnavailableException(
-        'Fake-bank payment service is unavailable',
+        'Fake Bank payment service is unavailable',
       );
     }
 
     if (!response.ok) {
       throw new ServiceUnavailableException(
-        `Fake-bank returned HTTP ${response.status}`,
+        `Fake Bank returned HTTP ${response.status}`,
       );
     }
 
     return (await response.json()) as T;
   }
 
-  // --------------------------------------------------
   // GET /orgs/billing
-  // --------------------------------------------------
-
   async getBilling(userId: string) {
     const org = await this.getOrganization(userId);
-
-    const now = new Date();
 
     const [memberCount, subscription] = await Promise.all([
       this.prisma.role_and_organization.count({
         where: { org_id: org.id },
       }),
-
       this.prisma.subscription.findFirst({
         where: {
           org_id: org.id,
           status: SubscriptionStatus.active,
-          ends_at: { gt: now },
+          ends_at: { gt: new Date() },
         },
         orderBy: { ends_at: 'desc' },
       }),
@@ -162,10 +144,7 @@ export class BillingService {
     };
   }
 
-  // --------------------------------------------------
   // POST /orgs/billing/checkout
-  // --------------------------------------------------
-
   async checkout(userId: string, dto: CheckoutDto) {
     const org = await this.getOrganization(userId, true);
 
@@ -185,7 +164,7 @@ export class BillingService {
       }
 
       throw new ConflictException(
-        'Checkout already created. Use a new key or recover the existing payment.',
+        'Checkout already exists for this request',
       );
     }
 
@@ -199,7 +178,7 @@ export class BillingService {
 
     if (active) {
       throw new ConflictException(
-        'An active subscription already exists. Plan switching is not implemented yet.',
+        'An active subscription already exists',
       );
     }
 
@@ -217,44 +196,30 @@ export class BillingService {
     });
 
     const returnUrl = new URL(
-      '/dashboard/billing',
+      `${userId}/billing`,
       this.frontendUrl,
     );
 
     returnUrl.searchParams.set('payment_id', payment.id);
 
-    let checkout: FakeBankCheckout;
-
-    try {
-      checkout = await this.bankRequest<FakeBankCheckout>(
-        '/v1/payments',
-        'POST',
-        {
-          merchant_id: this.merchantId,
-          merchant_reference: payment.id,
-
-          // Fake-bank uses dollars, Prisma uses cents.
-          amount: amountCents / 100,
-          currency: 'USD',
-          payment_method: 'card',
-
-          return_url: returnUrl.toString(),
-
-          // Must be reachable from the Fake-bank API container.
-          webhook_url: process.env.FAKE_BANK_WEBHOOK_URL,
-
-          scenario: 'card_success',
-        },
-      );
-    } catch (error) {
-      // Do not mark failed automatically: the provider may
-      // have created the payment before the request timed out.
-      throw error;
-    }
+    const checkout = await this.bankRequest<FakeBankCheckout>(
+      '/v1/payments',
+      'POST',
+      {
+        merchant_id: this.merchantId,
+        merchant_reference: payment.id,
+        amount: amountCents / 100,
+        currency: 'USD',
+        payment_method: 'card',
+        return_url: returnUrl.toString(),
+        webhook_url: process.env.FAKE_BANK_WEBHOOK_URL,
+        scenario: 'card_success',
+      },
+    );
 
     if (!checkout.payment_id || !checkout.checkout_url) {
       throw new ServiceUnavailableException(
-        'Fake-bank returned an invalid checkout response',
+        'Invalid Fake Bank checkout response',
       );
     }
 
@@ -271,10 +236,7 @@ export class BillingService {
     };
   }
 
-  // --------------------------------------------------
   // POST /orgs/billing/verify/:paymentId
-  // --------------------------------------------------
-
   async verify(userId: string, paymentId: string) {
     const org = await this.getOrganization(userId, true);
 
@@ -289,16 +251,12 @@ export class BillingService {
       throw new NotFoundException('Payment not found');
     }
 
-    if (!payment.provider_reference) {
-      throw new ConflictException(
-        'Payment provider reference is missing',
-      );
-    }
-
     if (payment.status === PaymentStatus.succeeded) {
       return {
         payment_id: payment.id,
         status: 'succeeded',
+        message: 'Payment successful',
+        plan: payment.plan,
       };
     }
 
@@ -306,14 +264,22 @@ export class BillingService {
       return {
         payment_id: payment.id,
         status: 'failed',
+        message: 'Payment failed',
       };
+    }
+
+    if (!payment.provider_reference) {
+      throw new ConflictException(
+        'Payment provider reference is missing',
+      );
     }
 
     const bankPayment = await this.bankRequest<FakeBankPayment>(
       `/v1/payments/${encodeURIComponent(payment.provider_reference)}`,
     );
 
-    // Verify that the provider response belongs to our payment.
+    // Never trust the return URL alone.
+    // Confirm the payment details with Fake Bank.
     if (
       bankPayment.payment_id !== payment.provider_reference ||
       bankPayment.merchant_id !== this.merchantId ||
@@ -322,7 +288,7 @@ export class BillingService {
       bankPayment.currency !== payment.currency
     ) {
       throw new ForbiddenException(
-        'Fake-bank payment verification mismatch',
+        'Fake Bank payment verification mismatch',
       );
     }
 
@@ -333,6 +299,7 @@ export class BillingService {
       return {
         payment_id: payment.id,
         status: 'pending',
+        message: 'Waiting for bank confirmation',
       };
     }
 
@@ -344,24 +311,24 @@ export class BillingService {
         },
         data: {
           status: PaymentStatus.failed,
-          failure_reason: 'Payment declined by Fake-bank',
+          failure_reason: 'Payment declined by Fake Bank',
         },
       });
 
       return {
         payment_id: payment.id,
         status: 'failed',
+        message: 'Payment failed',
       };
     }
 
     if (bankPayment.status !== 'succeeded') {
       throw new BadRequestException(
-        'Unknown Fake-bank payment status',
+        'Unknown Fake Bank payment status',
       );
     }
 
-    // Activate exactly once. The conditional update prevents
-    // repeated verification from creating duplicate subscriptions.
+    // Activate the subscription once.
     await this.prisma.$transaction(async (tx) => {
       const claimed = await tx.payment.updateMany({
         where: {
@@ -393,7 +360,6 @@ export class BillingService {
 
       const startedAt = new Date();
       const endsAt = new Date(startedAt);
-
       endsAt.setUTCDate(endsAt.getUTCDate() + 30);
 
       const subscription = await tx.subscription.create({
@@ -422,13 +388,12 @@ export class BillingService {
     return {
       payment_id: payment.id,
       status: 'succeeded',
+      message: 'Payment successful',
+      plan: payment.plan,
     };
   }
 
-  // --------------------------------------------------
   // GET /orgs/billing/payments
-  // --------------------------------------------------
-
   async getPayments(userId: string) {
     const org = await this.getOrganization(userId, true);
 
@@ -448,10 +413,7 @@ export class BillingService {
     });
   }
 
-  // --------------------------------------------------
   // POST /orgs/billing/cancel
-  // --------------------------------------------------
-
   async cancel(userId: string) {
     const org = await this.getOrganization(userId, true);
 

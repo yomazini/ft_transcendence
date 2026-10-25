@@ -559,6 +559,22 @@ export type PaymentUncheckedUpdateManyWithoutSubscriptionNestedInput = {
   deleteMany?: Prisma.PaymentScalarWhereInput | Prisma.PaymentScalarWhereInput[]
 }
 
+export type IntFieldUpdateOperationsInput = {
+  set?: number
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
+export type EnumPaymentStatusFieldUpdateOperationsInput = {
+  set?: $Enums.PaymentStatus
+}
+
+export type NullableStringFieldUpdateOperationsInput = {
+  set?: string | null
+}
+
 export type PaymentCreateNestedManyWithoutOrganizationInput = {
   create?: Prisma.XOR<Prisma.PaymentCreateWithoutOrganizationInput, Prisma.PaymentUncheckedCreateWithoutOrganizationInput> | Prisma.PaymentCreateWithoutOrganizationInput[] | Prisma.PaymentUncheckedCreateWithoutOrganizationInput[]
   connectOrCreate?: Prisma.PaymentCreateOrConnectWithoutOrganizationInput | Prisma.PaymentCreateOrConnectWithoutOrganizationInput[]
@@ -599,22 +615,6 @@ export type PaymentUncheckedUpdateManyWithoutOrganizationNestedInput = {
   update?: Prisma.PaymentUpdateWithWhereUniqueWithoutOrganizationInput | Prisma.PaymentUpdateWithWhereUniqueWithoutOrganizationInput[]
   updateMany?: Prisma.PaymentUpdateManyWithWhereWithoutOrganizationInput | Prisma.PaymentUpdateManyWithWhereWithoutOrganizationInput[]
   deleteMany?: Prisma.PaymentScalarWhereInput | Prisma.PaymentScalarWhereInput[]
-}
-
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
-export type EnumPaymentStatusFieldUpdateOperationsInput = {
-  set?: $Enums.PaymentStatus
-}
-
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
 }
 
 export type PaymentCreateWithoutSubscriptionInput = {

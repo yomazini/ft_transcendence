@@ -4,7 +4,10 @@ import { authHeaders } from "@/lib/auth";
 export type PlanTier = "free" | "premium" | "extra";
 export type PaidPlan = Exclude<PlanTier, "free">;
 
-export type PaymentStatus = "pending" | "succeeded" | "failed";
+export type PaymentStatus =
+  | "pending"
+  | "succeeded"
+  | "failed";
 
 export interface Billing {
   organization_id: string;
@@ -35,6 +38,8 @@ export interface CheckoutResponse {
 export interface VerifyResponse {
   payment_id: string;
   status: PaymentStatus;
+  message?: string;
+  plan?: PaidPlan;
 }
 
 export interface CancelResponse {
@@ -70,17 +75,26 @@ async function send<T>(
   return data as T;
 }
 
+// =============================================
 // GET /api/orgs/billing
+// =============================================
+
 export function getBilling(): Promise<Billing> {
   return send<Billing>("/api/orgs/billing");
 }
 
+// =============================================
 // GET /api/orgs/billing/payments
+// =============================================
+
 export function getPayments(): Promise<Payment[]> {
   return send<Payment[]>("/api/orgs/billing/payments");
 }
 
+// =============================================
 // POST /api/orgs/billing/checkout
+// =============================================
+
 export function createCheckout(
   plan: PaidPlan,
   idempotencyKey: string,
@@ -97,7 +111,10 @@ export function createCheckout(
   );
 }
 
+// =============================================
 // POST /api/orgs/billing/verify/:paymentId
+// =============================================
+
 export function verifyCheckout(
   paymentId: string,
 ): Promise<VerifyResponse> {
@@ -109,7 +126,75 @@ export function verifyCheckout(
   );
 }
 
+// =============================================
+// Automatically wait for Fake Bank confirmation
+// =============================================
+
+export async function verifyCheckoutUntilComplete(
+  paymentId: string,
+  options: {
+    maxAttempts?: number;
+    intervalMs?: number;
+    signal?: AbortSignal;
+  } = {},
+): Promise<VerifyResponse> {
+  const {
+    maxAttempts = 5,
+    intervalMs = 1500,
+    signal,
+  } = options;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (signal?.aborted) {
+      throw new Error("Verification canceled");
+    }
+
+    const result = await verifyCheckout(paymentId);
+
+    if (
+      result.status === "succeeded" ||
+      result.status === "failed"
+    ) {
+      return result;
+    }
+
+    if (attempt < maxAttempts - 1) {
+      await new Promise<void>((resolve, reject) => {
+        if (signal?.aborted) {
+          reject(new Error("Verification canceled"));
+          return;
+        }
+
+        const timeout = setTimeout(() => {
+          signal?.removeEventListener("abort", onAbort);
+          resolve();
+        }, intervalMs);
+
+        function onAbort() {
+          clearTimeout(timeout);
+          reject(new Error("Verification canceled"));
+        }
+
+        signal?.addEventListener(
+          "abort",
+          onAbort,
+          { once: true },
+        );
+      });
+    }
+  }
+
+  return {
+    payment_id: paymentId,
+    status: "pending",
+    message: "Payment confirmation is taking longer than expected",
+  };
+}
+
+// =============================================
 // POST /api/orgs/billing/cancel
+// =============================================
+
 export function cancelSubscription(): Promise<CancelResponse> {
   return send<CancelResponse>(
     "/api/orgs/billing/cancel",

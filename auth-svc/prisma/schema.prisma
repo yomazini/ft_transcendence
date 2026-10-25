@@ -1,124 +1,20 @@
-// // This is your Prisma schema file,
-// // learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// // Get a free hosted Postgres database in seconds: `npx create-db`
-
-// /**
-// 	- This tells Prisma "when I run a command, build me a typed JavaScript/TypeScript library based on whatever models I define below, and put that generated code here (output)."
-// */
-// generator client {
-//   provider = "prisma-client"
-//   output   = "../generated/prisma"
-// }
-
-// datasource db {
-//   provider = "postgresql"
-// }
-
-// model Organization {
-//   id                String                  @id @default(uuid())
-//   name              String
-//   user_organization role_and_organization[]
-//   description       String
-//   created_at        DateTime                @default(now())
-// }
-
-// model User {
-//   id                      String                  @id @default(uuid())
-//   email                   String                  @unique
-//   password                String
-//   user_roles_organization role_and_organization[]
-//   created_at              DateTime                @default(now())
-// }
-
-// model role_and_organization {
-//   id           String       @id @default(uuid())
-//   user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
-//   user_id      String
-//   organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
-//   org_id       String
-//   role         Roles        @default(Viewer)
-// }
-
-// enum Roles {
-//   Admin
-//   Analyst
-//   Viewer
-// }
-
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-	provider = "prisma-client"
-	output   = "../src/generated/prisma"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
-	provider = "postgresql"
+  provider = "postgresql"
 }
 
-// model	Organization {
-// 	id					String		@id @default(uuid())
-// 	name				String
-// 	script_jobs			Job[]
-// 	user_organization	role_and_organization[]
-// 	messages			Messages[]
-// 	description			String 		@db.VarChar(200)
-// 	created_at			DateTime	@default(now())
-// }
+// =====================================================
+// BILLING ENUMS
+// =====================================================
 
-//===========================
 enum PlanTier {
   free
   premium
   extra
-}
-
-enum SubscriptionStatus {
-  active
-  canceled
-  expired
-}
-
-model Subscription {
-  id                   String             @id @default(uuid())
-
-  org_id               String
-  organization         Organization       @relation(fields: [org_id], references: [id], onDelete: Cascade)
-
-  plan                 PlanTier
-  status               SubscriptionStatus @default(active)
-
-  started_at           DateTime           @default(now())
-  ends_at              DateTime
-
-  cancel_at_period_end Boolean            @default(false)
-
-  created_at           DateTime           @default(now())
-  updated_at           DateTime           @updatedAt
-
-  payments             Payment[]
-
-  @@index([org_id, status])
-  @@index([ends_at])
-}
-
-model Organization {
-  id                String                  @id @default(uuid())
-  name              String
-  script_jobs       Job[]
-  user_organization role_and_organization[]
-  messages          Messages[]
-  description       String                  @db.VarChar(200)
-  created_at        DateTime                @default(now())
-
-  // Billing
-  plan              PlanTier                @default(free)
-  subscriptions     Subscription[]
-  payments          Payment[]
 }
 
 enum PaymentStatus {
@@ -127,157 +23,496 @@ enum PaymentStatus {
   failed
 }
 
+enum SubscriptionStatus {
+  active
+  canceled
+  expired
+}
+
+// =====================================================
+// BILLING MODELS
+// =====================================================
+
+model Subscription {
+  id String @id @default(uuid())
+
+  org_id       String
+  organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+
+  plan   PlanTier
+  status SubscriptionStatus @default(active)
+
+  started_at DateTime @default(now())
+  ends_at    DateTime
+
+  cancel_at_period_end Boolean @default(false)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  payments Payment[]
+
+  @@index([org_id, status])
+  @@index([ends_at])
+}
+
 model Payment {
-  id                 String         @id @default(uuid())
+  id String @id @default(uuid())
 
-  org_id             String
-  organization       Organization   @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  org_id       String
+  organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
-  subscription_id    String?
-  subscription       Subscription?  @relation(fields: [subscription_id], references: [id], onDelete: SetNull)
+  subscription_id String?
+  subscription    Subscription? @relation(fields: [subscription_id], references: [id], onDelete: SetNull)
 
-  // Requested plan
-  plan               PlanTier
+  plan PlanTier
 
-  // Server-calculated amount
-  amount_cents       Int
-  currency           String         @default("USD")
+  amount_cents Int
+  currency     String @default("USD")
 
-  // Payment state
-  status             PaymentStatus  @default(pending)
+  status PaymentStatus @default(pending)
 
-  // Fake-bank payment identifier
-  provider_reference String?        @unique
+  provider_reference String? @unique
+  idempotency_key    String? @unique
 
-  // Prevent duplicate checkout requests
-  idempotency_key    String?        @unique
+  failure_reason String?
 
-  failure_reason     String?
-
-  created_at         DateTime       @default(now())
-  updated_at         DateTime       @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@index([org_id, created_at])
   @@index([subscription_id])
 }
 
+// =====================================================
+// ORGANIZATION
+// =====================================================
 
-//=================
+model Organization {
+  id   String @id @default(uuid())
+  name String
 
+  script_jobs       Job[]
+  user_organization role_and_organization[]
+  messages          Messages[]
 
+  description String   @db.VarChar(200)
+  created_at  DateTime @default(now())
+
+  // Billing
+  plan          PlanTier       @default(free)
+  subscriptions Subscription[]
+  payments      Payment[]
+}
+
+// =====================================================
+// USER
+// =====================================================
+
+model User {
+  id       String @id @default(uuid())
+  email    String @unique
+  password String
+
+  user_roles_organization role_and_organization[]
+  messages                Messages[]
+  jobs                    Job[]
+
+  two_factor_secret String?
+  is_2fa_enabled    Boolean @default(false)
+  email_verified    Boolean @default(false)
+
+  created_at DateTime @default(now())
+}
+
+// =====================================================
+// ORGANIZATION MEMBERSHIP
+// =====================================================
+
+model role_and_organization {
+  id String @id @default(uuid())
+
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id String
+
+  organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  org_id       String
+
+  role Roles @default(Viewer)
+
+  @@unique([user_id, org_id])
+}
+
+// =====================================================
+// COMMENTS
+// =====================================================
+
+model Comments {
+  id String @id @default(uuid())
+
+  job    Job    @relation(fields: [job_id], references: [id], onDelete: Cascade)
+  job_id String
+
+  text    String
+  author  String?
+  upvotes Int
+
+  sentiment_score Float?
+  embedding       Unsupported("vector")?
+
+  created_at DateTime @default(now())
+}
+
+// =====================================================
+// JOBS
+// =====================================================
+
+model Job {
+  id String @id @default(uuid())
+
+  organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  org_id       String
+
+  user       User?   @relation(fields: [created_by], references: [id], onDelete: SetNull)
+  created_by String?
+
+  target String
+  mode   JobModes    @default(Keyword)
+  status JobStatuses @default(Running)
+
+  customer_persona Json?
+
+  report   Report?
+  comments Comments[]
+
+  created_at DateTime @default(now())
+}
+
+enum JobModes {
+  Keyword
+  Subreddit
+  Post
+  User
+}
+
+enum JobStatuses {
+  Queued
+  Running
+  Done
+  Failed
+}
+
+// =====================================================
+// REPORTS
+// =====================================================
+
+model Report {
+  id String @id @default(uuid())
+
+  job    Job    @relation(fields: [job_id], references: [id], onDelete: Cascade)
+  job_id String @unique
+
+  swot       Json
+  blue_ocean Json
+  conclusion String?
+
+  created_at DateTime @default(now())
+}
+
+// =====================================================
+// BACKUPS
+// =====================================================
+
+model Backups {
+  id String @id @default(uuid())
+
+  fileName String
+  filePath String
+  s3Key    String?
+  fileSize Int?
+
+  status       BackupStatus @default(IN_PROGRESS)
+  errorMessage String?
+
+  created_at DateTime @default(now())
+}
+
+enum BackupStatus {
+  IN_PROGRESS
+  SUCCESS
+  FAILED
+  RESTORED
+}
+
+// =====================================================
+// ORGANIZATION ROLES
+// =====================================================
+
+enum Roles {
+  Admin
+  Analyst
+  Viewer
+}
+
+// =====================================================
+// MESSAGES
+// =====================================================
+
+model Messages {
+  id String @id @default(uuid())
+
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id String
+
+  organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  org_id       String
+
+  response String
+  text     String
+
+  read_status Boolean  @default(false)
+  created_at  DateTime @default(now())
+}
+
+// =====================================================
+// PRICE SENSITIVITY
+// =====================================================
 
 enum PriceSensitivity {
-	budget
-	midMarket
-	premium
+  budget
+  midMarket
+  premium
 }
 
-model	User {
-	id							String		@id	@default(uuid())
-	email						String		@unique
-	password					String
-	user_roles_organization		role_and_organization[]
-	messages					Messages[]
-	jobs						Job[]
-	two_factor_secret			String?
-	is_2fa_enabled				Boolean 	@default(false)
-	email_verified				Boolean 	@default(false)
-	created_at					DateTime	@default(now())
-}
+// // This is your Prisma schema file,
+// // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-model	role_and_organization {
-	id				String			@id @default(uuid())
-	user			User			@relation(fields: [user_id], references: [id], onDelete: Cascade)
-	user_id			String
-	organization	Organization	@relation(fields: [org_id], references: [id], onDelete: Cascade)
-	org_id			String
-	role			Roles			@default(Viewer)
-	@@unique([user_id, org_id])
-}
+// // Get a free hosted Postgres database in seconds: `npx create-db`
 
-model	Comments {
-	id				String			@id @default(uuid())
-	job				Job	@relation(fields: [job_id], references: [id], onDelete: Cascade)
-	job_id			String
-	text			String
-	author			String?
-	upvotes			Int
-	sentiment_score	Float?
-	embedding		Unsupported("vector")?
-	created_at		DateTime		@default(now())
-}
+// generator client {
+// 	provider = "prisma-client"
+// 	output   = "../src/generated/prisma"
+// }
 
-model	Job {
-	id				String				@id @default(uuid())
-	organization		Organization	@relation(fields: [org_id], references: [id], onDelete: Cascade)
-	org_id				String
-	user				User?			@relation(fields: [created_by], references: [id], onDelete: SetNull)
-	created_by			String?
-	target				String
-	mode				JobModes		@default(Keyword)
-	status				JobStatuses		@default(Running)
-	customer_persona	Json?
-	report				Report?
-	comments			Comments[]
-	created_at			DateTime		@default(now())
-}
+// datasource db {
+// 	provider = "postgresql"
+// }
 
-enum	JobModes {
-	Keyword
-	Subreddit
-	Post
-	User
-}
+// // model	Organization {
+// // 	id					String		@id @default(uuid())
+// // 	name				String
+// // 	script_jobs			Job[]
+// // 	user_organization	role_and_organization[]
+// // 	messages			Messages[]
+// // 	description			String 		@db.VarChar(200)
+// // 	created_at			DateTime	@default(now())
+// // }
 
-enum	JobStatuses {
-	Queued
-	Running
-	Done
-	Failed
-}
+// //===========================
+// enum PlanTier {
+//   free
+//   premium
+//   extra
+// }
 
-model	Report {
-	id				String		@id	@default(uuid())
-	job    			Job   		@relation(fields: [job_id], references: [id], onDelete: Cascade)
-	job_id 			String		@unique
-	swot			Json
-	blue_ocean		Json
-	conclusion		String?
-	created_at		DateTime	@default(now())
-}
+// enum SubscriptionStatus {
+//   active
+//   canceled
+//   expired
+// }
 
-model	Backups {
-	id				String			@id	@default(uuid())
-	fileName		String
-	filePath		String
-	s3Key			String?
-	fileSize		Int?
-	status			BackupStatus	@default(IN_PROGRESS)
-	errorMessage	String?
-	created_at		DateTime		@default(now())
-}
+// model Subscription {
+//   id                   String             @id @default(uuid())
 
-enum	BackupStatus {
-	IN_PROGRESS
-	SUCCESS
-	FAILED
-	RESTORED
-}
+//   org_id               String
+//   organization         Organization       @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
-enum	Roles {
-	Admin
-	Analyst
-	Viewer
-}
+//   plan                 PlanTier
+//   status               SubscriptionStatus @default(active)
 
-model	Messages {
-	id				String			@id	@default(uuid())
-	user			User 			@relation(fields: [user_id], references: [id], onDelete: Cascade)
-	user_id			String
-	organization	Organization	@relation(fields: [org_id], references: [id], onDelete: Cascade)
-	org_id			String
-	response		String
-	text			String
-	read_status		Boolean			@default(false)
-	created_at		DateTime		@default(now())
-}
+//   started_at           DateTime           @default(now())
+//   ends_at              DateTime
+
+//   cancel_at_period_end Boolean            @default(false)
+
+//   created_at           DateTime           @default(now())
+//   updated_at           DateTime           @updatedAt
+
+//   payments             Payment[]
+
+//   @@index([org_id, status])
+//   @@index([ends_at])
+// }
+
+// model Organization {
+//   id                String                  @id @default(uuid())
+//   name              String
+//   script_jobs       Job[]
+//   user_organization role_and_organization[]
+//   messages          Messages[]
+//   description       String                  @db.VarChar(200)
+//   created_at        DateTime                @default(now())
+
+//   // Billing
+//   plan              PlanTier                @default(free)
+//   subscriptions     Subscription[]
+//   payments          Payment[]
+// }
+
+// enum PaymentStatus {
+//   pending
+//   succeeded
+//   failed
+// }
+
+// model Payment {
+//   id                 String         @id @default(uuid())
+
+//   org_id             String
+//   organization       Organization   @relation(fields: [org_id], references: [id], onDelete: Cascade)
+
+//   subscription_id    String?
+//   subscription       Subscription?  @relation(fields: [subscription_id], references: [id], onDelete: SetNull)
+
+//   // Requested plan
+//   plan               PlanTier
+
+//   // Server-calculated amount
+//   amount_cents       Int
+//   currency           String         @default("USD")
+
+//   // Payment state
+//   status             PaymentStatus  @default(pending)
+
+//   // Fake-bank payment identifier
+//   provider_reference String?        @unique
+
+//   // Prevent duplicate checkout requests
+//   idempotency_key    String?        @unique
+
+//   failure_reason     String?
+
+//   created_at         DateTime       @default(now())
+//   updated_at         DateTime       @updatedAt
+
+//   @@index([org_id, created_at])
+//   @@index([subscription_id])
+// }
+
+// //=================
+
+// enum PriceSensitivity {
+// 	budget
+// 	midMarket
+// 	premium
+// }
+
+// model	User {
+// 	id							String		@id	@default(uuid())
+// 	email						String		@unique
+// 	password					String
+// 	user_roles_organization		role_and_organization[]
+// 	messages					Messages[]
+// 	jobs						Job[]
+// 	two_factor_secret			String?
+// 	is_2fa_enabled				Boolean 	@default(false)
+// 	email_verified				Boolean 	@default(false)
+// 	created_at					DateTime	@default(now())
+// }
+
+// model	role_and_organization {
+// 	id				String			@id @default(uuid())
+// 	user			User			@relation(fields: [user_id], references: [id], onDelete: Cascade)
+// 	user_id			String
+// 	organization	Organization	@relation(fields: [org_id], references: [id], onDelete: Cascade)
+// 	org_id			String
+// 	role			Roles			@default(Viewer)
+// 	@@unique([user_id, org_id])
+// }
+
+// model	Comments {
+// 	id				String			@id @default(uuid())
+// 	job				Job	@relation(fields: [job_id], references: [id], onDelete: Cascade)
+// 	job_id			String
+// 	text			String
+// 	author			String?
+// 	upvotes			Int
+// 	sentiment_score	Float?
+// 	embedding		Unsupported("vector")?
+// 	created_at		DateTime		@default(now())
+// }
+
+// model	Job {
+// 	id				String				@id @default(uuid())
+// 	organization		Organization	@relation(fields: [org_id], references: [id], onDelete: Cascade)
+// 	org_id				String
+// 	user				User?			@relation(fields: [created_by], references: [id], onDelete: SetNull)
+// 	created_by			String?
+// 	target				String
+// 	mode				JobModes		@default(Keyword)
+// 	status				JobStatuses		@default(Running)
+// 	customer_persona	Json?
+// 	report				Report?
+// 	comments			Comments[]
+// 	created_at			DateTime		@default(now())
+// }
+
+// enum	JobModes {
+// 	Keyword
+// 	Subreddit
+// 	Post
+// 	User
+// }
+
+// enum	JobStatuses {
+// 	Queued
+// 	Running
+// 	Done
+// 	Failed
+// }
+
+// model	Report {
+// 	id				String		@id	@default(uuid())
+// 	job    			Job   		@relation(fields: [job_id], references: [id], onDelete: Cascade)
+// 	job_id 			String		@unique
+// 	swot			Json
+// 	blue_ocean		Json
+// 	conclusion		String?
+// 	created_at		DateTime	@default(now())
+// }
+
+// model	Backups {
+// 	id				String			@id	@default(uuid())
+// 	fileName		String
+// 	filePath		String
+// 	s3Key			String?
+// 	fileSize		Int?
+// 	status			BackupStatus	@default(IN_PROGRESS)
+// 	errorMessage	String?
+// 	created_at		DateTime		@default(now())
+// }
+
+// enum	BackupStatus {
+// 	IN_PROGRESS
+// 	SUCCESS
+// 	FAILED
+// 	RESTORED
+// }
+
+// enum	Roles {
+// 	Admin
+// 	Analyst
+// 	Viewer
+// }
+
+// model	Messages {
+// 	id				String			@id	@default(uuid())
+// 	user			User 			@relation(fields: [user_id], references: [id], onDelete: Cascade)
+// 	user_id			String
+// 	organization	Organization	@relation(fields: [org_id], references: [id], onDelete: Cascade)
+// 	org_id			String
+// 	response		String
+// 	text			String
+// 	read_status		Boolean			@default(false)
+// 	created_at		DateTime		@default(now())
+// }

@@ -18,15 +18,6 @@ export const PlanTier = {
 export type PlanTier = (typeof PlanTier)[keyof typeof PlanTier]
 
 
-export const SubscriptionStatus = {
-  active: 'active',
-  canceled: 'canceled',
-  expired: 'expired'
-} as const
-
-export type SubscriptionStatus = (typeof SubscriptionStatus)[keyof typeof SubscriptionStatus]
-
-
 export const PaymentStatus = {
   pending: 'pending',
   succeeded: 'succeeded',
@@ -36,13 +27,13 @@ export const PaymentStatus = {
 export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus]
 
 
-export const PriceSensitivity = {
-  budget: 'budget',
-  midMarket: 'midMarket',
-  premium: 'premium'
+export const SubscriptionStatus = {
+  active: 'active',
+  canceled: 'canceled',
+  expired: 'expired'
 } as const
 
-export type PriceSensitivity = (typeof PriceSensitivity)[keyof typeof PriceSensitivity]
+export type SubscriptionStatus = (typeof SubscriptionStatus)[keyof typeof SubscriptionStatus]
 
 
 export const JobModes = {
@@ -82,3 +73,12 @@ export const Roles = {
 } as const
 
 export type Roles = (typeof Roles)[keyof typeof Roles]
+
+
+export const PriceSensitivity = {
+  budget: 'budget',
+  midMarket: 'midMarket',
+  premium: 'premium'
+} as const
+
+export type PriceSensitivity = (typeof PriceSensitivity)[keyof typeof PriceSensitivity]

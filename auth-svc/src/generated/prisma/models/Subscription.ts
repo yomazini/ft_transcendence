@@ -402,6 +402,11 @@ export type SubscriptionMinOrderByAggregateInput = {
   updated_at?: Prisma.SortOrder
 }
 
+export type SubscriptionNullableScalarRelationFilter = {
+  is?: Prisma.SubscriptionWhereInput | null
+  isNot?: Prisma.SubscriptionWhereInput | null
+}
+
 export type SubscriptionListRelationFilter = {
   every?: Prisma.SubscriptionWhereInput
   some?: Prisma.SubscriptionWhereInput
@@ -410,11 +415,6 @@ export type SubscriptionListRelationFilter = {
 
 export type SubscriptionOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
-}
-
-export type SubscriptionNullableScalarRelationFilter = {
-  is?: Prisma.SubscriptionWhereInput | null
-  isNot?: Prisma.SubscriptionWhereInput | null
 }
 
 export type StringFieldUpdateOperationsInput = {
@@ -435,6 +435,22 @@ export type DateTimeFieldUpdateOperationsInput = {
 
 export type BoolFieldUpdateOperationsInput = {
   set?: boolean
+}
+
+export type SubscriptionCreateNestedOneWithoutPaymentsInput = {
+  create?: Prisma.XOR<Prisma.SubscriptionCreateWithoutPaymentsInput, Prisma.SubscriptionUncheckedCreateWithoutPaymentsInput>
+  connectOrCreate?: Prisma.SubscriptionCreateOrConnectWithoutPaymentsInput
+  connect?: Prisma.SubscriptionWhereUniqueInput
+}
+
+export type SubscriptionUpdateOneWithoutPaymentsNestedInput = {
+  create?: Prisma.XOR<Prisma.SubscriptionCreateWithoutPaymentsInput, Prisma.SubscriptionUncheckedCreateWithoutPaymentsInput>
+  connectOrCreate?: Prisma.SubscriptionCreateOrConnectWithoutPaymentsInput
+  upsert?: Prisma.SubscriptionUpsertWithoutPaymentsInput
+  disconnect?: Prisma.SubscriptionWhereInput | boolean
+  delete?: Prisma.SubscriptionWhereInput | boolean
+  connect?: Prisma.SubscriptionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.SubscriptionUpdateToOneWithWhereWithoutPaymentsInput, Prisma.SubscriptionUpdateWithoutPaymentsInput>, Prisma.SubscriptionUncheckedUpdateWithoutPaymentsInput>
 }
 
 export type SubscriptionCreateNestedManyWithoutOrganizationInput = {
@@ -479,20 +495,68 @@ export type SubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput = {
   deleteMany?: Prisma.SubscriptionScalarWhereInput | Prisma.SubscriptionScalarWhereInput[]
 }
 
-export type SubscriptionCreateNestedOneWithoutPaymentsInput = {
-  create?: Prisma.XOR<Prisma.SubscriptionCreateWithoutPaymentsInput, Prisma.SubscriptionUncheckedCreateWithoutPaymentsInput>
-  connectOrCreate?: Prisma.SubscriptionCreateOrConnectWithoutPaymentsInput
-  connect?: Prisma.SubscriptionWhereUniqueInput
+export type SubscriptionCreateWithoutPaymentsInput = {
+  id?: string
+  plan: $Enums.PlanTier
+  status?: $Enums.SubscriptionStatus
+  started_at?: Date | string
+  ends_at: Date | string
+  cancel_at_period_end?: boolean
+  created_at?: Date | string
+  updated_at?: Date | string
+  organization: Prisma.OrganizationCreateNestedOneWithoutSubscriptionsInput
 }
 
-export type SubscriptionUpdateOneWithoutPaymentsNestedInput = {
-  create?: Prisma.XOR<Prisma.SubscriptionCreateWithoutPaymentsInput, Prisma.SubscriptionUncheckedCreateWithoutPaymentsInput>
-  connectOrCreate?: Prisma.SubscriptionCreateOrConnectWithoutPaymentsInput
-  upsert?: Prisma.SubscriptionUpsertWithoutPaymentsInput
-  disconnect?: Prisma.SubscriptionWhereInput | boolean
-  delete?: Prisma.SubscriptionWhereInput | boolean
-  connect?: Prisma.SubscriptionWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.SubscriptionUpdateToOneWithWhereWithoutPaymentsInput, Prisma.SubscriptionUpdateWithoutPaymentsInput>, Prisma.SubscriptionUncheckedUpdateWithoutPaymentsInput>
+export type SubscriptionUncheckedCreateWithoutPaymentsInput = {
+  id?: string
+  org_id: string
+  plan: $Enums.PlanTier
+  status?: $Enums.SubscriptionStatus
+  started_at?: Date | string
+  ends_at: Date | string
+  cancel_at_period_end?: boolean
+  created_at?: Date | string
+  updated_at?: Date | string
+}
+
+export type SubscriptionCreateOrConnectWithoutPaymentsInput = {
+  where: Prisma.SubscriptionWhereUniqueInput
+  create: Prisma.XOR<Prisma.SubscriptionCreateWithoutPaymentsInput, Prisma.SubscriptionUncheckedCreateWithoutPaymentsInput>
+}
+
+export type SubscriptionUpsertWithoutPaymentsInput = {
+  update: Prisma.XOR<Prisma.SubscriptionUpdateWithoutPaymentsInput, Prisma.SubscriptionUncheckedUpdateWithoutPaymentsInput>
+  create: Prisma.XOR<Prisma.SubscriptionCreateWithoutPaymentsInput, Prisma.SubscriptionUncheckedCreateWithoutPaymentsInput>
+  where?: Prisma.SubscriptionWhereInput
+}
+
+export type SubscriptionUpdateToOneWithWhereWithoutPaymentsInput = {
+  where?: Prisma.SubscriptionWhereInput
+  data: Prisma.XOR<Prisma.SubscriptionUpdateWithoutPaymentsInput, Prisma.SubscriptionUncheckedUpdateWithoutPaymentsInput>
+}
+
+export type SubscriptionUpdateWithoutPaymentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  plan?: Prisma.EnumPlanTierFieldUpdateOperationsInput | $Enums.PlanTier
+  status?: Prisma.EnumSubscriptionStatusFieldUpdateOperationsInput | $Enums.SubscriptionStatus
+  started_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ends_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  cancel_at_period_end?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organization?: Prisma.OrganizationUpdateOneRequiredWithoutSubscriptionsNestedInput
+}
+
+export type SubscriptionUncheckedUpdateWithoutPaymentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  org_id?: Prisma.StringFieldUpdateOperationsInput | string
+  plan?: Prisma.EnumPlanTierFieldUpdateOperationsInput | $Enums.PlanTier
+  status?: Prisma.EnumSubscriptionStatusFieldUpdateOperationsInput | $Enums.SubscriptionStatus
+  started_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ends_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  cancel_at_period_end?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type SubscriptionCreateWithoutOrganizationInput = {
@@ -558,70 +622,6 @@ export type SubscriptionScalarWhereInput = {
   cancel_at_period_end?: Prisma.BoolFilter<"Subscription"> | boolean
   created_at?: Prisma.DateTimeFilter<"Subscription"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Subscription"> | Date | string
-}
-
-export type SubscriptionCreateWithoutPaymentsInput = {
-  id?: string
-  plan: $Enums.PlanTier
-  status?: $Enums.SubscriptionStatus
-  started_at?: Date | string
-  ends_at: Date | string
-  cancel_at_period_end?: boolean
-  created_at?: Date | string
-  updated_at?: Date | string
-  organization: Prisma.OrganizationCreateNestedOneWithoutSubscriptionsInput
-}
-
-export type SubscriptionUncheckedCreateWithoutPaymentsInput = {
-  id?: string
-  org_id: string
-  plan: $Enums.PlanTier
-  status?: $Enums.SubscriptionStatus
-  started_at?: Date | string
-  ends_at: Date | string
-  cancel_at_period_end?: boolean
-  created_at?: Date | string
-  updated_at?: Date | string
-}
-
-export type SubscriptionCreateOrConnectWithoutPaymentsInput = {
-  where: Prisma.SubscriptionWhereUniqueInput
-  create: Prisma.XOR<Prisma.SubscriptionCreateWithoutPaymentsInput, Prisma.SubscriptionUncheckedCreateWithoutPaymentsInput>
-}
-
-export type SubscriptionUpsertWithoutPaymentsInput = {
-  update: Prisma.XOR<Prisma.SubscriptionUpdateWithoutPaymentsInput, Prisma.SubscriptionUncheckedUpdateWithoutPaymentsInput>
-  create: Prisma.XOR<Prisma.SubscriptionCreateWithoutPaymentsInput, Prisma.SubscriptionUncheckedCreateWithoutPaymentsInput>
-  where?: Prisma.SubscriptionWhereInput
-}
-
-export type SubscriptionUpdateToOneWithWhereWithoutPaymentsInput = {
-  where?: Prisma.SubscriptionWhereInput
-  data: Prisma.XOR<Prisma.SubscriptionUpdateWithoutPaymentsInput, Prisma.SubscriptionUncheckedUpdateWithoutPaymentsInput>
-}
-
-export type SubscriptionUpdateWithoutPaymentsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  plan?: Prisma.EnumPlanTierFieldUpdateOperationsInput | $Enums.PlanTier
-  status?: Prisma.EnumSubscriptionStatusFieldUpdateOperationsInput | $Enums.SubscriptionStatus
-  started_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  ends_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  cancel_at_period_end?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  organization?: Prisma.OrganizationUpdateOneRequiredWithoutSubscriptionsNestedInput
-}
-
-export type SubscriptionUncheckedUpdateWithoutPaymentsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  org_id?: Prisma.StringFieldUpdateOperationsInput | string
-  plan?: Prisma.EnumPlanTierFieldUpdateOperationsInput | $Enums.PlanTier
-  status?: Prisma.EnumSubscriptionStatusFieldUpdateOperationsInput | $Enums.SubscriptionStatus
-  started_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  ends_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  cancel_at_period_end?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type SubscriptionCreateManyOrganizationInput = {
