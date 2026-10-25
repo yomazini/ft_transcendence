@@ -12,12 +12,67 @@ datasource db {
 	provider = "postgresql"
 }
 
+enum PlanTier {
+	Free
+	Premium
+	Extra
+}
+
+enum PaymentStatus {
+	Pending
+	Succeeded
+	Failed
+}
+
+enum SubscriptionStatus {
+	Active
+	Canceled
+	Expired
+}
+
+model	Subscription {
+	id						String				@id @default(uuid())
+	org_id					String
+	organization_id			Organization		@relation(fields: [org_id], references: [id], onDelete: Cascade)
+	plan					PlanTier
+	status					SubscriptionStatus	@default(Active)
+	started_at				DateTime			@default(now())
+	ends_at					DateTime
+	updated_at				DateTime			@updatedAt
+	cancel_at_period_end	Boolean				@default(false)
+	created_at				DateTime			@default(now())
+	payment					Payment[]
+	@@index([org_id, status])
+  	@@index([ends_at])
+}
+
+model Payment {
+	id					String			@id	@default(uuid())
+	org_id				String
+	organization_id		Organization	@relation(fields: [org_id], references: [id], onDelete: Cascade)
+	subscription_id		String?
+	subscription		Subscription?	@relation(fields: [subscription_id], references: [id], onDelete: SetNull)
+	plan				PlanTier
+	amount_cents		Int
+	currency			String			@default("USD")
+	status				PaymentStatus	@default(Pending)
+	idempotency_key		String?			@unique
+	provider_reference	String?			@unique
+	failure_reason		String?
+	created_at			DateTime 		@default(now())
+	updated_at			DateTime 		@updatedAt
+	@@index([org_id, created_at])
+	@@index([subscription_id])
+}
+
 model	Organization {
 	id					String		@id @default(uuid())
 	name				String
 	script_jobs			Job[]
 	user_organization	role_and_organization[]
 	messages			Messages[]
+	subscription		Subscription[]
+	payment		Payment[]
 	description			String 		@db.VarChar(200)
 	created_at			DateTime	@default(now())
 }
@@ -52,15 +107,18 @@ model	role_and_organization {
 }
 
 model	Comments {
-	id				String			@id @default(uuid())
-	job				Job	@relation(fields: [job_id], references: [id], onDelete: Cascade)
+	id				String		@id @default(uuid())
+	job				Job			@relation(fields: [job_id], references: [id], onDelete: Cascade)
 	job_id			String
 	text			String
 	author			String?
 	upvotes			Int
 	sentiment_score	Float?
+	parent_id		String?
+	parent			Comments? 	@relation("CommentParent", fields: [parent_id], references: [id], onDelete: SetNull)
+	replies			Comments[]	@relation("CommentParent")
 	embedding		Unsupported("vector")?
-	created_at		DateTime		@default(now())
+	created_at		DateTime	@default(now())
 }
 
 model	Job {
