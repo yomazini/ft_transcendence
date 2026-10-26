@@ -11,6 +11,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
+import { ApiTags, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { BillingIdentity, BillingService } from './billing.service';
 import { CheckoutDto } from './dto/checkout.dto';
 import { JwtGuard } from '../auth/guard/jwt.guard';
@@ -24,6 +25,8 @@ interface AuthenticatedRequest {
   };
 }
 
+@ApiTags('billing')
+@ApiBearerAuth()
 @Controller('orgs/billing')
 @UseGuards(JwtGuard)
 export class BillingController {
@@ -52,6 +55,8 @@ export class BillingController {
   // ==========================================
 
   @Get()
+  @ApiResponse({ status: 200, description: 'Current plan, status, members and limits' })
+  @ApiResponse({ status: 401, description: 'Missing or invalid token' })
   async getBilling(@Req() req: AuthenticatedRequest) {
     return this.billingService.getBilling(
       this.getIdentity(req),
@@ -64,6 +69,11 @@ export class BillingController {
   // ==========================================
 
   @Post('checkout')
+  @ApiResponse({ status: 201, description: 'Payment created, returns the fake-bank checkout URL' })
+  @ApiResponse({ status: 400, description: 'Invalid plan or idempotency key' })
+  @ApiResponse({ status: 401, description: 'Missing or invalid token' })
+  @ApiResponse({ status: 403, description: 'Not an Admin of the organization' })
+  @ApiResponse({ status: 409, description: 'Idempotency key reused or subscription already active' })
   async checkout(
     @Req() req: AuthenticatedRequest,
     @Body() dto: CheckoutDto,
@@ -80,6 +90,10 @@ export class BillingController {
   // ==========================================
 
   @Post('verify/:paymentId')
+  @ApiResponse({ status: 201, description: 'Payment status; on success the subscription is active' })
+  @ApiResponse({ status: 401, description: 'Missing or invalid token' })
+  @ApiResponse({ status: 403, description: 'Not an Admin of the organization' })
+  @ApiResponse({ status: 404, description: 'Payment not found in this organization' })
   async verify(
     @Req() req: AuthenticatedRequest,
     @Param('paymentId', ParseUUIDPipe) paymentId: string,
@@ -96,6 +110,9 @@ export class BillingController {
   // ==========================================
 
   @Get('payments')
+  @ApiResponse({ status: 200, description: 'Last 50 payments of the organization' })
+  @ApiResponse({ status: 401, description: 'Missing or invalid token' })
+  @ApiResponse({ status: 403, description: 'Not an Admin of the organization' })
   async getPayments(@Req() req: AuthenticatedRequest) {
     return this.billingService.getPayments(
       this.getIdentity(req),
@@ -108,6 +125,10 @@ export class BillingController {
   // ==========================================
 
   @Post('cancel')
+  @ApiResponse({ status: 201, description: 'Subscription will end at the end of the period' })
+  @ApiResponse({ status: 401, description: 'Missing or invalid token' })
+  @ApiResponse({ status: 403, description: 'Not an Admin of the organization' })
+  @ApiResponse({ status: 404, description: 'No active subscription' })
   async cancel(@Req() req: AuthenticatedRequest) {
     return this.billingService.cancel(
       this.getIdentity(req),

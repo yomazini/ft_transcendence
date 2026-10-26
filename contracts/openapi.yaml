@@ -138,6 +138,60 @@ components:
         blue_ocean: { type: object }
         created_at: { type: string, format: date-time }
 
+    PlanTier:
+      type: string
+      enum: [free, premium, extra]
+      description: free = 1 member / 5 jobs, premium = 5 members / 10 jobs, extra = 20 members / 20 jobs.
+
+    Billing:
+      type: object
+      required: [organization_id, plan, status, member_count, max_users, max_jobs, price_cents, subscription_end, cancel_at_period_end]
+      properties:
+        organization_id: { type: string, format: uuid }
+        plan: { $ref: "#/components/schemas/PlanTier" }
+        status: { type: string, enum: [free, active, canceled, expired] }
+        member_count: { type: integer }
+        max_users: { type: integer }
+        max_jobs: { type: integer }
+        price_cents: { type: integer, example: 2900 }
+        subscription_end: { type: string, format: date-time, nullable: true }
+        cancel_at_period_end: { type: boolean }
+
+    CheckoutRequest:
+      type: object
+      required: [plan, idempotency_key]
+      properties:
+        plan: { type: string, enum: [premium, extra] }
+        idempotency_key: { type: string, format: uuid }
+
+    CheckoutResponse:
+      type: object
+      required: [payment_id, url]
+      properties:
+        payment_id: { type: string, format: uuid }
+        url: { type: string, format: uri, description: Fake-bank checkout page to redirect the browser to }
+
+    PaymentResult:
+      type: object
+      required: [payment_id, status, message]
+      properties:
+        payment_id: { type: string, format: uuid }
+        status: { type: string, enum: [pending, succeeded, failed] }
+        message: { type: string }
+        plan: { $ref: "#/components/schemas/PlanTier" }
+
+    Payment:
+      type: object
+      required: [id, plan, amount_cents, currency, status, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        plan: { $ref: "#/components/schemas/PlanTier" }
+        amount_cents: { type: integer }
+        currency: { type: string, example: USD }
+        status: { type: string, enum: [pending, succeeded, failed] }
+        failure_reason: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
     RagQueryRequest:
       type: object
       required: [job_id, query]
@@ -312,6 +366,8 @@ paths:
           description: Invalid parameters, user already exists, or the organization no longer exists
         "401":
           description: Invalid or expired invite token
+        "403":
+          description: The organization reached its plan's member limit
 
   /auth/change-password:
     post:
@@ -566,7 +622,7 @@ paths:
         "401":
           description: Unauthorized
         "403":
-          description: Caller is not an Admin
+          description: Caller is not an Admin, or the organization reached its plan's member limit
         "404":
           description: Not the caller's organization
 
@@ -621,6 +677,106 @@ paths:
           description: Caller is not an Admin
         "404":
           description: Not the caller's organization, or the user is not a member of it
+
+  /orgs/billing:
+    get:
+      summary: Current plan, subscription status, member count and plan limits of the caller's organization
+      operationId: getBilling
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Billing details
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Billing" }
+        "401":
+          description: Unauthorized
+
+  /orgs/billing/checkout:
+    post:
+      summary: Start a payment for a paid plan (Admin only) and get the fake-bank checkout URL
+      operationId: billingCheckout
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CheckoutRequest" }
+      responses:
+        "201":
+          description: Payment created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CheckoutResponse" }
+        "400":
+          description: Invalid plan or idempotency key
+        "401":
+          description: Unauthorized
+        "403":
+          description: Caller is not an Admin
+        "409":
+          description: Idempotency key already used for another payment, or a subscription is already active
+
+  /orgs/billing/verify/{paymentId}:
+    parameters:
+      - { name: paymentId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      summary: Check a payment with the fake bank after the redirect; on success the subscription starts (30 days) (Admin only)
+      operationId: billingVerify
+      security: [{ bearerAuth: [] }]
+      responses:
+        "201":
+          description: Payment status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PaymentResult" }
+        "401":
+          description: Unauthorized
+        "403":
+          description: Caller is not an Admin, or the bank data does not match the payment
+        "404":
+          description: Payment not found in the caller's organization
+
+  /orgs/billing/payments:
+    get:
+      summary: Last 50 payments of the caller's organization (Admin only)
+      operationId: billingPayments
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Payments, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Payment" }
+        "401":
+          description: Unauthorized
+        "403":
+          description: Caller is not an Admin
+
+  /orgs/billing/cancel:
+    post:
+      summary: Cancel the active subscription at the end of the paid period (Admin only)
+      operationId: billingCancel
+      security: [{ bearerAuth: [] }]
+      responses:
+        "201":
+          description: Subscription scheduled to end
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, ends_at]
+                properties:
+                  message: { type: string }
+                  ends_at: { type: string, format: date-time }
+        "401":
+          description: Unauthorized
+        "403":
+          description: Caller is not an Admin
+        "404":
+          description: No active subscription
 
   /jobs:
     post:
