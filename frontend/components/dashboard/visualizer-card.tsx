@@ -3,49 +3,20 @@
 
 import { useMemo, useState } from "react";
 import { TrendingUp } from "lucide-react";
-import {
-	Area,
-	AreaChart,
-	Bar,
-	BarChart,
-	CartesianGrid,
-	Line,
-	LineChart,
-	XAxis,
-	YAxis,
-} from "recharts";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-import {
-	ChartContainer,
-	ChartTooltip,
-	ChartTooltipContent,
-} from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { Button } from "@/components/ui/button";
 import type { ReportDetails } from "@/app/types/report";
 
 type ChartType = "area" | "line" | "bar";
-type DateRange = "7" | "all";
-type SentimentFilter =
-	| "all"
-	| "positive"
-	| "negative"
-	| "neutral";
+type DateRange = "7" | "all" | "custom";
+type SentimentFilter = "all"| "positive"| "negative"| "neutral";
 
 type ChartPoint = {
 	date: string;
@@ -149,11 +120,14 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 	const [sentimentFilter, setSentimentFilter] =
 		useState<SentimentFilter>("all");
 
-	const now = new Date();
+	const [from, setFrom] = useState("");
+	const [to, setTo] = useState("");
 
-	const today = formatDate(now);
+	const today = formatDate(new Date());
+	const invalidRange = Boolean(from && to && from > to);
 
 	const chartData = useMemo(() => {
+		const now = new Date(`${today}T12:00:00`);
 		const grouped = new Map<
 			string,
 			{ total: number; count: number }
@@ -221,6 +195,15 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 			return points;
 		}
 
+		if (dateRange === "custom") {
+			if (invalidRange) return [];
+			return points.filter(
+				(point) =>
+					(!from || point.date >= from) &&
+					(!to || point.date <= to)
+			);
+		}
+
 		const start = new Date(
 			now.getFullYear(),
 			now.getMonth(),
@@ -256,7 +239,7 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 		}
 
 		return result;
-	}, [report, dateRange, sentimentFilter, today]);
+	}, [report, dateRange, sentimentFilter, today, from, to, invalidRange]);
 
 	const validPoints = chartData.filter(
 		(point) => point.sentiment !== null
@@ -346,6 +329,8 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 
 	function resetFilters() {
 		setDateRange("all");
+		setFrom("");
+		setTo("");
 		setSentimentFilter("all");
 		setChartType("area");
 	}
@@ -389,6 +374,7 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 						<SelectContent>
 							<SelectItem value="7">Last 7 days</SelectItem>
 							<SelectItem value="all">All time</SelectItem>
+							<SelectItem value="custom">Custom range</SelectItem>
 						</SelectContent>
 					</Select>
 
@@ -424,6 +410,36 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 						Reset
 					</Button>
 				</div>
+
+				{dateRange === "custom" && (
+					<div className="mt-3 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+						<label className="flex min-w-0 flex-col gap-1 text-xs text-gray-600">
+							From
+							<input
+								type="date"
+								value={from}
+								onChange={(event) => setFrom(event.target.value)}
+								max={to || undefined}
+								className="h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+							/>
+						</label>
+						<label className="flex min-w-0 flex-col gap-1 text-xs text-gray-600">
+							To
+							<input
+								type="date"
+								value={to}
+								onChange={(event) => setTo(event.target.value)}
+								min={from || undefined}
+								className="h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+							/>
+						</label>
+						{invalidRange && (
+							<p className="text-xs text-red-500 sm:col-span-2">
+								The start date must be before or equal to the end date.
+							</p>
+						)}
+					</div>
+				)}
 			</CardHeader>
 
 			<CardContent className="min-w-0 overflow-hidden pt-6">
