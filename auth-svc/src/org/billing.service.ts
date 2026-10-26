@@ -16,11 +16,17 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CheckoutDto } from './dto/checkout.dto';
 
-const PLANS = {
-  free: { price: 0, maxUsers: 1 },
-  premium: { price: 2900, maxUsers: 5 },
-  extra: { price: 5900, maxUsers: 20 },
+export const PLANS = {
+  Free: { price: 0, maxUsers: 1 },
+  Premium: { price: 2900, maxUsers: 5 },
+  Extra: { price: 5900, maxUsers: 20 },
 } as const;
+
+export interface BillingIdentity {
+  userId: string;
+  orgId: string;
+  role: string;
+}
 
 interface FakeBankCheckout {
   payment_id: string;
@@ -50,33 +56,22 @@ export class BillingService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  private async getOrganization(userId: string, admin = false) {
-    const memberships =
-      await this.prisma.role_and_organization.findMany({
-        where: { user_id: userId },
-        include: { organization: true },
-        take: 2,
-      });
-
-    if (memberships.length === 0) {
-      throw new NotFoundException('Organization not found');
-    }
-
-    if (memberships.length > 1) {
-      throw new BadRequestException(
-        'Multiple organizations found. Select an active organization.',
-      );
-    }
-
-    const membership = memberships[0];
-
-    if (admin && membership.role !== 'Admin') {
+  private async getOrganization(identity: BillingIdentity, admin = false) {
+    if (admin && identity.role !== 'Admin') {
       throw new ForbiddenException(
         'Only organization admins can manage billing',
       );
     }
 
-    return membership.organization;
+    const org = await this.prisma.organization.findUnique({
+      where: { id: identity.orgId },
+    });
+
+    if (!org) {
+      throw new NotFoundException('Organization not found');
+    }
+
+    return org;
   }
 
   private async bankRequest<T>(
@@ -110,9 +105,33 @@ export class BillingService {
     return (await response.json()) as T;
   }
 
+  async assertCanAddMember(orgId: string) {
+    const [memberCount, subscription] = await Promise.all([
+      this.prisma.role_and_organization.count({
+        where: { org_id: orgId },
+      }),
+      this.prisma.subscription.findFirst({
+        where: {
+          org_id: orgId,
+          status: SubscriptionStatus.Active,
+          ends_at: { gt: new Date() },
+        },
+        orderBy: { ends_at: 'desc' },
+      }),
+    ]);
+
+    const plan: PlanTier = subscription?.plan ?? PlanTier.Free;
+
+    if (memberCount >= PLANS[plan].maxUsers) {
+      throw new ForbiddenException(
+        `Member limit reached for the ${plan.toLowerCase()} plan (${PLANS[plan].maxUsers})`,
+      );
+    }
+  }
+
   // GET /orgs/billing
-  async getBilling(userId: string) {
-    const org = await this.getOrganization(userId);
+  async getBilling(identity: BillingIdentity) {
+    const org = await this.getOrganization(identity);
 
     const [memberCount, subscription] = await Promise.all([
       this.prisma.role_and_organization.count({
@@ -121,19 +140,19 @@ export class BillingService {
       this.prisma.subscription.findFirst({
         where: {
           org_id: org.id,
-          status: SubscriptionStatus.active,
+          status: SubscriptionStatus.Active,
           ends_at: { gt: new Date() },
         },
         orderBy: { ends_at: 'desc' },
       }),
     ]);
 
-    const plan: PlanTier = subscription?.plan ?? PlanTier.free;
+    const plan: PlanTier = subscription?.plan ?? PlanTier.Free;
 
     return {
       organization_id: org.id,
-      plan,
-      status: subscription?.status ?? 'free',
+      plan: plan.toLowerCase(),
+      status: subscription?.status.toLowerCase() ?? 'free',
       member_count: memberCount,
       max_users: PLANS[plan].maxUsers,
       price_cents: PLANS[plan].price,
@@ -144,14 +163,14 @@ export class BillingService {
   }
 
   // POST /orgs/billing/checkout
-  async checkout(userId: string, dto: CheckoutDto) {
-    const org = await this.getOrganization(userId, true);
+  async checkout(identity: BillingIdentity, dto: CheckoutDto) {
+    const org = await this.getOrganization(identity, true);
 
     if (dto.plan !== 'premium' && dto.plan !== 'extra') {
       throw new BadRequestException('Invalid paid plan');
     }
 
-    const plan = dto.plan as PlanTier;
+    const plan = dto.plan === 'premium' ? PlanTier.Premium : PlanTier.Extra;
 
     const existing = await this.prisma.payment.findUnique({
       where: { idempotency_key: dto.idempotency_key },
@@ -170,7 +189,7 @@ export class BillingService {
     const active = await this.prisma.subscription.findFirst({
       where: {
         org_id: org.id,
-        status: SubscriptionStatus.active,
+        status: SubscriptionStatus.Active,
         ends_at: { gt: new Date() },
       },
     });
@@ -189,13 +208,13 @@ export class BillingService {
         plan,
         amount_cents: amountCents,
         currency: 'USD',
-        status: PaymentStatus.pending,
+        status: PaymentStatus.Pending,
         idempotency_key: dto.idempotency_key,
       },
     });
 
     const returnUrl = new URL(
-      `${userId}/billing`,
+      `${identity.userId}/billing`,
       this.frontendUrl,
     );
 
@@ -236,8 +255,8 @@ export class BillingService {
   }
 
   // POST /orgs/billing/verify/:paymentId
-  async verify(userId: string, paymentId: string) {
-    const org = await this.getOrganization(userId, true);
+  async verify(identity: BillingIdentity, paymentId: string) {
+    const org = await this.getOrganization(identity, true);
 
     const payment = await this.prisma.payment.findFirst({
       where: {
@@ -250,16 +269,16 @@ export class BillingService {
       throw new NotFoundException('Payment not found');
     }
 
-    if (payment.status === PaymentStatus.succeeded) {
+    if (payment.status === PaymentStatus.Succeeded) {
       return {
         payment_id: payment.id,
         status: 'succeeded',
         message: 'Payment successful',
-        plan: payment.plan,
+        plan: payment.plan.toLowerCase(),
       };
     }
 
-    if (payment.status === PaymentStatus.failed) {
+    if (payment.status === PaymentStatus.Failed) {
       return {
         payment_id: payment.id,
         status: 'failed',
@@ -306,10 +325,10 @@ export class BillingService {
       await this.prisma.payment.updateMany({
         where: {
           id: payment.id,
-          status: PaymentStatus.pending,
+          status: PaymentStatus.Pending,
         },
         data: {
-          status: PaymentStatus.failed,
+          status: PaymentStatus.Failed,
           failure_reason: 'Payment declined by Fake Bank',
         },
       });
@@ -332,10 +351,10 @@ export class BillingService {
       const claimed = await tx.payment.updateMany({
         where: {
           id: payment.id,
-          status: PaymentStatus.pending,
+          status: PaymentStatus.Pending,
         },
         data: {
-          status: PaymentStatus.succeeded,
+          status: PaymentStatus.Succeeded,
         },
       });
 
@@ -346,7 +365,7 @@ export class BillingService {
       const active = await tx.subscription.findFirst({
         where: {
           org_id: org.id,
-          status: SubscriptionStatus.active,
+          status: SubscriptionStatus.Active,
           ends_at: { gt: new Date() },
         },
       });
@@ -365,7 +384,7 @@ export class BillingService {
         data: {
           org_id: org.id,
           plan: payment.plan,
-          status: SubscriptionStatus.active,
+          status: SubscriptionStatus.Active,
           started_at: startedAt,
           ends_at: endsAt,
         },
@@ -377,26 +396,21 @@ export class BillingService {
           subscription_id: subscription.id,
         },
       });
-
-      await tx.organization.update({
-        where: { id: org.id },
-        data: { plan: payment.plan },
-      });
     });
 
     return {
       payment_id: payment.id,
       status: 'succeeded',
       message: 'Payment successful',
-      plan: payment.plan,
+      plan: payment.plan.toLowerCase(),
     };
   }
 
   // GET /orgs/billing/payments
-  async getPayments(userId: string) {
-    const org = await this.getOrganization(userId, true);
+  async getPayments(identity: BillingIdentity) {
+    const org = await this.getOrganization(identity, true);
 
-    return this.prisma.payment.findMany({
+    const payments = await this.prisma.payment.findMany({
       where: { org_id: org.id },
       orderBy: { created_at: 'desc' },
       take: 50,
@@ -410,16 +424,22 @@ export class BillingService {
         created_at: true,
       },
     });
+
+    return payments.map((payment) => ({
+      ...payment,
+      plan: payment.plan.toLowerCase(),
+      status: payment.status.toLowerCase(),
+    }));
   }
 
   // POST /orgs/billing/cancel
-  async cancel(userId: string) {
-    const org = await this.getOrganization(userId, true);
+  async cancel(identity: BillingIdentity) {
+    const org = await this.getOrganization(identity, true);
 
     const subscription = await this.prisma.subscription.findFirst({
       where: {
         org_id: org.id,
-        status: SubscriptionStatus.active,
+        status: SubscriptionStatus.Active,
         ends_at: { gt: new Date() },
       },
       orderBy: { created_at: 'desc' },

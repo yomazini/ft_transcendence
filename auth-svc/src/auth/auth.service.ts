@@ -5,6 +5,7 @@ import { AcceptInviteDto, ChangeEmailDto, ChangePasswordDto, Complete42Dto, Dele
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from 'src/mail/mail.service';
 import { MetricsService } from 'src/metrics/metrics.service';
+import { BillingService } from 'src/org/billing.service';
 
 @Injectable()
 export class AuthService {
@@ -13,6 +14,7 @@ export class AuthService {
 		private readonly jwt: JwtService,
 		private readonly mail: MailService,
 		private readonly metrics: MetricsService,
+		private readonly billing: BillingService,
 	) {}
 
 	async register(dto: RegisterDto) {
@@ -245,6 +247,7 @@ export class AuthService {
 		if (payload.purpose !== 'invite') {
 			throw new UnauthorizedException('Invalid invite token');
 		}
+		await this.billing.assertCanAddMember(payload.org_id);
 		try {
 			const hash = await argon.hash(dto.password);
 

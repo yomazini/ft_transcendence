@@ -10,6 +10,7 @@ import { BillingService } from './billing.service';
 @Module({
   controllers: [BillingController, OrgController],
   providers: [OrgService, BillingService],
+  exports: [BillingService],
   imports: [PrismaModule, MailModule,
 	JwtModule.register({ secret: process.env.JWT_SECRET!})],
 })
