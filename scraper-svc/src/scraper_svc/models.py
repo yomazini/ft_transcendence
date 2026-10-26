@@ -32,10 +32,28 @@ class Jobstatuses(str, enum.Enum):
     FAILED = 'Failed'
 
 
+class Paymentstatus(str, enum.Enum):
+    PENDING = 'Pending'
+    SUCCEEDED = 'Succeeded'
+    FAILED = 'Failed'
+
+
+class Plantier(str, enum.Enum):
+    FREE = 'Free'
+    PREMIUM = 'Premium'
+    EXTRA = 'Extra'
+
+
 class Roles(str, enum.Enum):
     ADMIN = 'Admin'
     ANALYST = 'Analyst'
     VIEWER = 'Viewer'
+
+
+class Subscriptionstatus(str, enum.Enum):
+    ACTIVE = 'Active'
+    CANCELED = 'Canceled'
+    EXPIRED = 'Expired'
 
 
 class Backups(Base):
@@ -67,7 +85,9 @@ class Organization(Base):
 
     Job: Mapped[list['Job']] = relationship('Job', back_populates='org')
     Messages: Mapped[list['Messages']] = relationship('Messages', back_populates='org')
+    Subscription: Mapped[list['Subscription']] = relationship('Subscription', back_populates='org')
     role_and_organization: Mapped[list['RoleAndOrganization']] = relationship('RoleAndOrganization', back_populates='org')
+    Payment: Mapped[list['Payment']] = relationship('Payment', back_populates='org')
 
 
 class User(Base):
@@ -149,6 +169,29 @@ class Messages(Base):
     user: Mapped['User'] = relationship('User', back_populates='Messages')
 
 
+class Subscription(Base):
+    __tablename__ = 'Subscription'
+    __table_args__ = (
+        ForeignKeyConstraint(['org_id'], ['Organization.id'], ondelete='CASCADE', onupdate='CASCADE', name='Subscription_org_id_fkey'),
+        PrimaryKeyConstraint('id', name='Subscription_pkey'),
+        Index('Subscription_ends_at_idx', 'ends_at'),
+        Index('Subscription_org_id_status_idx', 'org_id', 'status')
+    )
+
+    id: Mapped[str] = mapped_column(Text, primary_key=True)
+    org_id: Mapped[str] = mapped_column(Text, nullable=False)
+    plan: Mapped[Plantier] = mapped_column(Enum(Plantier, values_callable=lambda cls: [member.value for member in cls], name='PlanTier'), nullable=False)
+    status: Mapped[Subscriptionstatus] = mapped_column(Enum(Subscriptionstatus, values_callable=lambda cls: [member.value for member in cls], name='SubscriptionStatus'), nullable=False, server_default=text('\'Active\'::"SubscriptionStatus"'))
+    started_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False, server_default=text('CURRENT_TIMESTAMP'))
+    ends_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False)
+    updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False)
+    cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False, server_default=text('CURRENT_TIMESTAMP'))
+
+    org: Mapped['Organization'] = relationship('Organization', back_populates='Subscription')
+    Payment: Mapped[list['Payment']] = relationship('Payment', back_populates='subscription')
+
+
 class RoleAndOrganization(Base):
     __tablename__ = 'role_and_organization'
     __table_args__ = (
@@ -171,6 +214,7 @@ class Comments(Base):
     __tablename__ = 'Comments'
     __table_args__ = (
         ForeignKeyConstraint(['job_id'], ['Job.id'], ondelete='CASCADE', onupdate='CASCADE', name='Comments_job_id_fkey'),
+        ForeignKeyConstraint(['parent_id'], ['Comments.id'], ondelete='SET NULL', onupdate='CASCADE', name='Comments_parent_id_fkey'),
         PrimaryKeyConstraint('id', name='Comments_pkey')
     )
 
@@ -182,8 +226,40 @@ class Comments(Base):
     author: Mapped[Optional[str]] = mapped_column(Text)
     sentiment_score: Mapped[Optional[float]] = mapped_column(Double(53))
     embedding: Mapped[Optional[object]] = mapped_column(VECTOR)
+    parent_id: Mapped[Optional[str]] = mapped_column(Text)
 
     job: Mapped['Job'] = relationship('Job', back_populates='Comments')
+    parent: Mapped[Optional['Comments']] = relationship('Comments', remote_side=[id], back_populates='parent_reverse')
+    parent_reverse: Mapped[list['Comments']] = relationship('Comments', remote_side=[parent_id], back_populates='parent')
+
+
+class Payment(Base):
+    __tablename__ = 'Payment'
+    __table_args__ = (
+        ForeignKeyConstraint(['org_id'], ['Organization.id'], ondelete='CASCADE', onupdate='CASCADE', name='Payment_org_id_fkey'),
+        ForeignKeyConstraint(['subscription_id'], ['Subscription.id'], ondelete='SET NULL', onupdate='CASCADE', name='Payment_subscription_id_fkey'),
+        PrimaryKeyConstraint('id', name='Payment_pkey'),
+        Index('Payment_idempotency_key_key', 'idempotency_key', unique=True),
+        Index('Payment_org_id_created_at_idx', 'org_id', 'created_at'),
+        Index('Payment_provider_reference_key', 'provider_reference', unique=True),
+        Index('Payment_subscription_id_idx', 'subscription_id')
+    )
+
+    id: Mapped[str] = mapped_column(Text, primary_key=True)
+    org_id: Mapped[str] = mapped_column(Text, nullable=False)
+    plan: Mapped[Plantier] = mapped_column(Enum(Plantier, values_callable=lambda cls: [member.value for member in cls], name='PlanTier'), nullable=False)
+    amount_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+    currency: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'USD'::text"))
+    status: Mapped[Paymentstatus] = mapped_column(Enum(Paymentstatus, values_callable=lambda cls: [member.value for member in cls], name='PaymentStatus'), nullable=False, server_default=text('\'Pending\'::"PaymentStatus"'))
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False, server_default=text('CURRENT_TIMESTAMP'))
+    updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False)
+    subscription_id: Mapped[Optional[str]] = mapped_column(Text)
+    idempotency_key: Mapped[Optional[str]] = mapped_column(Text)
+    provider_reference: Mapped[Optional[str]] = mapped_column(Text)
+    failure_reason: Mapped[Optional[str]] = mapped_column(Text)
+
+    org: Mapped['Organization'] = relationship('Organization', back_populates='Payment')
+    subscription: Mapped[Optional['Subscription']] = relationship('Subscription', back_populates='Payment')
 
 
 class Report(Base):

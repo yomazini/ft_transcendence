@@ -5,6 +5,7 @@ from collections.abc import Callable
 from scraper_svc.scrapers import scrape_mode
 from scraper_svc.Settings import Settings
 from scraper_svc.models import Jobmodes
+from scraper_svc.Database import Database
 from asyncio import Future
 from uuid import UUID
 
@@ -16,11 +17,13 @@ ANALYSIS_QUEUE=os.getenv("ANALYSIS_QUEUE", 'analyze-job')
 
 class ScrapingWorker:
     settings: Settings
+    db: Database | None
     worker: Worker | None
     queue: Queue | None
 
     def __init__(self):
         self.settings = Settings()
+        self.db = None
         self.worker = None
         self.queue = None
 
@@ -32,14 +35,19 @@ class ScrapingWorker:
             mode_str: str = data["mode"]
             mode: Jobmodes = Jobmodes(mode_str.capitalize())
             target: str = data["target"]
-            print(data, flush=True)
             body = scrape_mode(self.settings.sessions[0], target, mode)
-            print(body, flush=True)
+            if self.db is None:
+                raise RuntimeError("Database not found")
+            self.db.add(str(id), body, mode)
         except Exception as e:
             print(e, flush=True)
 
     async def start(self):
         await self.settings.init_settings()
+        url = self.settings.url
+        if url is None:
+            raise RuntimeError("Database URL was not configured")
+        self.db = Database(url)
         self.worker = Worker(JOB_QUEUE, cast(Callable[..., Future[Any]], self.scrape), {'connection': REDIS_URL, 'autorun': False})
         self.queue = Queue(ANALYSIS_QUEUE, {'connection': REDIS_URL})
         await self.worker.run()

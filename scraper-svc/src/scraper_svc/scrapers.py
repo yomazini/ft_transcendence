@@ -15,14 +15,14 @@ def valid_post_url(url: str) -> str:
         raise RuntimeError("Invalid post url")
     return f"{BASE_URL}{parsed.path.removesuffix('/')}.json"
 
-def scrape_mode(session_id: str, target: str, mode: Jobmodes, limit: int = 0) -> requests.Response:
+def scrape_mode(session_id: str, target: str, mode: Jobmodes, limit: int = 0) ->  list[dict[str, Any]]:
     match mode:
         case Jobmodes.POST:
             return scrape_post(session_id, target, limit)
         case _:
             raise TypeError("Unsupported mode");
 
-def scrape_post(session_id: str, target: str, limit: int) -> Any:
+def scrape_post(session_id: str, target: str, limit: int) -> list[dict[str, Any]]:
     target = valid_post_url(target)
     response = requests.get(target, headers=HEADERS,params={'limit': limit}, cookies={'reddit_session': session_id})
     response.raise_for_status()
