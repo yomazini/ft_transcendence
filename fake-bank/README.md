@@ -24,15 +24,15 @@ behavior.
 
 ## Quick Start
 
-Start the complete Fake-bank product runtime in containers:
+In InsightFlow, Fake-bank runs with the rest of the project from the repository root:
 
 ```sh
-docker compose -f docker/docker-compose.yml up --build
+make up
 ```
 
-This starts PostgreSQL, applies migrations, and then starts the API and Hosted Checkout UI.
-The Example Merchant is not included. Open the API at `http://127.0.0.1:8080` and hosted
-checkout pages at `http://127.0.0.1:5173`.
+The root `docker-compose.yml` starts `fake-bank-db`, applies the migrations (`fake-bank-migrate`),
+then starts `fake-bank-api` (`http://127.0.0.1:18080`) and the hosted checkout (`http://127.0.0.1:15173`).
+The Example Merchant is not included.
 
 For native workspace development, install dependencies:
 
