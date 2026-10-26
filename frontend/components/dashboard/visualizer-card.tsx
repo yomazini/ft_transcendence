@@ -1,260 +1,548 @@
+
 "use client";
 
+import { useMemo, useState } from "react";
+import { TrendingUp } from "lucide-react";
 import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  XAxis,
-  YAxis,
+	Area,
+	AreaChart,
+	Bar,
+	BarChart,
+	CartesianGrid,
+	Line,
+	LineChart,
+	XAxis,
+	YAxis,
 } from "recharts";
 
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+
+import {
+	ChartContainer,
+	ChartTooltip,
+	ChartTooltipContent,
 } from "@/components/ui/chart";
 
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { TrendingUp } from "lucide-react";
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 
+import { Button } from "@/components/ui/button";
 import type { ReportDetails } from "@/app/types/report";
 
+type ChartType = "area" | "line" | "bar";
+type DateRange = "7" | "all";
+type SentimentFilter =
+	| "all"
+	| "positive"
+	| "negative"
+	| "neutral";
+
+type ChartPoint = {
+	date: string;
+	sentiment: number | null;
+};
+
 const chartConfig = {
-  sentiment: {
-    label: "Sentiment",
-    color: "var(--chart-1)",
-  },
-} satisfies ChartConfig;
+	sentiment: {
+		label: "VADER Sentiment",
+		color: "#64748b",
+	},
+};
+
+function formatDate(date: Date): string {
+	const y = date.getFullYear();
+	const m = String(date.getMonth() + 1).padStart(2, "0");
+	const d = String(date.getDate()).padStart(2, "0");
+
+	return `${y}-${m}-${d}`;
+}
 
 
+function getItemDate(
+	day: string | number,
+	now: Date
+): string | null {
+	if (typeof day === "number") {
+		const date = new Date(
+			now.getFullYear(),
+			now.getMonth(),
+			day
+		);
 
-export function VisualizerCard({ report }: { report: ReportDetails | null }) {
-	const now = new Date();
-	const year = now.getFullYear();
-	const monthShort = now.toLocaleString("en-US", { month: "short" });
-	const month = now.getMonth();
-	const daysInMonth = new Date(year, month + 1, 0).getDate();
-	const monthLabel = now.toLocaleString("en-US", { month: "long", year: "numeric" });
-
-	const sentimentByDay = new Map<number, number>();
-	report?.result?.forEach((item) => {
-		let dayNum;
-
-		if (typeof item.day === "number") {
-			dayNum = item.day;
-		} else {
-			const iso = String(item.day).match(/^(\d{4})-(\d{2})-(\d{2})/);
-			if (iso) {
-				if (Number(iso[1]) !== year || Number(iso[2]) - 1 !== month) return;
-				dayNum = Number(iso[3]);
-			} else {
-				dayNum = new Date(item.day).getDate();
-			}
+		if (date.getMonth() !== now.getMonth()) {
+			return null;
 		}
 
-		sentimentByDay.set(dayNum, item.sentiment_score);
-	});
+		return formatDate(date);
+	}
 
-	const chartData = Array.from({ length: daysInMonth }, (_, i) => ({
-		day: i + 1,
-		sentiment: sentimentByDay.get(i + 1) ?? null,
-	}));
+	const value = String(day).trim();
 
-	const currentSentiment =
-		[...chartData].reverse().find((d) => d.sentiment !== null)?.sentiment ?? 0;
+	const monthDay = value.match(/^([A-Za-z]{3,9})\s+(\d{1,2})$/);
 
-	const isPositive = currentSentiment > 0;
-	const isNegative = currentSentiment < 0;
+	if (monthDay) {
+		const monthNames = [
+			"jan", "feb", "mar", "apr",
+			"may", "jun", "jul", "aug",
+			"sep", "oct", "nov", "dec",
+		];
 
-	const color = isPositive
-	? "text-green-500"
-	: isNegative
-		? "text-red-500"
-		: "text-orange-400";
+		const month = monthNames.indexOf(
+			monthDay[1].slice(0, 3).toLowerCase()
+		);
 
-	const arrow = isPositive ? "↗" : isNegative ? "↘" : "→";
+		if (month === -1) return null;
 
-	const hasPoints = chartData.some(
-		(d) => typeof d.sentiment === "number" && !Number.isNaN(d.sentiment)
+		const dayNumber = Number(monthDay[2]);
+
+		const date = new Date(
+			now.getFullYear(),
+			month,
+			dayNumber
+		);
+
+		if (
+			date.getMonth() !== month ||
+			date.getDate() !== dayNumber
+		) {
+			return null;
+		}
+
+		return formatDate(date);
+	}
+
+	const isoMatch = value.match(/^(\d{4}-\d{2}-\d{2})/);
+
+	if (isoMatch) {
+		const date = new Date(`${isoMatch[1]}T12:00:00`);
+
+		if (
+			Number.isNaN(date.getTime()) ||
+			formatDate(date) !== isoMatch[1]
+		) {
+			return null;
+		}
+
+		return isoMatch[1];
+	}
+
+	return null;
+}
+
+export function VisualizerCard({ report }: { report: ReportDetails | null }) {
+	const [chartType, setChartType] =
+		useState<ChartType>("area");
+
+	const [dateRange, setDateRange] =
+		useState<DateRange>("all");
+
+	const [sentimentFilter, setSentimentFilter] =
+		useState<SentimentFilter>("all");
+
+	const now = new Date();
+
+	const today = formatDate(now);
+
+	const chartData = useMemo(() => {
+		const grouped = new Map<
+			string,
+			{ total: number; count: number }
+		>();
+
+		report?.result?.forEach((item) => {
+			const date = getItemDate(item.day, now);
+
+			if (item.sentiment_score == null) {
+				return;
+			}
+
+			const score = Number(item.sentiment_score);
+
+			if (
+				!date ||
+				!Number.isFinite(score) ||
+				score < -1 ||
+				score > 1
+			) {
+				return;
+			}
+
+			if (
+				sentimentFilter === "positive" &&
+				score <= 0.05
+			) {
+				return;
+			}
+
+			if (
+				sentimentFilter === "negative" &&
+				score >= -0.05
+			) {
+				return;
+			}
+
+			if (
+				sentimentFilter === "neutral" &&
+				Math.abs(score) > 0.05
+			) {
+				return;
+			}
+
+			const previous = grouped.get(date) ?? {
+				total: 0,
+				count: 0,
+			};
+
+			grouped.set(date, {
+				total: previous.total + score,
+				count: previous.count + 1,
+			});
+		});
+
+		const points: ChartPoint[] = Array.from(
+			grouped.entries(),
+			([date, value]) => ({
+				date,
+				sentiment: value.total / value.count,
+			})
+		).sort((a, b) => a.date.localeCompare(b.date));
+
+		if (dateRange === "all") {
+			return points;
+		}
+
+		const start = new Date(
+			now.getFullYear(),
+			now.getMonth(),
+			now.getDate()
+		);
+
+		start.setDate(start.getDate() - 6);
+
+		const startDate = formatDate(start);
+
+		const last7 = points.filter(
+			(point) =>
+				point.date >= startDate &&
+				point.date <= today
+		);
+
+		const days = new Map(
+			last7.map((point) => [point.date, point.sentiment])
+		);
+
+		const result: ChartPoint[] = [];
+
+		for (let i = 0; i < 7; i++) {
+			const date = new Date(start);
+			date.setDate(start.getDate() + i);
+
+			const key = formatDate(date);
+
+			result.push({
+				date: key,
+				sentiment: days.get(key) ?? null,
+			});
+		}
+
+		return result;
+	}, [report, dateRange, sentimentFilter, today]);
+
+	const validPoints = chartData.filter(
+		(point) => point.sentiment !== null
 	);
 
-	return (
-		<Card className="w-full min-w-0 shrink-0 h-[550px] rounded-none">
-		<div className="pointer-events-none absolute -bottom-20 -left-20 max-h-[48px] rounded-full bg-slate-400/5 blur-3xl" />
+	const currentSentiment =
+		validPoints.at(-1)?.sentiment ?? null;
 
-		<CardHeader className="relative flex flex-row items-start border-b justify-between">
+	const isPositive =
+		currentSentiment !== null &&
+		currentSentiment > 0.05;
 
-			<div>
-			<CardTitle className="grid-cols-2 gap-2 gap text-base font-semibold text-gray-800 flex">
-				<TrendingUp className="size-5 text-gray-500" />
-				VADER Sentiment Trend
-			</CardTitle>
+	const isNegative =
+		currentSentiment !== null &&
+		currentSentiment < -0.05;
 
-			<p className="mt-1 text-xs text-gray-400">
-				{monthLabel} | +1.0 (Positive) to -1.0 (Negative)
-			</p>
-			</div>
+	const color =
+		currentSentiment === null
+			? "text-gray-400"
+			: isPositive
+				? "text-green-500"
+				: isNegative
+					? "text-red-500"
+					: "text-orange-400";
 
-			<div className="text-right">
-			<p className={`text-lg font-bold ${color}`}>
-				{isPositive ? "+" : ""}
-				{currentSentiment.toFixed(2)} {arrow}
-			</p>
+	const arrow = isPositive
+		? "↗"
+		: isNegative
+			? "↘"
+			: "→";
 
-			<p className="text-xs text-gray-400">
-				Current Sentiment:{" "}
-				<span className="font-medium text-gray-500">
-				Positive
-				</span>
-			</p>
-			</div>
+	const sentimentLabel =
+		currentSentiment === null
+			? "No data"
+			: isPositive
+				? "Positive"
+				: isNegative
+					? "Negative"
+					: "Neutral";
 
-		</CardHeader>
+	const hasPoints = validPoints.length > 0;
 
-		<CardContent className="relative h-full pt-2">
-			{!hasPoints && (
-			<div className="pointer-events-none absolute inset-x-0 top-2 z-10 flex h-[320px] flex-col items-center justify-center gap-2">
-				<div className="flex size-12 items-center justify-center rounded-full bg-gray-100">
-				<TrendingUp className="size-6 text-gray-400" />
-				</div>
-				<p className="text-sm font-medium text-gray-600">
-				No sentiment data yet
-				</p>
-				<p className="text-xs text-gray-400">
-				Points will appear here as messages are analyzed
-				</p>
-			</div>
-			)}
+	const chartChildren = (
+		<>
+			<CartesianGrid
+				vertical={false}
+				strokeDasharray="3 3"
+				className="opacity-20"
+			/>
 
-			<div className="w-full overflow-x-auto">
-			<ChartContainer
-				config={chartConfig}
-				className="h-[400px] lg:h-[430px] w-full aspect-auto"
-				style={{ minWidth: Math.max(daysInMonth * 40, 600) }}
-			>
-				<AreaChart
-				accessibilityLayer
-				data={chartData}
-				margin={{
-					top: 10,
-					right: 0,
-					left: 0,
-					bottom: 0,
-				}}
-				>
+			<XAxis
+				dataKey="date"
+				tickLine={false}
+				axisLine={false}
+				tickMargin={8}
+				minTickGap={20}
+				tick={{ fontSize: 10, fill: "#6b7280" }}
+				tickFormatter={(date: string) =>
+					new Date(`${date}T12:00:00`).toLocaleDateString(
+						"en-US",
+						{ month: "short", day: "numeric" }
+					)
+				}
+			/>
 
-				<defs>
-					<linearGradient
-					id="sentiment-area"
-					x1="0"
-					y1="0"
-					x2="0"
-					y2="1"
-					>
-					<stop
-						offset="0%"
-						stopColor="#64748b"
-						stopOpacity={0.16}
-					/>
+			<YAxis
+				domain={[-1, 1]}
+				ticks={[-1, -0.5, 0, 0.5, 1]}
+				tickLine={false}
+				axisLine={false}
+				tick={{ fontSize: 10, fill: "#9ca3af" }}
+				tickFormatter={(value: number) =>
+					value > 0 ? `+${value}` : String(value)
+				}
+			/>
 
-					<stop
-						offset="100%"
-						stopOpacity={0}
-					/>
-					</linearGradient>
-
-					<linearGradient
-					id="sentiment-line"
-					x1="0"
-					y1="0"
-					x2="1"
-					y2="0"
-					>
-					<stop
-						offset="0%"
-						stopColor="#cbd5e1"
-					/>
-
-					<stop
-						offset="50%"
-						stopColor="#94a3b8"
-					/>
-
-					<stop
-						offset="100%"
-						stopColor="#475569"
-					/>
-					</linearGradient>
-
-				</defs>
-
-				<CartesianGrid
-					vertical={false}
-					strokeDasharray="3 3"
-					className="opacity-10"
-				/>
-
-				<XAxis
-					dataKey="day"
-					tickLine={false}
-					axisLine={false}
-					tickMargin={8}
-					interval={0}
-					padding={{ left: 20, right: 20 }}
-					tick={{ fontSize: 10, fill: "#6b7280" }}
-					tickFormatter={(day) => `${monthShort} ${day}`}
-				/>
-
-				<YAxis
-					domain={[-1, 1]}
-					ticks={[-1, -0.5, 0, 0.5, 1]}
-					tickLine={false}
-					axisLine={false}
-					tickMargin={8}
-					tick={{
-					fontSize: 10,
-					fill: "#9ca3af",
-					}}
-					tickFormatter={(value) =>
-					value > 0 ? `+${value}` : value
-					}
-				/>
-
-				<ChartTooltip
-					cursor={false}
-					content={
+			<ChartTooltip
+				content={
 					<ChartTooltipContent
 						indicator="line"
-						labelFormatter={(_, payload) => {
-						const day = payload?.[0]?.payload?.day;
-						return day ? `${monthShort} ${day}, ${year}` : "";
-						}}
+						labelFormatter={(label) => String(label)}
 					/>
-					}
-				/>
+				}
+			/>
+		</>
+	);
 
-				<Area
-					type="natural"
-					dataKey="sentiment"
-					connectNulls
-					stroke="url(#sentiment-line)"
-					strokeWidth={2.5}
-					fill="url(#sentiment-area)"
-					dot={{ r: 4, fill: "#475569", stroke: "#ffffff", strokeWidth: 2 }}
-					activeDot={{ r: 6, fill: "#334155", stroke: "#ffffff", strokeWidth: 2 }}
-				/>
+	function resetFilters() {
+		setDateRange("all");
+		setSentimentFilter("all");
+		setChartType("area");
+	}
 
-				</AreaChart>
-			</ChartContainer>
-			</div>
+	return (
+		<Card className="w-full min-w-0 max-w-full overflow-hidden rounded-none">
+			<CardHeader className="border-b">
+				<div className="flex flex-wrap items-start justify-between gap-4">
+					<div>
+						<CardTitle className="flex items-center gap-2 text-base text-gray-800">
+							<TrendingUp className="size-5 text-gray-500" />
+							VADER Sentiment Trend
+						</CardTitle>
 
-		</CardContent>
+						<p className="mt-1 text-xs text-gray-400">
+							+1.0 (Positive) to -1.0 (Negative)
+						</p>
+					</div>
+
+					<div className="text-right">
+						<p className={`text-lg font-bold ${color}`}>
+							{currentSentiment === null
+								? "—"
+								: `${currentSentiment > 0 ? "+" : ""}${currentSentiment.toFixed(2)} ${arrow}`}
+						</p>
+
+						<p className="text-xs text-gray-400">
+							Latest Sentiment:{" "}
+							<span className="font-medium text-gray-500">
+								{sentimentLabel}
+							</span>
+						</p>
+					</div>
+				</div>
+
+				<div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+					<Select value={dateRange} onValueChange={(value) => setDateRange(value as DateRange)}>
+						<SelectTrigger className="w-full sm:w-[145px]">
+							<SelectValue placeholder="Date range" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="7">Last 7 days</SelectItem>
+							<SelectItem value="all">All time</SelectItem>
+						</SelectContent>
+					</Select>
+
+					<Select value={sentimentFilter} onValueChange={(value) => setSentimentFilter(value as SentimentFilter)}>
+						<SelectTrigger className="w-full sm:w-[155px]">
+							<SelectValue placeholder="Sentiment" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="all">All sentiments</SelectItem>
+							<SelectItem value="positive">Positive</SelectItem>
+							<SelectItem value="negative">Negative</SelectItem>
+							<SelectItem value="neutral">Neutral</SelectItem>
+						</SelectContent>
+					</Select>
+
+					<Select value={chartType} onValueChange={(value) => setChartType(value as ChartType)}>
+						<SelectTrigger className="w-full sm:w-[125px]">
+							<SelectValue placeholder="Chart type" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="area">Area Chart</SelectItem>
+							<SelectItem value="line">Line Chart</SelectItem>
+							<SelectItem value="bar">Bar Chart</SelectItem>
+						</SelectContent>
+					</Select>
+
+					<Button
+						variant="ghost"
+						size="sm"
+						className="w-full sm:w-auto"
+						onClick={resetFilters}
+					>
+						Reset
+					</Button>
+				</div>
+			</CardHeader>
+
+			<CardContent className="min-w-0 overflow-hidden pt-6">
+				{!hasPoints ? (
+					<div className="flex h-[350px] flex-col items-center justify-center gap-2">
+						<div className="flex size-12 items-center justify-center rounded-full bg-gray-100">
+							<TrendingUp className="size-6 text-gray-400" />
+						</div>
+
+						<p className="text-sm font-medium text-gray-600">
+							No sentiment data available
+						</p>
+
+						<p className="text-center text-xs text-gray-400">
+							Try another date range or sentiment filter.
+						</p>
+					</div>
+				) : (
+					<ChartContainer
+						config={chartConfig}
+						className="aspect-auto h-[250px] w-full min-w-0 max-w-full sm:h-[350px]"
+					>
+						{chartType === "area" ? (
+							<AreaChart
+								data={chartData}
+								accessibilityLayer
+								margin={{
+									top: 10,
+									right: 10,
+									left: 0,
+									bottom: 10,
+								}}
+							>
+								<defs>
+									<linearGradient
+										id="sentiment-area"
+										x1="0"
+										y1="0"
+										x2="0"
+										y2="1"
+									>
+										<stop
+											offset="0%"
+											stopColor="#64748b"
+											stopOpacity={0.5}
+										/>
+										<stop
+											offset="100%"
+											stopColor="#64748b"
+											stopOpacity={0.05}
+										/>
+									</linearGradient>
+								</defs>
+
+								{chartChildren}
+
+								<Area
+									type="monotone"
+									dataKey="sentiment"
+									stroke="#64748b"
+									strokeWidth={2}
+									fill="url(#sentiment-area)"
+									dot={{ r: 3 }}
+									activeDot={{ r: 6 }}
+									connectNulls={false}
+								/>
+							</AreaChart>
+						) : chartType === "line" ? (
+							<LineChart
+								data={chartData}
+								accessibilityLayer
+								margin={{
+									top: 10,
+									right: 10,
+									left: 0,
+									bottom: 10,
+								}}
+							>
+								{chartChildren}
+
+								<Line
+									type="linear"
+									dataKey="sentiment"
+									stroke="#64748b"
+									strokeWidth={2.5}
+									strokeDasharray="5 3"
+									dot={{
+										r: 4,
+										fill: "#64748b",
+										strokeWidth: 0,
+									}}
+									activeDot={{ r: 7 }}
+									connectNulls={false}
+								/>
+							</LineChart>
+						) : (
+							<BarChart
+								data={chartData}
+								accessibilityLayer
+								margin={{
+									top: 10,
+									right: 10,
+									left: 0,
+									bottom: 10,
+								}}
+							>
+								{chartChildren}
+
+								<Bar
+									dataKey="sentiment"
+									fill="#64748b"
+									radius={3}
+									maxBarSize={40}
+								/>
+							</BarChart>
+						)}
+					</ChartContainer>
+				)}
+			</CardContent>
 		</Card>
 	);
 }
