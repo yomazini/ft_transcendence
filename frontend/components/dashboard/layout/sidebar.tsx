@@ -27,6 +27,7 @@ import {
 import { useQuery } from "@tanstack/react-query"
 import { listJobs } from "@/lib/api/jobs"
 import { useDeleteRepById } from "@/hooks/useDeleteRepById"
+import { useCurrentUser } from "@/hooks/useCurrentUser"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 import {
@@ -39,7 +40,7 @@ import { useParams, usePathname, useRouter, useSearchParams } from "next/navigat
 /** Pages under /<user id>/…; the id is read from the current URL. */
 const dashboardItems = [
 	{ title: "Home", page: "dashboard", icon: House },
-	{ title: "Billing", page: "billing", icon: CreditCard },
+	{ title: "Billing", page: "billing", icon: CreditCard, adminOnly: true },
 	{ title: "Members", page: "members", icon: Users },
 	{ title: "Setting", page: "setting", icon: Settings },
 ]
@@ -53,6 +54,8 @@ export function AppSidebar() {
 	const { data: jobs = [], isLoading: loading, error } = useQuery({ queryKey: ["jobs"], queryFn: listJobs });
 	const selectedJob = useSearchParams().get("job");
 	const deleteReport = useDeleteRepById();
+	const { user } = useCurrentUser();
+	const visibleItems = dashboardItems.filter((item) => !item.adminOnly || user?.role === "Admin");
 
 	const handleDelete = async (id: string) => {
 		try {
@@ -99,7 +102,7 @@ export function AppSidebar() {
 
 					<SidebarGroupContent>
 						<SidebarMenu className="gap-1">
-							{dashboardItems.map((item) => {
+							{visibleItems.map((item) => {
 								const href = `/${userId}/${item.page}`;
 								return (
 									<SidebarMenuItem key={item.title}>
