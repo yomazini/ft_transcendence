@@ -123,6 +123,8 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 
 /** Token storage */
 export function saveToken(token: string, remember: boolean): void {
+	localStorage.removeItem(TOKEN_KEY);
+	sessionStorage.removeItem(TOKEN_KEY);
 	const storage = remember ? localStorage : sessionStorage;
 	storage.setItem(TOKEN_KEY, token);
 }
