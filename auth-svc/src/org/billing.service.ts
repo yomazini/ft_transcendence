@@ -17,9 +17,9 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CheckoutDto } from './dto/checkout.dto';
 
 export const PLANS = {
-  Free: { price: 0, maxUsers: 1 },
-  Premium: { price: 2900, maxUsers: 5 },
-  Extra: { price: 5900, maxUsers: 20 },
+  Free: { price: 0, maxUsers: 1, maxJobs: 5 },
+  Premium: { price: 2900, maxUsers: 5, maxJobs: 10 },
+  Extra: { price: 5900, maxUsers: 20, maxJobs: 20 },
 } as const;
 
 export interface BillingIdentity {
@@ -155,6 +155,7 @@ export class BillingService {
       status: subscription?.status.toLowerCase() ?? 'free',
       member_count: memberCount,
       max_users: PLANS[plan].maxUsers,
+      max_jobs: PLANS[plan].maxJobs,
       price_cents: PLANS[plan].price,
       subscription_end: subscription?.ends_at ?? null,
       cancel_at_period_end:
