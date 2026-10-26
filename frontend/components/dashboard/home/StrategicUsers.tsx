@@ -22,12 +22,12 @@ export default function StrategicUsers() {
 
 
 	return (
-		<section className="grid min-w-0 grid-cols-1 overflow-hidden border xl:grid-cols-3">
+		<section className="grid min-w-0 grid-cols-1 overflow-hidden border 2xl:grid-cols-3">
 
 
 			<Strategic />
 
-			<div className="min-w-0 border-t lg:border-l lg:border-t-0">
+			<div className="min-w-0 border-t 2xl:border-l 2xl:border-t-0">
 				<SectionTitle icon={Lightbulb}>Key Insights</SectionTitle>
 				<div className=" px-4 ">
 					<div className="flex justify-between items-center  pt-3">

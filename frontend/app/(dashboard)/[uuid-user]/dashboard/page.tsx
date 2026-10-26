@@ -34,7 +34,6 @@ import SectionTitle from "@/components/dashboard/home/SectionTitle";
 import RevenueOverview from "@/components/dashboard/home/RevenueOverview";
 import SummaryMetrics from "@/components/dashboard/home/SummaryMetrics";
 import StrategicUsers from "@/components/dashboard/home/StrategicUsers";
-import ListUesrs from "@/components/dashboard/home/listUsers";
 
 
 
@@ -65,7 +64,6 @@ export default function DashboardPage() {
 			{/* Campaigns and products */}
 			<StrategicUsers />
 
-			<ListUesrs />
 		</main>
 	);
 }

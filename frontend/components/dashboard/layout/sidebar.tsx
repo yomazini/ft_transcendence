@@ -27,6 +27,7 @@ import {
 import { useQuery } from "@tanstack/react-query"
 import { listJobs } from "@/lib/api/jobs"
 import { useDeleteRepById } from "@/hooks/useDeleteRepById"
+import { useCurrentUser } from "@/hooks/useCurrentUser"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 import {
@@ -39,7 +40,7 @@ import { useParams, usePathname, useRouter, useSearchParams } from "next/navigat
 /** Pages under /<user id>/…; the id is read from the current URL. */
 const dashboardItems = [
 	{ title: "Home", page: "dashboard", icon: House },
-	{ title: "Billing", page: "billing", icon: CreditCard },
+	{ title: "Billing", page: "billing", icon: CreditCard, adminOnly: true },
 	{ title: "Members", page: "members", icon: Users },
 	{ title: "Setting", page: "setting", icon: Settings },
 ]
@@ -53,6 +54,8 @@ export function AppSidebar() {
 	const { data: jobs = [], isLoading: loading, error } = useQuery({ queryKey: ["jobs"], queryFn: listJobs });
 	const selectedJob = useSearchParams().get("job");
 	const deleteReport = useDeleteRepById();
+	const { user } = useCurrentUser();
+	const visibleItems = dashboardItems.filter((item) => !item.adminOnly || user?.role === "Admin");
 
 	const handleDelete = async (id: string) => {
 		try {
@@ -71,14 +74,14 @@ export function AppSidebar() {
 		>
 			{/* Logo */}
 			<SidebarHeader className="border-b">
-				<div className="flex h-14 items-center gap-3 px-3">
+				<div className="flex h-14 items-center gap-3 ">
 					<div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-black text-white">
 						<span className="text-lg font-bold">
 							I
 						</span>
 					</div>
 
-					<div className="flex flex-1 flex-col">
+					<div className="flex flex-1 flex-col pl-5">
 						<span className="text-sm font-semibold">
 							InsightFlow
 						</span>
@@ -87,10 +90,6 @@ export function AppSidebar() {
 							Dashboard
 						</span>
 					</div>
-
-					<span className="rounded border px-1.5 py-0.5 text-[10px] font-medium">
-						V1.0
-					</span>
 				</div>
 			</SidebarHeader>
 
@@ -103,7 +102,7 @@ export function AppSidebar() {
 
 					<SidebarGroupContent>
 						<SidebarMenu className="gap-1">
-							{dashboardItems.map((item) => {
+							{visibleItems.map((item) => {
 								const href = `/${userId}/${item.page}`;
 								return (
 									<SidebarMenuItem key={item.title}>

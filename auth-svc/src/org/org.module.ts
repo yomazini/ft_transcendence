@@ -4,12 +4,14 @@ import { OrgService } from './org.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { MailModule } from 'src/mail/mail.module';
 import { JwtModule } from '@nestjs/jwt';
+import { BillingController } from './billing.controller';
+import { BillingService } from './billing.service';
 
 @Module({
-  controllers: [OrgController],
-  providers: [OrgService],
+  controllers: [BillingController, OrgController],
+  providers: [OrgService, BillingService],
+  exports: [BillingService],
   imports: [PrismaModule, MailModule,
-	JwtModule.register({ secret: process.env.JWT_SECRET!})
-  ],
+	JwtModule.register({ secret: process.env.JWT_SECRET!})],
 })
 export class OrgModule {}
