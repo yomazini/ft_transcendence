@@ -4,6 +4,7 @@ import { InviteMemberDto, UpdateOrgDto } from './dto';
 import { MailService } from 'src/mail/mail.service';
 import { JwtService } from '@nestjs/jwt';
 import { UpdateMemberDto } from './dto/update-member.dto';
+import { BillingService } from './billing.service';
 
 @Injectable()
 export class OrgService {
@@ -11,6 +12,7 @@ export class OrgService {
 		private readonly prisma: PrismaService,
 		private readonly mail: MailService,
 		private readonly jwt: JwtService,
+		private readonly billing: BillingService,
 	) {}
 
 	async get(id: string, userOrgId: string) {
@@ -85,6 +87,8 @@ export class OrgService {
 			where: { email: dto.email },
 		})
 		if (user) { throw new BadRequestException('User already exists'); }
+
+		await this.billing.assertCanAddMember(id);
 
 		const invite_token = await this.jwt.signAsync({
 			email: dto.email,

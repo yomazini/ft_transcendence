@@ -128,4 +128,52 @@ describe('ProxyService', () => {
 
     service.forward(reqMock, resMock);
   });
+
+  it('should forward billing route and JWT to auth-svc', (done) => {
+    const reqMock: any = {
+      originalUrl: '/api/orgs/billing',
+      method: 'GET',
+      headers: {
+        authorization: 'Bearer test-token',
+      },
+      socket: { remoteAddress: '127.0.0.1' },
+      body: {},
+    };
+
+    const resMock: any = new PassThrough();
+
+    resMock.headersSent = false;
+
+    resMock.status = jest.fn().mockImplementation((code) => {
+      resMock.statusCode = code;
+      return resMock;
+    });
+
+    resMock.setHeader = jest.fn();
+
+    let responseData = '';
+
+    resMock.on('data', (chunk: Buffer) => {
+      responseData += chunk.toString();
+    });
+
+    resMock.on('finish', () => {
+      try {
+        expect(resMock.status).toHaveBeenCalledWith(200);
+
+        const parsed = JSON.parse(responseData);
+
+        expect(parsed.receivedUrl).toBe('/orgs/billing');
+
+        expect(parsed.receivedHeaders.authorization)
+          .toBe('Bearer test-token');
+
+        done();
+      } catch (error) {
+        done(error);
+      }
+    });
+
+    service.forward(reqMock, resMock);
+  });
 });

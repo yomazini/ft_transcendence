@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useMemo, useState } from "react";
@@ -11,12 +12,20 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+
+import { CalendarDays } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import type { ReportDetails } from "@/app/types/report";
 
 type ChartType = "area" | "line" | "bar";
 type DateRange = "7" | "all" | "custom";
-type SentimentFilter = "all"| "positive"| "negative"| "neutral";
+type SentimentFilter = "all" | "positive" | "negative" | "neutral";
 
 type ChartPoint = {
 	date: string;
@@ -111,14 +120,12 @@ function getItemDate(
 }
 
 export function VisualizerCard({ report }: { report: ReportDetails | null }) {
-	const [chartType, setChartType] =
-		useState<ChartType>("area");
+	const [chartType, setChartType] = useState<ChartType>("area");
 
-	const [dateRange, setDateRange] =
-		useState<DateRange>("all");
+	const [dateRange, setDateRange] = useState<DateRange>("all");
 
-	const [sentimentFilter, setSentimentFilter] =
-		useState<SentimentFilter>("all");
+	const [pop, setPop] = useState(false);
+	const [sentimentFilter, setSentimentFilter] = useState<SentimentFilter>("all");
 
 	const [from, setFrom] = useState("");
 	const [to, setTo] = useState("");
@@ -333,10 +340,11 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 		setTo("");
 		setSentimentFilter("all");
 		setChartType("area");
+		setPop(false);
 	}
 
 	return (
-		<Card className="w-full min-w-0 max-w-full overflow-hidden rounded-none">
+		<Card className="w-full min-w-0 max-w-full rounded-none">
 			<CardHeader className="border-b">
 				<div className="flex flex-wrap items-start justify-between gap-4">
 					<div>
@@ -366,9 +374,16 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 					</div>
 				</div>
 
-				<div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
-					<Select value={dateRange} onValueChange={(value) => setDateRange(value as DateRange)}>
-						<SelectTrigger className="w-full sm:w-[145px]">
+				{/* Fixed-height filter row: on narrow screens it scrolls INSIDE the card, not the page. */}
+				<div className="mt-4 flex h-9 min-w-0 max-w-full items-center gap-2 overflow-x-auto overflow-y-hidden whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+					<Select
+						value={dateRange}
+						onValueChange={(value) => {
+							setDateRange(value as DateRange);
+							setPop(false);
+						}}
+					>
+						<SelectTrigger className="h-9 w-[140px] shrink-0">
 							<SelectValue placeholder="Date range" />
 						</SelectTrigger>
 						<SelectContent>
@@ -379,7 +394,7 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 					</Select>
 
 					<Select value={sentimentFilter} onValueChange={(value) => setSentimentFilter(value as SentimentFilter)}>
-						<SelectTrigger className="w-full sm:w-[155px]">
+						<SelectTrigger className="h-9 w-[155px] shrink-0">
 							<SelectValue placeholder="Sentiment" />
 						</SelectTrigger>
 						<SelectContent>
@@ -391,7 +406,7 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 					</Select>
 
 					<Select value={chartType} onValueChange={(value) => setChartType(value as ChartType)}>
-						<SelectTrigger className="w-full sm:w-[125px]">
+						<SelectTrigger className="h-9 w-[125px] shrink-0">
 							<SelectValue placeholder="Chart type" />
 						</SelectTrigger>
 						<SelectContent>
@@ -401,45 +416,44 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 						</SelectContent>
 					</Select>
 
-					<Button
-						variant="ghost"
-						size="sm"
-						className="w-full sm:w-auto"
-						onClick={resetFilters}
-					>
+					<Button variant="ghost" size="sm" className="h-9 shrink-0" onClick={resetFilters}>
 						Reset
 					</Button>
+
+					{dateRange === "custom" && (
+						<Popover open={pop} onOpenChange={setPop}>
+							<PopoverTrigger
+								render={<Button variant="outline" size="sm" className="h-9 shrink-0 gap-2" />}
+							>
+								<CalendarDays className="size-4" />
+								Select dates
+							</PopoverTrigger>
+							<PopoverContent
+								align="end"
+								side="bottom"
+								className="z-50 w-[min(320px,calc(100vw-32px))] bg-white p-4"
+							>
+								<div className="flex flex-col gap-4 whitespace-normal">
+									<p className="text-sm font-medium">Custom date range</p>
+									<label className="flex flex-col gap-2 text-xs text-gray-500">
+										From
+										<input type="date" value={from} max={to || undefined}
+											onChange={(e) => setFrom(e.target.value)}
+											className="h-9 w-full min-w-0 rounded-md border px-3 text-sm" />
+									</label>
+									<label className="flex flex-col gap-2 text-xs text-gray-500">
+										To
+											<input type="date" value={to} min={from || undefined}
+											onChange={(e) => setTo(e.target.value)}
+											className="h-9 w-full min-w-0 rounded-md border px-3 text-sm" />
+									</label>
+									<Button size="sm" disabled={invalidRange || !from || !to} onClick={() => setPop(false)}>Apply</Button>
+								</div>
+							</PopoverContent>
+						</Popover>
+					)}
 				</div>
 
-				{dateRange === "custom" && (
-					<div className="mt-3 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
-						<label className="flex min-w-0 flex-col gap-1 text-xs text-gray-600">
-							From
-							<input
-								type="date"
-								value={from}
-								onChange={(event) => setFrom(event.target.value)}
-								max={to || undefined}
-								className="h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm text-foreground"
-							/>
-						</label>
-						<label className="flex min-w-0 flex-col gap-1 text-xs text-gray-600">
-							To
-							<input
-								type="date"
-								value={to}
-								onChange={(event) => setTo(event.target.value)}
-								min={from || undefined}
-								className="h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm text-foreground"
-							/>
-						</label>
-						{invalidRange && (
-							<p className="text-xs text-red-500 sm:col-span-2">
-								The start date must be before or equal to the end date.
-							</p>
-						)}
-					</div>
-				)}
 			</CardHeader>
 
 			<CardContent className="min-w-0 overflow-hidden pt-6">

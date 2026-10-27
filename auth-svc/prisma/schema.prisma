@@ -21,6 +21,8 @@ model Organization {
   user_organization role_and_organization[]
   description       String
   created_at        DateTime                @default(now())
+  subscriptions     Subscription[]
+  payments          Payment[]
 }
 
 model User {
@@ -46,3 +48,51 @@ enum Roles {
   Viewer
 }
 
+enum PlanTier {
+  Free
+  Premium
+  Extra
+}
+
+enum SubscriptionStatus {
+  Active
+  Canceled
+  Expired
+}
+
+enum PaymentStatus {
+  Pending
+  Succeeded
+  Failed
+}
+
+model Subscription {
+  id                   String             @id @default(uuid())
+  org_id               String
+  organization         Organization       @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  plan                 PlanTier
+  status               SubscriptionStatus @default(Active)
+  started_at           DateTime           @default(now())
+  ends_at              DateTime
+  cancel_at_period_end Boolean            @default(false)
+  created_at           DateTime           @default(now())
+  updated_at           DateTime           @updatedAt
+  payments             Payment[]
+}
+
+model Payment {
+  id                 String        @id @default(uuid())
+  org_id             String
+  organization       Organization  @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  subscription_id    String?
+  subscription       Subscription? @relation(fields: [subscription_id], references: [id], onDelete: SetNull)
+  plan               PlanTier
+  amount_cents       Int
+  currency           String        @default("USD")
+  status             PaymentStatus @default(Pending)
+  provider_reference String?       @unique
+  idempotency_key    String?       @unique
+  failure_reason     String?
+  created_at         DateTime      @default(now())
+  updated_at         DateTime      @updatedAt
+}
