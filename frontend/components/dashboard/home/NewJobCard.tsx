@@ -74,13 +74,17 @@ export default function NewJobCard() {
 			<form className="mt-4 flex flex-col gap-3 sm:flex-row" onSubmit={handleSubmit} noValidate>
 				<select
 					aria-label="Target type"
-					className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm"
+					className="h-8 rounded-lg border border-input bg-background px-2.5 text-sm text-foreground dark:bg-zinc-900 dark:text-white"
 					value={mode}
 					onChange={(e) => setMode(e.target.value as JobMode)}
 					disabled={submitting}
 				>
 					{MODES.map((m) => (
-						<option key={m.value} value={m.value}>
+						<option
+							key={m.value}
+							value={m.value}
+							className="bg-white text-black dark:bg-zinc-900 dark:text-white"
+						>
 							{m.label}
 						</option>
 					))}
