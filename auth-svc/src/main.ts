@@ -1,13 +1,19 @@
 import { config } from 'dotenv';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 config({ path: '.env.example' });
-
+import { loadVaultSecrets } from './vault';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 
 /** @note this is just NestJS's naming convention for "the function that starts everything,"  */
 async function bootstrap() {
+	try {
+		await loadVaultSecrets();
+	} catch(e) {
+		Logger.warn(`Vault unavailable; using .env: ${e}`);
+	}
+	const { AppModule } = await import('./app.module.js');
+
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 

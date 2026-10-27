@@ -85,7 +85,9 @@ services:
     env_file: .env
     depends_on:
       postgres: { condition: service_healthy }
-      vault: { condition: service_started }
+      vault: { condition: service_healthy }
+    volumes:
+      - "./vault/creds/auth-svc:/run/vault:ro" # [HOST_PATH]:[CONTAIENRT_PATH]:ro(readonly)
     networks: [ft_network]
     restart: unless-stopped
     # Owner: Mehdi
@@ -192,7 +194,7 @@ services:
 
   # --- Security & secrets -----------------------------------------------
   vault:
-    container_name: vault
+    container_name: vault 
     image: vault-prod
     build: ./vault
     ports: ["127.0.0.1:8200:8200"]
