@@ -1,4 +1,4 @@
-import os, hvac
+import os, hvac, logging
 from scraper_svc.Login import Login
 from sqlalchemy import URL
 
@@ -53,6 +53,7 @@ class Settings:
 		)
 
 	async def init_settings(self):
+		logging.getLogger("scraper-svc").info(f"Getting secrets from {VAULT_DNS}...")
 		await self.login()
 		await self.init_sessions()
 		await self.init_database()

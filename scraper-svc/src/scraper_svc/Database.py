@@ -45,7 +45,7 @@ class Database:
 				parent_id=None
 			)
 			session.add(post)
-			self.add_comments(session, job_id, post_id, data[1]["data"]["children"])
+			self.add_comments(session, job_id, post_id, data[1]["data"]["children"])		
 
 	def add_comments(self, session: Session, job_id:str, parent_id: str, data: list[dict[str, Any]]) -> None:
 		for item in data:
