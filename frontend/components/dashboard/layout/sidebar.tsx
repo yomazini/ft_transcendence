@@ -11,6 +11,8 @@ import {
 	MoreHorizontal,
 	Trash2,
 	ChevronRight,
+	HelicopterIcon,
+	HospitalIcon,
 } from "lucide-react"
 
 import {
@@ -43,6 +45,7 @@ const dashboardItems = [
 	{ title: "Billing", page: "billing", icon: CreditCard, adminOnly: true },
 	{ title: "Members", page: "members", icon: Users },
 	{ title: "Setting", page: "setting", icon: Settings },
+	{ title: "Status", page: "status", icon: HospitalIcon },
 ]
 
 

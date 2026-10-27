@@ -9,7 +9,6 @@ import { Users } from "lucide-react";
 
 
 export default function StrategicUsers() {
-	// Real members of the organization (auth-svc). The ring shows how many are Admins.
 	const { members } = useMembers();
 	const totalUsers = members.length;
 	const admins = members.filter((m) => m.role === "Admin").length;

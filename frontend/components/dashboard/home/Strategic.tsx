@@ -1,9 +1,9 @@
+
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+
 import {
-	Activity,
-	Globe,
 	Lightbulb,
 	Link,
 	Megaphone,
@@ -13,7 +13,6 @@ import {
 	Target,
 	Trash2,
 	TrendingUp,
-	Users,
 	Waves,
 } from "lucide-react";
 
@@ -22,34 +21,66 @@ import { useReportById } from "@/hooks/useReportById";
 import { useSelectedJobId } from "@/hooks/useSelectedJob";
 import { Cards } from "../swot-cards";
 
-const asText = (v: unknown): string => {
-	if (typeof v === "string") return v;
-	if (v && typeof v === "object") {
-		const o = v as { point?: string; action?: string; text?: string };
-		return o.point ?? o.action ?? o.text ?? JSON.stringify(v);
+const asText = (value: unknown): string => {
+	if (typeof value === "string") {
+		return value;
 	}
-	return String(v ?? "");
+
+	if (value && typeof value === "object") {
+		const item = value as {
+			point?: string;
+			action?: string;
+			text?: string;
+		};
+
+		return (
+			item.point ??
+			item.action ??
+			item.text ??
+			JSON.stringify(value)
+		);
+	}
+
+	return String(value ?? "");
 };
 
-const asItems = (v: unknown): string[] =>
-	Array.isArray(v) ? v.map(asText) : typeof v === "string" ? [v] : [];
+const asItems = (value: unknown): string[] => {
+	if (Array.isArray(value)) {
+		return value.map(asText);
+	}
 
+	if (typeof value === "string") {
+		return [value];
+	}
 
-
+	return [];
+};
 
 export default function Strategic() {
 	const id = useSelectedJobId();
-	const [activeCard, setActiveCard] = useState<1 | 2 | 3>(1);
+
+	const [activeCard, setActiveCard] =
+		useState<1 | 2 | 3 | 4 | 5>(1);
 
 	const { report, loading, error } = useReportById(id);
-	const selectedCard = (activeCard === 3 && report?.conclusion === null) ? 1 : activeCard;
 
-	// Analysis-svc stores the four actions under blue_ocean.strategy.
-	// Keep the old top-level shape as a fallback.
+	const hasConclusion = report?.conclusion != null;
+
+	const selectedCard =
+		activeCard === 3 && !hasConclusion
+			? 1
+			: activeCard;
+
+	// Blue Ocean strategy data
 	const blue = report?.blue_ocean as
-		| { strategy?: Record<string, unknown>; [key: string]: unknown }
+		| {
+			strategy?: Record<string, unknown>;
+			[key: string]: unknown;
+		}
 		| undefined;
+
 	const strategy = blue?.strategy ?? blue;
+
 	const swot = [
 		{
 			items: asItems(report?.swot?.strengths),
@@ -108,47 +139,49 @@ export default function Strategic() {
 			icon: PlusCircle,
 			title: "CREATE",
 			description: "Introduce new factors",
-			iconColor: "text-gary-500",
+			iconColor: "text-gray-500",
 		},
 	];
 
-	const conclusion = [
-		{
-			item: report?.conclusion ?? null,
-			icon: Lightbulb,
-			title: "conclusion",
-			description: "Key insights and final takeaways from the analysis.",
-			iconColor: "text-gray-500",
-		}
-	];
-
-	if (loading) {
+	if (loading || error) {
 		return (
-			<div className="min-w-0 xl:col-span-2">
+			<div className="w-full min-w-0 self-start 2xl:col-span-2">
 				<SectionTitle icon={Megaphone}>
 					Strategic Analysis
 				</SectionTitle>
+
 				<div className="p-4 text-sm text-muted-foreground">
-					Loading strategic analysis...
+					{loading
+						? "Loading strategic analysis..."
+						: "Failed to load strategic analysis."}
 				</div>
 			</div>
 		);
 	}
 
+	const activeItems = selectedCard === 1 ? swot : blueOcean;
+
 	return (
-		<div className="min-w-0 2xl:col-span-2 overflow-y-auto">
+		<div className="flex h-auto w-full min-w-0 max-w-full flex-col self-start 2xl:col-span-2">
+
 			<SectionTitle icon={Megaphone}>
 				<span>Strategic Analysis</span>
 			</SectionTitle>
-			<div className="divide-y h-[500px]">
-				<div className="flex w-full min-w-0 justify-center">
-					<div className={`grid w-full min-w-0 rounded-lg bg-slate-100 p-1 dark:bg-slate-900
-						${report?.conclusion !== null ? "grid-cols-3 gap-3" : "grid-cols-2 gap-2"}`}>
+
+			<div className="flex w-full min-w-0 flex-col divide-y">
+
+				<div className="w-full min-w-0">
+					<div
+						className={`grid w-full min-w-0 rounded-lg bg-slate-100 p-1 dark:bg-slate-900 ${hasConclusion
+							? "grid-cols-3 gap-2"
+							: "grid-cols-2 gap-2"
+							}`}
+					>
 						<button
 							type="button"
 							onClick={() => setActiveCard(1)}
 							aria-pressed={selectedCard === 1}
-							className={`flex min-w-0 items-center justify-center gap-2 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:text-sm ${selectedCard === 1
+							className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:gap-2 sm:text-sm ${selectedCard === 1
 								? "bg-white text-black shadow-sm dark:bg-slate-800 dark:text-white"
 								: "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
 								}`}
@@ -161,7 +194,7 @@ export default function Strategic() {
 							type="button"
 							onClick={() => setActiveCard(2)}
 							aria-pressed={selectedCard === 2}
-							className={`flex min-w-0 items-center justify-center gap-2 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:text-sm ${selectedCard === 2
+							className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:gap-2 sm:text-sm ${selectedCard === 2
 								? "bg-white text-black shadow-sm dark:bg-slate-800 dark:text-white"
 								: "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
 								}`}
@@ -169,78 +202,51 @@ export default function Strategic() {
 							<Waves className="size-4 shrink-0" />
 							<span className="truncate">Blue Ocean</span>
 						</button>
-						{
-							(() => {
-								if (report?.conclusion !== null) {
-									return (
-									<button
-										type="button"
-										onClick={() => setActiveCard(3)}
-										className={`flex min-w-0 items-center justify-center gap-2 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:text-sm ${selectedCard === 3
-											? "bg-white text-black shadow-sm dark:bg-slate-800 dark:text-white"
-											: "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-											}`}
-									>
-										<Lightbulb className="size-4" />
-										<span>Conclusion</span>
-									</button>
-									);
-								}
-								return null;
-							})()
-						}
+
+						{hasConclusion && (
+							<button
+								type="button"
+								onClick={() => setActiveCard(3)}
+								aria-pressed={selectedCard === 3}
+								className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:gap-2 sm:text-sm ${selectedCard === 3
+									? "bg-white text-black shadow-sm dark:bg-slate-800 dark:text-white"
+									: "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+									}`}
+							>
+								<Lightbulb className="size-4 shrink-0" />
+								<span className="truncate">Conclusion</span>
+							</button>
+						)}
 					</div>
 				</div>
 
-				<div
-					className={`w-full min-w-0 grid-cols-1 gap-4 p-2 py-4 lg:grid-cols-2 ${
-						selectedCard === 1 ? "grid" : "hidden"
-					}`}
-				>
-					{swot.map((item) => (
-						<Cards
-							key={item.title}
-							items={item.items}
-							icon={item.icon}
-							title={item.title}
-							description={item.description}
-							iconColor={item.iconColor}
-						/>
-					))}
-				</div>
+				{selectedCard !== 3 && (
+					<div className="grid h-auto w-full min-w-0 grid-cols-1 gap-4 px-2 py-4 sm:grid-cols-2 lg:min-h-[548px]">
+						{activeItems.map((item) => (
+							<Cards
+								key={item.title}
+								items={item.items}
+								icon={item.icon}
+								title={item.title}
+								description={item.description}
+								iconColor={item.iconColor}
+							/>
+						))}
+					</div>
+				)}
 
-				<div
-					className={`w-full min-w-0 grid-cols-1 gap-4 p-2 py-4 lg:grid-cols-2 ${
-						(selectedCard === 2) ? "grid" : "hidden"
-					}`}
-				>
-					{blueOcean.map((item) => (
+				{selectedCard === 3 && hasConclusion && (
+					<div className="h-[548px] grid w-full min-w-0 grid-cols-1 gap-4 px-2 py-4">
 						<Cards
-							key={item.title}
-							items={item.items}
-							icon={item.icon}
-							title={item.title}
-							description={item.description}
-							iconColor={item.iconColor}
+							items={report?.conclusion ?? null}
+							icon={Lightbulb}
+							title="CONCLUSION"
+							description="Key insights and final takeaways from the analysis."
+							iconColor="text-gray-500"
 						/>
-					))}
-				</div>
-				<div
-					className={`w-full min-w-0 grid grid-cols-1 p-4 ${
-						selectedCard === 3 ? "" : "hidden"
-					}`}
-				>
-					{conclusion.map((item) => (
-						<Cards
-						key={item.title}
-						items={item.item}
-						icon={item.icon}
-						title={item.title}
-						description={item.description}
-						iconColor={item.iconColor}
-						/>
-					))}
-				</div>
+					</div>
+				)}
+
 			</div>
 		</div>
 	);
