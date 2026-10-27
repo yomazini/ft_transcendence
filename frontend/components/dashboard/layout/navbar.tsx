@@ -54,14 +54,7 @@ export function DashboardNavbar() {
         <div className="hidden h-6 w-px bg-border sm:block" />
 
         {/* Search */}
-        <div className="relative hidden w-80 md:block">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-
-          <Input
-            placeholder="Search..."
-            className="h-9 pl-9"
-          />
-        </div>
+        
       </div>
 
       {/* Right */}
