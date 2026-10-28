@@ -634,11 +634,11 @@ export default function BillingPage() {
           </p>
         )}
 
-        {billing.status === "active" && (
+        {/* {billing.status === "active" && (
           <p className="mt-4 text-sm text-muted-foreground">
             Plan switching is not yet supported by the billing backend.
           </p>
-        )}
+        )} */}
       </section>
 
       {/* Payment history */}
@@ -732,23 +732,7 @@ export default function BillingPage() {
       )}
 
       {/* Development information */}
-      <div className="flex items-start gap-3 rounded-xl border bg-muted/30 p-4">
-        <Clock3 className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
-
-        <div className="text-sm text-muted-foreground">
-          <p className="font-medium text-foreground">
-            Simulated payments
-          </p>
-
-          <p className="mt-1">
-            Billing uses Stripe Mock with a local checkout
-            simulator for development and testing.
-            No real money is charged. Paid access lasts
-            for the subscription period recorded by
-            your backend.
-          </p>
-        </div>
-      </div>
+      
     </div>
   );
 }

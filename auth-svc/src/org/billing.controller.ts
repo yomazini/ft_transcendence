@@ -27,7 +27,7 @@ interface AuthenticatedRequest {
 export class BillingController {
   constructor(
     private readonly billingService: BillingService,
-  ) {}
+  ) { }
 
   private getIdentity(req: AuthenticatedRequest): string {
     const userId = req.user?.sub ?? req.user?.id;
@@ -91,6 +91,19 @@ export class BillingController {
   async cancel(@Req() req: AuthenticatedRequest) {
     return this.billingService.cancel(
       this.getIdentity(req),
+    );
+  }
+
+  @Post('simulate/:paymentId')
+  async simulatePayment(
+    @Req() req: AuthenticatedRequest,
+    @Param('paymentId', ParseUUIDPipe) paymentId: string,
+    @Body('outcome') outcome: 'succeeded' | 'failed',
+  ) {
+    return this.billingService.simulatePayment(
+      this.getIdentity(req),
+      paymentId,
+      outcome,
     );
   }
 }
