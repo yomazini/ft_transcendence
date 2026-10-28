@@ -33,11 +33,9 @@ const PLANS = [
     name: "Free",
     price: 0,
     maxUsers: 1,
-    maxJobs: 5,
     description: "For individuals getting started.",
     features: [
       "1 organization member",
-      "Up to 5 analysis jobs",
       "Basic workspace access",
       "Community support",
     ],
@@ -47,11 +45,9 @@ const PLANS = [
     name: "Premium",
     price: 29,
     maxUsers: 5,
-    maxJobs: 10,
     description: "For growing teams.",
     features: [
       "Up to 5 organization members",
-      "Up to 10 analysis jobs",
       "Team collaboration",
       "Advanced insights",
       "Priority support",
@@ -62,11 +58,9 @@ const PLANS = [
     name: "Extra",
     price: 59,
     maxUsers: 20,
-    maxJobs: 20,
     description: "For larger organizations.",
     features: [
       "Up to 20 organization members",
-      "Up to 20 analysis jobs",
       "Team collaboration",
       "Advanced insights",
       "Priority support",
@@ -98,6 +92,7 @@ function StatusBadge({ status }: { status: string }) {
     pending: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400",
     failed: "bg-red-500/10 text-red-600 dark:text-red-400",
     canceled: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
+    expired: "bg-muted text-muted-foreground",
     free: "bg-muted text-muted-foreground",
   };
 
@@ -179,7 +174,10 @@ export default function BillingPage() {
   useEffect(() => {
     if (loading || !isAdmin) return;
 
-    const paymentId = new URLSearchParams(window.location.search).get("payment_id");
+    const paymentId = new URLSearchParams(
+      window.location.search,
+    ).get("payment_id");
+
     if (!paymentId) return;
 
     const controller = new AbortController();
@@ -201,27 +199,38 @@ export default function BillingPage() {
         if (result.status === "succeeded") {
           await Promise.all([loadBilling(), loadPayments()]);
           if (!active) return;
+
           toast.success("Payment successful! Your plan is active.");
         } else if (result.status === "failed") {
           await loadPayments();
           if (!active) return;
+
           toast.error("Payment failed. Please try again.");
         } else {
           setNeedsRetry(true);
-          toast.info("The bank has not confirmed the payment yet. Please retry verification.");
+          toast.info(
+            "Payment confirmation is pending. Please retry verification.",
+          );
         }
 
-        // Only remove the ID when verification reached a final result.
         if (result.status !== "pending") {
           const url = new URL(window.location.href);
           url.searchParams.delete("payment_id");
-          window.history.replaceState(window.history.state, "", url.toString());
+
+          window.history.replaceState(
+            window.history.state,
+            "",
+            url.toString(),
+          );
         }
       } catch (err) {
         if (!active || controller.signal.aborted) return;
+
         setNeedsRetry(true);
         toast.error(
-          err instanceof Error ? err.message : "Unable to verify payment.",
+          err instanceof Error
+            ? err.message
+            : "Unable to verify payment.",
         );
       } finally {
         if (active) setVerifying(false);
@@ -234,11 +243,19 @@ export default function BillingPage() {
       active = false;
       controller.abort();
     };
-  }, [loading, isAdmin, loadBilling, loadPayments, verificationRetry]);
+  }, [
+    loading,
+    isAdmin,
+    loadBilling,
+    loadPayments,
+    verificationRetry,
+  ]);
 
   async function handleCheckout(plan: PaidPlan) {
     if (!isAdmin) {
-      toast.error("Only organization admins can manage billing.");
+      toast.error(
+        "Only organization admins can manage billing.",
+      );
       return;
     }
 
@@ -252,15 +269,27 @@ export default function BillingPage() {
     setProcessingPlan(plan);
 
     try {
-      const checkout = await createCheckout(plan, crypto.randomUUID());
+      const checkout = await createCheckout(
+        plan,
+        crypto.randomUUID(),
+      );
 
       if (!checkout.url) {
-        throw new Error("Payment provider did not return a checkout URL.");
+        throw new Error(
+          "Checkout service did not return a URL.",
+        );
       }
 
       const url = new URL(checkout.url);
+
       if (!["http:", "https:"].includes(url.protocol)) {
         throw new Error("Invalid checkout URL.");
+      }
+
+      if (url.origin !== window.location.origin) {
+        throw new Error(
+          "Checkout must use the local InsightFlow application.",
+        );
       }
 
       window.location.assign(url.toString());
@@ -270,6 +299,7 @@ export default function BillingPage() {
           ? err.message
           : "Unable to create checkout.",
       );
+
       setProcessingPlan(null);
     }
   }
@@ -289,6 +319,7 @@ export default function BillingPage() {
 
     try {
       const result = await cancelSubscription();
+
       toast.success(result.message);
       await loadBilling();
     } catch (err) {
@@ -314,11 +345,16 @@ export default function BillingPage() {
     return (
       <div className="mx-auto max-w-5xl p-6">
         <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6">
-          <h2 className="text-lg font-semibold">Unable to load billing</h2>
+          <h2 className="text-lg font-semibold">
+            Unable to load billing
+          </h2>
+
           <p className="mt-2 text-sm text-muted-foreground">
             {error ?? "Billing information is unavailable."}
           </p>
+
           <button
+            type="button"
             onClick={() => window.location.reload()}
             className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground"
           >
@@ -331,7 +367,9 @@ export default function BillingPage() {
 
   const usagePercentage = Math.min(
     100,
-    Math.round((billing.member_count / billing.max_users) * 100),
+    Math.round(
+      (billing.member_count / billing.max_users) * 100,
+    ),
   );
 
   return (
@@ -340,7 +378,10 @@ export default function BillingPage() {
       <div>
         <div className="mb-2 flex items-center gap-2 text-primary">
           <CreditCard className="h-5 w-5" />
-          <span className="text-sm font-medium">Organization billing</span>
+
+          <span className="text-sm font-medium">
+            Organization billing
+          </span>
         </div>
 
         <h1 className="text-3xl font-bold tracking-tight">
@@ -352,19 +393,28 @@ export default function BillingPage() {
         </p>
       </div>
 
+      {/* Payment verification */}
       {verifying && (
         <div className="flex items-center gap-3 rounded-xl border bg-card p-4">
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          <span className="text-sm">Verifying your payment with Fake-bank...</span>
+
+          <span className="text-sm">
+            Verifying your simulated payment...
+          </span>
         </div>
       )}
 
       {needsRetry && !verifying && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4">
-          <p className="text-sm">Payment confirmation is not complete yet.</p>
+          <p className="text-sm">
+            Payment confirmation is not complete yet.
+          </p>
+
           <button
             type="button"
-            onClick={() => setVerificationRetry((count) => count + 1)}
+            onClick={() =>
+              setVerificationRetry((count) => count + 1)
+            }
             className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
           >
             Check payment again
@@ -377,13 +427,18 @@ export default function BillingPage() {
         <div className="rounded-xl border bg-card p-6">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold">Current plan</h2>
+
             <StatusBadge status={billing.status} />
           </div>
 
           <div className="mt-5 flex items-center gap-3">
             <Crown className="h-8 w-8 text-primary" />
+
             <div>
-              <p className="text-2xl font-bold capitalize">{billing.plan}</p>
+              <p className="text-2xl font-bold capitalize">
+                {billing.plan}
+              </p>
+
               <p className="text-sm text-muted-foreground">
                 {formatAmount(billing.price_cents, "USD")} / month
               </p>
@@ -407,24 +462,31 @@ export default function BillingPage() {
             billing.status === "active" &&
             !billing.cancel_at_period_end && (
               <button
+                type="button"
                 onClick={handleCancel}
                 disabled={canceling || verifying}
                 className="mt-5 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
               >
-                {canceling ? "Canceling..." : "Cancel subscription"}
+                {canceling
+                  ? "Canceling..."
+                  : "Cancel subscription"}
               </button>
             )}
         </div>
 
-        {/* Member usage */}
+        {/* Team usage */}
         <div className="rounded-xl border bg-card p-6">
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />
-            <h2 className="font-semibold">Team usage</h2>
+
+            <h2 className="font-semibold">
+              Team usage
+            </h2>
           </div>
 
           <p className="mt-5 text-3xl font-bold">
             {billing.member_count}
+
             <span className="text-lg font-normal text-muted-foreground">
               {" "}/ {billing.max_users} members
             </span>
@@ -438,16 +500,22 @@ export default function BillingPage() {
           </div>
 
           <p className="mt-3 text-sm text-muted-foreground">
-            {Math.max(0, billing.max_users - billing.member_count)} seats
-            available on your current plan.
+            {Math.max(
+              0,
+              billing.max_users - billing.member_count,
+            )}{" "}
+            seats available on your current plan.
           </p>
         </div>
       </div>
 
-      {/* Pricing */}
+      {/* Available plans */}
       <section>
         <div className="mb-5">
-          <h2 className="text-xl font-semibold">Available plans</h2>
+          <h2 className="text-xl font-semibold">
+            Available plans
+          </h2>
+
           <p className="mt-1 text-sm text-muted-foreground">
             Choose the right capacity for your organization.
           </p>
@@ -457,6 +525,7 @@ export default function BillingPage() {
           {PLANS.map((plan) => {
             const current = billing.plan === plan.id;
             const paid = plan.id !== "free";
+
             const canCheckout =
               isAdmin &&
               paid &&
@@ -469,7 +538,9 @@ export default function BillingPage() {
               <div
                 key={plan.id}
                 className={`relative flex flex-col rounded-xl border bg-card p-6 ${
-                  current ? "border-primary ring-1 ring-primary" : ""
+                  current
+                    ? "border-primary ring-1 ring-primary"
+                    : ""
                 }`}
               >
                 {current && (
@@ -478,21 +549,32 @@ export default function BillingPage() {
                   </span>
                 )}
 
-                <h3 className="text-xl font-semibold">{plan.name}</h3>
+                <h3 className="text-xl font-semibold">
+                  {plan.name}
+                </h3>
+
                 <p className="mt-2 min-h-10 text-sm text-muted-foreground">
                   {plan.description}
                 </p>
 
                 <div className="mt-5">
-                  <span className="text-4xl font-bold">${plan.price}</span>
-                  <span className="text-muted-foreground"> / month</span>
+                  <span className="text-4xl font-bold">
+                    ${plan.price}
+                  </span>
+
+                  <span className="text-muted-foreground">
+                    {" "}/ month
+                  </span>
                 </div>
 
                 <div className="my-6 border-t" />
 
                 <ul className="mb-8 flex-1 space-y-3">
                   {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2 text-sm">
+                    <li
+                      key={feature}
+                      className="flex items-start gap-2 text-sm"
+                    >
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                       {feature}
                     </li>
@@ -501,6 +583,7 @@ export default function BillingPage() {
 
                 {current ? (
                   <button
+                    type="button"
                     disabled
                     className="w-full rounded-lg border bg-muted px-4 py-2.5 text-sm font-medium text-muted-foreground"
                   >
@@ -508,6 +591,7 @@ export default function BillingPage() {
                   </button>
                 ) : !paid ? (
                   <button
+                    type="button"
                     disabled
                     className="w-full rounded-lg border px-4 py-2.5 text-sm text-muted-foreground"
                   >
@@ -515,8 +599,14 @@ export default function BillingPage() {
                   </button>
                 ) : (
                   <button
-                    disabled={!canCheckout || processingPlan !== null}
-                    onClick={() => handleCheckout(plan.id as PaidPlan)}
+                    type="button"
+                    disabled={
+                      !canCheckout ||
+                      processingPlan !== null
+                    }
+                    onClick={() =>
+                      handleCheckout(plan.id as PaidPlan)
+                    }
                     className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {processingPlan === plan.id ? (
@@ -539,7 +629,8 @@ export default function BillingPage() {
 
         {!isAdmin && (
           <p className="mt-4 text-sm text-muted-foreground">
-            Only organization administrators can change subscription plans.
+            Only organization administrators can change
+            subscription plans.
           </p>
         )}
 
@@ -554,9 +645,12 @@ export default function BillingPage() {
       {isAdmin && (
         <section>
           <div className="mb-5">
-            <h2 className="text-xl font-semibold">Payment history</h2>
+            <h2 className="text-xl font-semibold">
+              Payment history
+            </h2>
+
             <p className="mt-1 text-sm text-muted-foreground">
-              Recent simulated payments processed through Fake-bank.
+              Recent simulated payments processed using Stripe Mock.
             </p>
           </div>
 
@@ -564,7 +658,11 @@ export default function BillingPage() {
             {payments.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-12 text-center">
                 <CreditCard className="mb-3 h-9 w-9 text-muted-foreground" />
-                <p className="font-medium">No payments yet</p>
+
+                <p className="font-medium">
+                  No payments yet
+                </p>
+
                 <p className="mt-1 text-sm text-muted-foreground">
                   Your payment history will appear here.
                 </p>
@@ -574,30 +672,48 @@ export default function BillingPage() {
                 <table className="w-full text-left text-sm">
                   <thead className="border-b bg-muted/40">
                     <tr>
-                      <th className="px-5 py-4 font-medium">Plan</th>
-                      <th className="px-5 py-4 font-medium">Date</th>
-                      <th className="px-5 py-4 font-medium">Amount</th>
-                      <th className="px-5 py-4 font-medium">Status</th>
+                      <th className="px-5 py-4 font-medium">
+                        Plan
+                      </th>
+
+                      <th className="px-5 py-4 font-medium">
+                        Date
+                      </th>
+
+                      <th className="px-5 py-4 font-medium">
+                        Amount
+                      </th>
+
+                      <th className="px-5 py-4 font-medium">
+                        Status
+                      </th>
                     </tr>
                   </thead>
 
                   <tbody>
                     {payments.map((payment) => (
-                      <tr key={payment.id} className="border-b last:border-0">
+                      <tr
+                        key={payment.id}
+                        className="border-b last:border-0"
+                      >
                         <td className="px-5 py-4 font-medium capitalize">
                           {payment.plan}
                         </td>
+
                         <td className="px-5 py-4 text-muted-foreground">
                           {formatDate(payment.created_at)}
                         </td>
+
                         <td className="px-5 py-4">
                           {formatAmount(
                             payment.amount_cents,
                             payment.currency,
                           )}
                         </td>
+
                         <td className="px-5 py-4">
                           <StatusBadge status={payment.status} />
+
                           {payment.status === "failed" &&
                             payment.failure_reason && (
                               <p className="mt-1 text-xs text-destructive">
@@ -615,17 +731,21 @@ export default function BillingPage() {
         </section>
       )}
 
-      {/* Information */}
+      {/* Development information */}
       <div className="flex items-start gap-3 rounded-xl border bg-muted/30 p-4">
         <Clock3 className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+
         <div className="text-sm text-muted-foreground">
           <p className="font-medium text-foreground">
             Simulated payments
           </p>
+
           <p className="mt-1">
-            Billing uses Fake-bank for development and testing.
-            No real money is charged. Paid access lasts for the
-            subscription period recorded by your backend.
+            Billing uses Stripe Mock with a local checkout
+            simulator for development and testing.
+            No real money is charged. Paid access lasts
+            for the subscription period recorded by
+            your backend.
           </p>
         </div>
       </div>

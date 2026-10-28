@@ -1,3 +1,4 @@
+
 import {
   Injectable,
   BadRequestException,
@@ -6,6 +7,8 @@ import {
   ConflictException,
   ServiceUnavailableException,
 } from '@nestjs/common';
+
+import Stripe from 'stripe';
 
 import {
   PlanTier,
@@ -16,170 +19,230 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CheckoutDto } from './dto/checkout.dto';
 
-export const PLANS = {
-  Free: { price: 0, maxUsers: 1, maxJobs: 5 },
-  Premium: { price: 2900, maxUsers: 5, maxJobs: 10 },
-  Extra: { price: 5900, maxUsers: 20, maxJobs: 20 },
-} as const;
+type ApiPlan = 'free' | 'premium' | 'extra';
+type PaidPlan = 'premium' | 'extra';
+type SimulatedOutcome = 'succeeded' | 'failed';
 
-export interface BillingIdentity {
-  userId: string;
-  orgId: string;
-  role: string;
+const PLANS: Record<
+  ApiPlan,
+  { price: number; maxUsers: number }
+> = {
+  free: { price: 0, maxUsers: 1 },
+  premium: { price: 2900, maxUsers: 5 },
+  extra: { price: 5900, maxUsers: 20 },
+};
+
+function toPrismaPlan(plan: PaidPlan): PlanTier {
+  return plan === 'premium'
+    ? PlanTier.Premium
+    : PlanTier.Extra;
 }
 
-interface FakeBankCheckout {
-  payment_id: string;
-  status: string;
-  checkout_url: string;
+function toApiPlan(plan: PlanTier): ApiPlan {
+  switch (plan) {
+    case PlanTier.Premium:
+      return 'premium';
+    case PlanTier.Extra:
+      return 'extra';
+    default:
+      return 'free';
+  }
 }
 
-interface FakeBankPayment {
-  payment_id: string;
-  merchant_id: string;
-  merchant_reference?: string;
-  amount: number;
-  currency: string;
-  status: 'created' | 'pending' | 'succeeded' | 'failed';
+function toApiPaymentStatus(
+  status: PaymentStatus,
+): 'pending' | 'succeeded' | 'failed' {
+  switch (status) {
+    case PaymentStatus.Succeeded:
+      return 'succeeded';
+    case PaymentStatus.Failed:
+      return 'failed';
+    default:
+      return 'pending';
+  }
 }
 
 @Injectable()
 export class BillingService {
-  private readonly bankUrl =
-    process.env.FAKE_BANK_URL ?? 'http://fake-bank-api:8080';
-
-  private readonly merchantId =
-    process.env.FAKE_BANK_MERCHANT_ID ?? 'insightflow';
+  private readonly stripe: Stripe;
 
   private readonly frontendUrl =
     process.env.FRONTEND_URL ?? 'http://localhost:8080';
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {
+    this.stripe = new Stripe(
+      process.env.STRIPE_SECRET_KEY ?? 'sk_test_mock',
+      {
+        host: process.env.STRIPE_MOCK_HOST ?? 'stripe-mock',
+        port: 12111,
+        protocol: 'http',
+        maxNetworkRetries: 1,
+        timeout: 10000,
+      },
+    );
+  }
 
-  private async getOrganization(identity: BillingIdentity, admin = false) {
-    if (admin && identity.role !== 'Admin') {
+  // ==========================================
+  // Organization and permissions
+  // ==========================================
+
+  private async getOrganization(
+    userId: string,
+    admin = false,
+  ) {
+    const memberships =
+      await this.prisma.role_and_organization.findMany({
+        where: { user_id: userId },
+        include: { organization: true },
+        take: 2,
+      });
+
+    if (memberships.length === 0) {
+      throw new NotFoundException(
+        'Organization not found',
+      );
+    }
+
+    if (memberships.length > 1) {
+      throw new BadRequestException(
+        'Multiple organizations found. Select an active organization.',
+      );
+    }
+
+    const membership = memberships[0];
+
+    if (admin && membership.role !== 'Admin') {
       throw new ForbiddenException(
         'Only organization admins can manage billing',
       );
     }
 
-    const org = await this.prisma.organization.findUnique({
-      where: { id: identity.orgId },
-    });
-
-    if (!org) {
-      throw new NotFoundException('Organization not found');
-    }
-
-    return org;
+    return membership.organization;
   }
 
-  private async bankRequest<T>(
-    path: string,
-    method: 'GET' | 'POST' = 'GET',
-    body?: unknown,
-  ): Promise<T> {
-    let response: Response;
+  // ==========================================
+  // Check organization member limit
+  // ==========================================
 
-    try {
-      response = await fetch(`${this.bankUrl}${path}`, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: body === undefined ? undefined : JSON.stringify(body),
-        signal: AbortSignal.timeout(10000),
+  async assertCanAddMember(orgId: string): Promise<void> {
+    const organization =
+      await this.prisma.organization.findUnique({
+        where: { id: orgId },
+        select: { id: true },
       });
-    } catch {
-      throw new ServiceUnavailableException(
-        'Fake Bank payment service is unavailable',
+
+    if (!organization) {
+      throw new NotFoundException(
+        'Organization not found',
       );
     }
 
-    if (!response.ok) {
-      throw new ServiceUnavailableException(
-        `Fake Bank returned HTTP ${response.status}`,
-      );
-    }
-
-    return (await response.json()) as T;
-  }
-
-  async assertCanAddMember(orgId: string) {
-    const [memberCount, subscription] = await Promise.all([
-      this.prisma.role_and_organization.count({
-        where: { org_id: orgId },
-      }),
-      this.prisma.subscription.findFirst({
+    const subscription =
+      await this.prisma.subscription.findFirst({
         where: {
           org_id: orgId,
           status: SubscriptionStatus.Active,
           ends_at: { gt: new Date() },
         },
         orderBy: { ends_at: 'desc' },
-      }),
-    ]);
+      });
 
-    const plan: PlanTier = subscription?.plan ?? PlanTier.Free;
+    const plan = toApiPlan(
+      subscription?.plan ?? PlanTier.Free,
+    );
 
-    if (memberCount >= PLANS[plan].maxUsers) {
+    const memberCount =
+      await this.prisma.role_and_organization.count({
+        where: { org_id: orgId },
+      });
+
+    const maxUsers = PLANS[plan].maxUsers;
+
+    if (memberCount >= maxUsers) {
       throw new ForbiddenException(
-        `Member limit reached for the ${plan.toLowerCase()} plan (${PLANS[plan].maxUsers})`,
+        `Your ${plan} plan allows a maximum of ${maxUsers} users. Upgrade your plan.`,
       );
     }
   }
 
+  // ==========================================
   // GET /orgs/billing
-  async getBilling(identity: BillingIdentity) {
-    const org = await this.getOrganization(identity);
+  // ==========================================
 
-    const [memberCount, subscription] = await Promise.all([
-      this.prisma.role_and_organization.count({
-        where: { org_id: org.id },
-      }),
-      this.prisma.subscription.findFirst({
-        where: {
-          org_id: org.id,
-          status: SubscriptionStatus.Active,
-          ends_at: { gt: new Date() },
-        },
-        orderBy: { ends_at: 'desc' },
-      }),
-    ]);
+  async getBilling(userId: string) {
+    const org = await this.getOrganization(userId);
 
-    const plan: PlanTier = subscription?.plan ?? PlanTier.Free;
+    const [memberCount, subscription] =
+      await Promise.all([
+        this.prisma.role_and_organization.count({
+          where: { org_id: org.id },
+        }),
+
+        this.prisma.subscription.findFirst({
+          where: {
+            org_id: org.id,
+            status: SubscriptionStatus.Active,
+            ends_at: { gt: new Date() },
+          },
+          orderBy: { ends_at: 'desc' },
+        }),
+      ]);
+
+    const plan = toApiPlan(
+      subscription?.plan ?? PlanTier.Free,
+    );
 
     return {
       organization_id: org.id,
-      plan: plan.toLowerCase(),
-      status: subscription?.status.toLowerCase() ?? 'free',
+      plan,
+      status: subscription ? 'active' : 'free',
       member_count: memberCount,
       max_users: PLANS[plan].maxUsers,
-      max_jobs: PLANS[plan].maxJobs,
       price_cents: PLANS[plan].price,
-      subscription_end: subscription?.ends_at ?? null,
+      subscription_end:
+        subscription?.ends_at ?? null,
       cancel_at_period_end:
         subscription?.cancel_at_period_end ?? false,
     };
   }
 
+  // ==========================================
   // POST /orgs/billing/checkout
-  async checkout(identity: BillingIdentity, dto: CheckoutDto) {
-    const org = await this.getOrganization(identity, true);
+  // ==========================================
 
-    if (dto.plan !== 'premium' && dto.plan !== 'extra') {
-      throw new BadRequestException('Invalid paid plan');
+  async checkout(userId: string, dto: CheckoutDto) {
+    const org = await this.getOrganization(
+      userId,
+      true,
+    );
+
+    if (
+      dto.plan !== 'premium' &&
+      dto.plan !== 'extra'
+    ) {
+      throw new BadRequestException(
+        'Invalid paid plan',
+      );
     }
 
-    const plan = dto.plan === 'premium' ? PlanTier.Premium : PlanTier.Extra;
+    const plan: PaidPlan = dto.plan;
+    const prismaPlan = toPrismaPlan(plan);
 
-    const existing = await this.prisma.payment.findUnique({
-      where: { idempotency_key: dto.idempotency_key },
-    });
+    const existing =
+      await this.prisma.payment.findUnique({
+        where: {
+          idempotency_key: dto.idempotency_key,
+        },
+      });
 
     if (existing) {
-      if (existing.org_id !== org.id || existing.plan !== plan) {
-        throw new ConflictException('Idempotency key already used');
+      if (
+        existing.org_id !== org.id ||
+        existing.plan !== prismaPlan
+      ) {
+        throw new ConflictException(
+          'Idempotency key already used',
+        );
       }
 
       throw new ConflictException(
@@ -187,13 +250,14 @@ export class BillingService {
       );
     }
 
-    const active = await this.prisma.subscription.findFirst({
-      where: {
-        org_id: org.id,
-        status: SubscriptionStatus.Active,
-        ends_at: { gt: new Date() },
-      },
-    });
+    const active =
+      await this.prisma.subscription.findFirst({
+        where: {
+          org_id: org.id,
+          status: SubscriptionStatus.Active,
+          ends_at: { gt: new Date() },
+        },
+      });
 
     if (active) {
       throw new ConflictException(
@@ -206,7 +270,7 @@ export class BillingService {
     const payment = await this.prisma.payment.create({
       data: {
         org_id: org.id,
-        plan,
+        plan: prismaPlan,
         amount_cents: amountCents,
         currency: 'USD',
         status: PaymentStatus.Pending,
@@ -214,115 +278,71 @@ export class BillingService {
       },
     });
 
-    const returnUrl = new URL(
-      `${identity.userId}/billing`,
-      this.frontendUrl,
+    const checkoutUrl = new URL(
+      `${userId}/billing/checkout`,
+      this.frontendUrl.endsWith('/')
+        ? this.frontendUrl
+        : `${this.frontendUrl}/`,
     );
 
-    returnUrl.searchParams.set('payment_id', payment.id);
-
-    const checkout = await this.bankRequest<FakeBankCheckout>(
-      '/v1/payments',
-      'POST',
-      {
-        merchant_id: this.merchantId,
-        merchant_reference: payment.id,
-        amount: amountCents / 100,
-        currency: 'USD',
-        payment_method: 'card',
-        return_url: returnUrl.toString(),
-        webhook_url: process.env.FAKE_BANK_WEBHOOK_URL,
-        scenario: 'card_success',
-      },
+    checkoutUrl.searchParams.set(
+      'payment_id',
+      payment.id,
     );
 
-    if (!checkout.payment_id || !checkout.checkout_url) {
-      throw new ServiceUnavailableException(
-        'Invalid Fake Bank checkout response',
-      );
-    }
+    try {
+      // Stripe Mock validates the API request.
+      // It does not charge money or host checkout.
+      const session =
+        await this.stripe.checkout.sessions.create(
+          {
+            mode: 'payment',
+            line_items: [
+              {
+                price_data: {
+                  currency: 'usd',
+                  unit_amount: amountCents,
+                  product_data: {
+                    name: `InsightFlow ${plan}`,
+                  },
+                },
+                quantity: 1,
+              },
+            ],
+            success_url:
+              `${this.frontendUrl}/${userId}/billing?payment_id=${payment.id}`,
+            cancel_url:
+              `${this.frontendUrl}/${userId}/billing`,
+            client_reference_id: payment.id,
+            metadata: {
+              payment_id: payment.id,
+              organization_id: org.id,
+              plan,
+            },
+          },
+          {
+            idempotencyKey: dto.idempotency_key,
+          },
+        );
 
-    await this.prisma.payment.update({
-      where: { id: payment.id },
-      data: {
-        provider_reference: checkout.payment_id,
-      },
-    });
+      if (!session.id) {
+        throw new Error(
+          'Stripe Mock returned no session ID',
+        );
+      }
 
-    return {
-      payment_id: payment.id,
-      url: checkout.checkout_url,
-    };
-  }
+      await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          provider_reference: session.id,
+        },
+      });
 
-  // POST /orgs/billing/verify/:paymentId
-  async verify(identity: BillingIdentity, paymentId: string) {
-    const org = await this.getOrganization(identity, true);
-
-    const payment = await this.prisma.payment.findFirst({
-      where: {
-        id: paymentId,
-        org_id: org.id,
-      },
-    });
-
-    if (!payment) {
-      throw new NotFoundException('Payment not found');
-    }
-
-    if (payment.status === PaymentStatus.Succeeded) {
       return {
         payment_id: payment.id,
-        status: 'succeeded',
-        message: 'Payment successful',
-        plan: payment.plan.toLowerCase(),
+        url: checkoutUrl.toString(),
       };
-    }
-
-    if (payment.status === PaymentStatus.Failed) {
-      return {
-        payment_id: payment.id,
-        status: 'failed',
-        message: 'Payment failed',
-      };
-    }
-
-    if (!payment.provider_reference) {
-      throw new ConflictException(
-        'Payment provider reference is missing',
-      );
-    }
-
-    const bankPayment = await this.bankRequest<FakeBankPayment>(
-      `/v1/payments/${encodeURIComponent(payment.provider_reference)}`,
-    );
-
-    // Never trust the return URL alone.
-    // Confirm the payment details with Fake Bank.
-    if (
-      bankPayment.payment_id !== payment.provider_reference ||
-      bankPayment.merchant_id !== this.merchantId ||
-      bankPayment.merchant_reference !== payment.id ||
-      Math.round(bankPayment.amount * 100) !== payment.amount_cents ||
-      bankPayment.currency !== payment.currency
-    ) {
-      throw new ForbiddenException(
-        'Fake Bank payment verification mismatch',
-      );
-    }
-
-    if (
-      bankPayment.status === 'created' ||
-      bankPayment.status === 'pending'
-    ) {
-      return {
-        payment_id: payment.id,
-        status: 'pending',
-        message: 'Waiting for bank confirmation',
-      };
-    }
-
-    if (bankPayment.status === 'failed') {
+    } catch {
       await this.prisma.payment.updateMany({
         where: {
           id: payment.id,
@@ -330,24 +350,152 @@ export class BillingService {
         },
         data: {
           status: PaymentStatus.Failed,
-          failure_reason: 'Payment declined by Fake Bank',
+          failure_reason:
+            'Unable to create Stripe Mock session',
         },
       });
+
+      throw new ServiceUnavailableException(
+        'Unable to create Stripe Mock checkout',
+      );
+    }
+  }
+
+  // ==========================================
+  // POST /orgs/billing/verify/:paymentId
+  // ==========================================
+
+  async verify(userId: string, paymentId: string) {
+    const org = await this.getOrganization(
+      userId,
+      true,
+    );
+
+    const payment =
+      await this.prisma.payment.findFirst({
+        where: {
+          id: paymentId,
+          org_id: org.id,
+        },
+      });
+
+    if (!payment) {
+      throw new NotFoundException(
+        'Payment not found',
+      );
+    }
+
+    const status = toApiPaymentStatus(
+      payment.status,
+    );
+
+    return {
+      payment_id: payment.id,
+      status,
+      message:
+        status === 'succeeded'
+          ? 'Payment successful'
+          : status === 'failed'
+            ? payment.failure_reason ??
+              'Payment failed'
+            : 'Waiting for simulated payment confirmation',
+      ...(status === 'succeeded'
+        ? { plan: toApiPlan(payment.plan) }
+        : {}),
+    };
+  }
+
+  // ==========================================
+  // Development-only payment simulation
+  // ==========================================
+
+  async simulatePayment(
+    userId: string,
+    paymentId: string,
+    outcome: SimulatedOutcome,
+  ) {
+    if (process.env.NODE_ENV !== 'development') {
+      throw new ForbiddenException(
+        'Payment simulation is disabled',
+      );
+    }
+
+    if (
+      outcome !== 'succeeded' &&
+      outcome !== 'failed'
+    ) {
+      throw new BadRequestException(
+        'Invalid simulated outcome',
+      );
+    }
+
+    const org = await this.getOrganization(
+      userId,
+      true,
+    );
+
+    const payment =
+      await this.prisma.payment.findFirst({
+        where: {
+          id: paymentId,
+          org_id: org.id,
+        },
+      });
+
+    if (!payment) {
+      throw new NotFoundException(
+        'Payment not found',
+      );
+    }
+
+    if (!payment.provider_reference) {
+      throw new ConflictException(
+        'Stripe Mock session is missing',
+      );
+    }
+
+    if (payment.status === PaymentStatus.Succeeded) {
+      return {
+        payment_id: payment.id,
+        status: 'succeeded',
+        message: 'Payment already completed',
+        plan: toApiPlan(payment.plan),
+      };
+    }
+
+    if (payment.status === PaymentStatus.Failed) {
+      throw new ConflictException(
+        'Payment has already failed',
+      );
+    }
+
+    if (outcome === 'failed') {
+      const updated =
+        await this.prisma.payment.updateMany({
+          where: {
+            id: payment.id,
+            status: PaymentStatus.Pending,
+          },
+          data: {
+            status: PaymentStatus.Failed,
+            failure_reason:
+              'Simulated payment declined',
+          },
+        });
+
+      if (updated.count === 0) {
+        throw new ConflictException(
+          'Payment status has changed',
+        );
+      }
 
       return {
         payment_id: payment.id,
         status: 'failed',
-        message: 'Payment failed',
+        message: 'Simulated payment failed',
       };
     }
 
-    if (bankPayment.status !== 'succeeded') {
-      throw new BadRequestException(
-        'Unknown Fake Bank payment status',
-      );
-    }
-
-    // Activate the subscription once.
     await this.prisma.$transaction(async (tx) => {
       const claimed = await tx.payment.updateMany({
         where: {
@@ -360,7 +508,9 @@ export class BillingService {
       });
 
       if (claimed.count === 0) {
-        return;
+        throw new ConflictException(
+          'Payment status has changed',
+        );
       }
 
       const active = await tx.subscription.findFirst({
@@ -379,17 +529,21 @@ export class BillingService {
 
       const startedAt = new Date();
       const endsAt = new Date(startedAt);
-      endsAt.setUTCDate(endsAt.getUTCDate() + 30);
 
-      const subscription = await tx.subscription.create({
-        data: {
-          org_id: org.id,
-          plan: payment.plan,
-          status: SubscriptionStatus.Active,
-          started_at: startedAt,
-          ends_at: endsAt,
-        },
-      });
+      endsAt.setUTCDate(
+        endsAt.getUTCDate() + 30,
+      );
+
+      const subscription =
+        await tx.subscription.create({
+          data: {
+            org_id: org.id,
+            plan: payment.plan,
+            status: SubscriptionStatus.Active,
+            started_at: startedAt,
+            ends_at: endsAt,
+          },
+        });
 
       await tx.payment.update({
         where: { id: payment.id },
@@ -402,68 +556,88 @@ export class BillingService {
     return {
       payment_id: payment.id,
       status: 'succeeded',
-      message: 'Payment successful',
-      plan: payment.plan.toLowerCase(),
+      message: 'Simulated payment successful',
+      plan: toApiPlan(payment.plan),
     };
   }
 
+  // ==========================================
   // GET /orgs/billing/payments
-  async getPayments(identity: BillingIdentity) {
-    const org = await this.getOrganization(identity, true);
+  // ==========================================
 
-    const payments = await this.prisma.payment.findMany({
-      where: { org_id: org.id },
-      orderBy: { created_at: 'desc' },
-      take: 50,
-      select: {
-        id: true,
-        plan: true,
-        amount_cents: true,
-        currency: true,
-        status: true,
-        failure_reason: true,
-        created_at: true,
-      },
-    });
+  async getPayments(userId: string) {
+    const org = await this.getOrganization(
+      userId,
+      true,
+    );
+
+    const payments =
+      await this.prisma.payment.findMany({
+        where: { org_id: org.id },
+        orderBy: { created_at: 'desc' },
+        take: 50,
+        select: {
+          id: true,
+          plan: true,
+          amount_cents: true,
+          currency: true,
+          status: true,
+          failure_reason: true,
+          created_at: true,
+        },
+      });
 
     return payments.map((payment) => ({
       ...payment,
-      plan: payment.plan.toLowerCase(),
-      status: payment.status.toLowerCase(),
+      plan: toApiPlan(payment.plan),
+      status: toApiPaymentStatus(payment.status),
     }));
   }
 
+  // ==========================================
   // POST /orgs/billing/cancel
-  async cancel(identity: BillingIdentity) {
-    const org = await this.getOrganization(identity, true);
+  // ==========================================
 
-    const subscription = await this.prisma.subscription.findFirst({
-      where: {
-        org_id: org.id,
-        status: SubscriptionStatus.Active,
-        ends_at: { gt: new Date() },
-      },
-      orderBy: { created_at: 'desc' },
-    });
+  async cancel(userId: string) {
+    const org = await this.getOrganization(
+      userId,
+      true,
+    );
+
+    const subscription =
+      await this.prisma.subscription.findFirst({
+        where: {
+          org_id: org.id,
+          status: SubscriptionStatus.Active,
+          ends_at: { gt: new Date() },
+        },
+        orderBy: { created_at: 'desc' },
+      });
 
     if (!subscription) {
-      throw new NotFoundException('No active subscription');
+      throw new NotFoundException(
+        'No active subscription',
+      );
     }
 
     if (subscription.cancel_at_period_end) {
       return {
-        message: 'Subscription already scheduled for cancellation',
+        message:
+          'Subscription already scheduled for cancellation',
         ends_at: subscription.ends_at,
       };
     }
 
     await this.prisma.subscription.update({
       where: { id: subscription.id },
-      data: { cancel_at_period_end: true },
+      data: {
+        cancel_at_period_end: true,
+      },
     });
 
     return {
-      message: 'Subscription will expire at the end of the paid period',
+      message:
+        'Subscription will expire at the end of the paid period',
       ends_at: subscription.ends_at,
     };
   }

@@ -9,13 +9,14 @@ export type PaymentStatus =
   | "succeeded"
   | "failed";
 
+export type SimulationOutcome = "succeeded" | "failed";
+
 export interface Billing {
   organization_id: string;
   plan: PlanTier;
   status: "free" | "active" | "canceled" | "expired";
   member_count: number;
   max_users: number;
-  max_jobs: number;
   price_cents: number;
   subscription_end: string | null;
   cancel_at_period_end: boolean;
@@ -69,7 +70,7 @@ async function send<T>(
       Array.isArray(data?.message)
         ? data.message.join(", ")
         : data?.message ??
-            `Request failed (${response.status})`,
+          `Request failed (${response.status})`,
     );
   }
 
@@ -94,6 +95,7 @@ export function getPayments(): Promise<Payment[]> {
 
 // =============================================
 // POST /api/orgs/billing/checkout
+// Create Stripe Mock checkout session
 // =============================================
 
 export function createCheckout(
@@ -114,6 +116,7 @@ export function createCheckout(
 
 // =============================================
 // POST /api/orgs/billing/verify/:paymentId
+// Read payment status from backend
 // =============================================
 
 export function verifyCheckout(
@@ -128,7 +131,7 @@ export function verifyCheckout(
 }
 
 // =============================================
-// Automatically wait for Fake Bank confirmation
+// Poll until simulated payment is finalized
 // =============================================
 
 export async function verifyCheckoutUntilComplete(
@@ -173,14 +176,13 @@ export async function verifyCheckoutUntilComplete(
 
         function onAbort() {
           clearTimeout(timeout);
+          signal?.removeEventListener("abort", onAbort);
           reject(new Error("Verification canceled"));
         }
 
-        signal?.addEventListener(
-          "abort",
-          onAbort,
-          { once: true },
-        );
+        signal?.addEventListener("abort", onAbort, {
+          once: true,
+        });
       });
     }
   }
@@ -188,8 +190,27 @@ export async function verifyCheckoutUntilComplete(
   return {
     payment_id: paymentId,
     status: "pending",
-    message: "Payment confirmation is taking longer than expected",
+    message:
+      "Payment confirmation is taking longer than expected",
   };
+}
+
+// =============================================
+// POST /api/orgs/billing/simulate/:paymentId
+// Development-only simulated payment
+// =============================================
+
+export function simulatePayment(
+  paymentId: string,
+  outcome: SimulationOutcome,
+): Promise<VerifyResponse> {
+  return send<VerifyResponse>(
+    `/api/orgs/billing/simulate/${encodeURIComponent(paymentId)}`,
+    {
+      method: "POST",
+      body: JSON.stringify({ outcome }),
+    },
+  );
 }
 
 // =============================================
