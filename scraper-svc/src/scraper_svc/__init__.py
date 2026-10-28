@@ -1,25 +1,21 @@
 import asyncio
-import logging
+import scraper_svc.globals as g
+from sys import exit
 from scraper_svc.ScrapingWorker import ScrapingWorker
 
-def setup_logging() -> None:
-	logging.basicConfig(
-		level="INFO",
-		format=(
-			"%(levelname)s | %(message)s"
-		),
-		force=True,
-	)
+
 
 def main() -> None:
-	setup_logging()
-	logging.getLogger("scraper-svc").info("Starting scraping service...")
-	manager = ScrapingWorker()
+	g.logger.info("Starting scraping service...")
 	try:
+		g.settings.init_settings()
+		g.db.init_database(g.settings.get_database_url())
+		manager = ScrapingWorker()
 		asyncio.run(manager.start())
 	except Exception as e:
-		logging.getLogger("scraper-svc").error(e)
-		logging.getLogger("scraper-svc").error(f"Restarting...")
+		g.logger.error(str(e))
+		g.logger.error("Shutting down...")
+		exit(1)
 
 if (__name__ == '__main__'):
 	main()
