@@ -8,7 +8,7 @@
 
 ### Setup
 
-1. **Environment**: copy `.env.example` to `.env` and replace every placeholder with a real value. Never commit `.env`.
+1. **Environment**: copy `.env.example` to `.env` and replace every placeholder with a real value. Never commit `.env`. Vault stops at startup with an error if any of these are empty: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `JWT_SECRET`, `FORTYTWO_CLIENT_ID`, `FORTYTWO_CLIENT_SECRET`, `MAIL_USER`, `MAIL_PASS`, `GRAFANA_ADMIN_PASSWORD`, `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`.
 2. **Persistent data**: the container needs three mounts.
 
    | Mount | Type | Container path | Contents |
@@ -56,7 +56,7 @@ sudo rm -rf vault/secret/* vault/creds/*
 
 Changes to either file apply after you rebuild the image and restart the container.
 
-Services with a role and policy: `analysis-svc`, `auth-svc`, `database`, `gateway-svc`, `grafana`, `minio`, `scraper-svc`.
+Services with a role and policy: `analysis-svc`, `auth-svc`, `gateway-svc`, `grafana`, `reporting-svc`, `scraper-svc`.
 
 These are all the secret paths and what each one holds:
 
@@ -75,9 +75,12 @@ These are all the secret paths and what each one holds:
 | `secret/data/grafana` | `password` | `GRAFANA_ADMIN_PASSWORD` |
 | `secret/data/minio` | `user` | `MINIO_ROOT_USER` |
 | | `password` | `MINIO_ROOT_PASSWORD` |
+| | `access_key` | `MINIO_ACCESS_KEY` |
+| | `secret_key` | `MINIO_SECRET_KEY` |
+| | `backup_hmac_key` | `BACKUP_HMAC_KEY` |
 | `secret/data/gateway-svc` | `jwt_secret` | `JWT_SECRET` |
 
-Each service can read **only its own path**. Reading any other path returns `permission denied`.
+Each service can read **only the paths its policy allows** (`vault/conf/policies/{service-name}.hcl`). Reading any other path returns `permission denied`.
 
 ### How to use
 
