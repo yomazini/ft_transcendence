@@ -10,6 +10,7 @@ def main() -> None:
 	try:
 		g.settings.init_settings()
 		g.db.init_database(g.settings.get_database_url())
+		g.session.init_session_manager(g.settings.get_sessions())
 		manager = ScrapingWorker()
 		asyncio.run(manager.start())
 	except Exception as e:
