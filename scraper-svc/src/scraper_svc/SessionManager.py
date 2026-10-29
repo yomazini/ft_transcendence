@@ -2,19 +2,25 @@ import scraper_svc.globals as g
 from time import sleep, monotonic
 from threading import Condition, Thread
 
-REST_TIME=1
+REST_TIME=10
 BREAK_TIME=60
 
 class SessionManager:
+	_data: list[str] | None
 	_sessions: list[str]
 	_condition: Condition
 	_cooldown: float
 
 
 	def __init__(self) -> None:
-		self._sessions = g.settings.get_sessions()
+		self._data = None
+		self._sessions = []
 		self._condition = Condition()
 		self._cooldown = 0.0
+
+	def init_session_manager(self, sessions: list[str]):
+		self._data = sessions
+		self._sessions = self._data
 
 	def acquire(self)-> str:
 		with self._condition:
@@ -25,7 +31,9 @@ class SessionManager:
 					continue
 
 				if self._sessions:
-					return self._sessions.pop()
+					cookie = self._sessions.pop()
+					self._log(f"session granted left [{len(self._sessions)}]")
+					return cookie
 				
 				self._condition.wait()
 
@@ -42,6 +50,7 @@ class SessionManager:
 		sleep(REST_TIME)
 		with self._condition:
 			self._sessions.insert(0, cookie)
+			self._log(f"session retreived left [{len(self._sessions)}]")
 			self._condition.notify()
 
 	def release(self, cookie: str) -> None:
@@ -50,3 +59,6 @@ class SessionManager:
 			args=(cookie, ),
 			daemon=True
 		).start()
+
+	def _log(self, msg: str):
+		g.logger.info("Session manager: %s", msg)

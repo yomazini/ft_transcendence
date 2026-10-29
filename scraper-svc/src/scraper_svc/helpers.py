@@ -24,24 +24,32 @@ def valid_post_url(url: str) -> str:
 		raise RuntimeError("Invalid post url")
 	return f"{BASE_URL}{parsed.path.removesuffix('/')}.json"
 
-def scrape(session_id: str, target: str, limit: int) -> list[dict[str, Any]]:
-	response = requests.get(target, headers=HEADERS,params={'limit': limit}, cookies={'reddit_session': session_id})
+def scrape(target: str, limit: int) -> list[dict[str, Any]]:
+	session_id = g.session.acquire()
+	try:
+		response = requests.get(target, headers=HEADERS,params={'limit': limit}, cookies={'reddit_session': session_id})
+	finally:
+		g.session.release(session_id)
+
 	if response.status_code == 429:
+		g.session.pause_all()
 		raise RateLimitError("Reddit rate limit exceeded")
+
+	g.logger.info("Scraper: request status [%s]", response.status_code)
 	response.raise_for_status()
 	return response.json()
 
-def scrape_job(session_id: str, target: str, mode: Jobmodes, limit: int = 0) ->  list[dict[str, Any]]:
+def scrape_job(target: str, mode: Jobmodes, limit: int = 0) ->  list[dict[str, Any]]:
 	match mode:
 		case Jobmodes.POST:
-			return scrape_post(session_id, target, limit)
+			return scrape_post(target, limit)
 		case _:
 			raise TypeError("Unsupported mode");
 
-def scrape_post(session_id: str, target: str, limit: int) -> list[dict[str, Any]]:
+def scrape_post(target: str, limit: int) -> list[dict[str, Any]]:
 	target = valid_post_url(target)
 	g.logger.info("Scraping post: %s...", target)
-	response = scrape(session_id, target, limit)
+	response = scrape(target, limit)
 	return response
 
 

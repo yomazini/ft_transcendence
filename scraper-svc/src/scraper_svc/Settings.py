@@ -15,6 +15,7 @@ class Settings:
 	_sessions: list[str]
 	_role_id: str
 	_secret_id: str
+	_num_workers: int
 
 	class SettingError(Exception):
 		pass
@@ -25,6 +26,7 @@ class Settings:
 		self._secret_id = ""
 		self._url = None
 		self._sessions = []
+		self._num_workers = 0
 
 	def _load(self) -> None:
 		self._log("Loading Vault AppRole credentials")
@@ -57,6 +59,7 @@ class Settings:
 
 		data = secret["data"]["data"]["sessions"]
 		self._sessions = data.split(',')
+		self._num_workers = len(self._sessions)
 
 	def _init_database(self) -> None:
 		secret = self._client.secrets.kv.v2.read_secret_version(
@@ -109,6 +112,9 @@ class Settings:
 		if self._url is None:
 			self._error("Database URL is not initialized")
 		return (self._url)
+
+	def get_worker_num(self)->int:
+		return (self._num_workers)
 		
 		
 
