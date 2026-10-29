@@ -4,7 +4,8 @@ from typing import Any
 from uuid import uuid4
 from sqlalchemy.orm import Session
 from urllib.parse import urlparse, ParseResult
-from scraper_svc.models import Comments, Jobmodes
+from sqlalchemy import update
+from scraper_svc.models import Comments, Jobmodes, Job
 from scraper_svc.models import Jobmodes
 
 # Reddit scrapping
@@ -81,7 +82,8 @@ def add_post(session: Session, job_id, data:list[dict[str, Any]]) -> None:
 	)
 	session.add(post)
 	add_comments(session, job_id, post_id, data[1]["data"]["children"])
-		
+
+
 def add_comments(session: Session, job_id:str, parent_id: str, data: list[dict[str, Any]]) -> None:
 	for item in data:
 		comment_data = item["data"]
@@ -98,3 +100,14 @@ def add_comments(session: Session, job_id:str, parent_id: str, data: list[dict[s
 		if comment_data["replies"] == "":
 			continue
 		add_comments(session, job_id, comment_id, comment_data["replies"]["data"]["children"])
+
+async def update_job_status(job_id: str, job_status: str,error:str | None):
+	with g.db.get_session() as session:
+		session.execute(
+			update(Job)
+			.where(Job.id == job_id)
+			.values(status=job_status)
+			.returning(Job.id)
+		).scalar_one()
+
+	await g.events.publish(job_id, job_status, error)
