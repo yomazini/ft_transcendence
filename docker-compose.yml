@@ -14,6 +14,8 @@ volumes:
     name: postgres_db
   redis_data:
     name: redis_db
+  redisinsight_data:
+    name: redisinsight_db
   grafana_data:
     name: grafana_db
   minio_data:
@@ -192,6 +194,16 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks: [ft_network]
+    restart: unless-stopped
+
+  redisinsight:
+    container_name: redisinsight
+    image: redis/redisinsight:latest
+    ports: ["127.0.0.1:5540:5540"]
+    volumes: ["redisinsight_data:/data"]
+    depends_on:
+      redis: { condition: service_healthy }
     networks: [ft_network]
     restart: unless-stopped
 
