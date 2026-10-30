@@ -8,15 +8,15 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { BackupStatus } from 'src/generated/prisma/enums';
 import { MinioService } from 'src/minio/minio.service';
 import { ConfigService } from '@nestjs/config';
-import { createHash, createHmac } from 'crypto';
+import { createHmac } from 'crypto';
 import { MetricsService } from 'src/metrics/metrics.service';
 
 @Injectable()
 export class BackupsService {
 	private readonly logger = new Logger(BackupsService.name);
 	constructor(private readonly prisma: PrismaService, private readonly minioService: MinioService, private readonly configService: ConfigService, private readonly metrics: MetricsService) {
-		if (!fs.existsSync(this.configService.getOrThrow<string>("BACKUP_DIR", "/home/osouadi/Desktop/Downloads"))) {
-			fs.mkdirSync(this.configService.getOrThrow<string>("BACKUP_DIR", "/home/osouadi/Desktop/Downloads"), { recursive: true });
+		if (!fs.existsSync(this.configService.getOrThrow<string>("BACKUP_DIR", "/backups"))) {
+			fs.mkdirSync(this.configService.getOrThrow<string>("BACKUP_DIR", "/backups"), { recursive: true });
 		}
 	}
 
@@ -55,7 +55,7 @@ export class BackupsService {
 		const { host, port, database, user, password } = getDbConfig();
 		const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 		const fileName = `${database}_${timestamp}.dump`;
-		const filePath = path.join(this.configService.getOrThrow<string>("BACKUP_DIR", "/home/osouadi/Desktop/Downloads"), `${database}_${timestamp}.dump`);
+		const filePath = path.join(this.configService.getOrThrow<string>("BACKUP_DIR", "/backups"), `${database}_${timestamp}.dump`);
 		const shaPath = `${filePath}.hmac`;
 		
 		const backupRecord = await this.prisma.backups.create({

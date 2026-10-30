@@ -5,6 +5,10 @@ import { PrismaClient } from '../generated/prisma/client';
 @Injectable()
 export class PrismaService extends PrismaClient {
 	constructor() {
+		if (!process.env.DATABASE_URL) {
+			throw new Error("can't get DATABASE_URL!!!");
+		}
+
 		const adapter = new PrismaPg({
 			connectionString: process.env.DATABASE_URL!,
 		});
