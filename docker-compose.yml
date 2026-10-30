@@ -134,11 +134,17 @@ services:
     build: ./reporting-svc
     expose: ["3003"]
     env_file: .env
+    volumes:
+      # i shod separate them later thy overwrite them selfs 
+      - "./vault/creds/database:/run/vault:ro"
+      - "./vault/creds/minio:/run/vault:ro"
     environment:
       # The MinIO keys come from the root .env, so they match the minio service.
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
     depends_on:
+      minio-init:
+        condition: service_completed_successfully
       postgres: { condition: service_healthy }
       minio: { condition: service_healthy }
     networks: [ft_network]
@@ -148,38 +154,75 @@ services:
   # Object storage for reporting-svc backups (it fails to start without it).
   minio:
     container_name: minio
-    image: soldevelo/minio:2026.7.17
-    command: server /bitnami/minio/data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    volumes: ["minio_data:/bitnami/minio/data", "minio_certs:/certs"]
-    expose: ["9000"]
+    image: minio
+    build:
+      context: ./reporting-svc
+      dockerfile: Dockerfile.minio
+
+    volumes:
+      - minio_data:/bitnami/minio/data
+      - minio_certs:/certs
+      - ./vault/creds/minio:/run/vault:ro
+
+    tmpfs:
+      - /tmp/minio-vault:mode=0700,uid=0,gid=0
+    depends_on:
+      vault:
+        condition: service_healthy
+    expose:
+      - "9000"
+      - "9001"
+
+    env_file: .env
+    ports:
+      - "9001:9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 5s
       timeout: 5s
       retries: 10
       start_period: 10s
-    networks: [ft_network]
+
+    networks:
+      - ft_network
+
     restart: unless-stopped
     # Owner: Oussama
 
   # --- Data stores --------------------------------------------------------
   postgres:
     container_name: postgres
-    image: pgvector/pgvector:pg16
+    build:
+      context: ./reporting-svc
+      dockerfile: Dockerfile.postgres
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./vault/creds/database:/run/vault:ro
+      - ./reporting-svc/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+
+    depends_on:
+      vault:
+        condition: service_healthy
+    command:
+      - postgres
+      - -c
+      - hba_file=/etc/postgresql/pg_hba.conf
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes: ["postgres_data:/var/lib/postgresql/data"]
+      PGDATA: /var/lib/postgresql/data/pgdata
+
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-      interval: 5s
+      test:
+        - CMD-SHELL
+        - 'pg_isready -h 127.0.0.1 -U "$$(cat /tmp/postgres-health-user)" -d "$$(cat /tmp/postgres-health-db)"'
+      interval: 10s
       timeout: 5s
       retries: 10
-    networks: [ft_network]
+      start_period: 30s
+
+    networks:
+      - ft_network
+
     restart: unless-stopped
     # Owner: Oussama (schema/migrations across all services)
 
@@ -259,7 +302,7 @@ services:
   # No ports: only Prometheus, inside ft_network, reads them.
   postgres-exporter:
     container_name: postgres-exporter
-    image: prometheuscommunity/postgres-exporter:v0.15.0
+    image: prometheuscommunity/postgres-exporter:v0.20.1
     environment:
       DATA_SOURCE_NAME: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
     depends_on: [postgres]
@@ -376,3 +419,35 @@ services:
       postgres: { condition: service_healthy }
     networks: [ft_network]
     restart: unless-stopped
+  # new service for rstoring backups
+  restore-svc:
+    profiles: ["recovery"]
+    container_name: restore-svc
+    build:
+      context: ./restore-svc
+      dockerfile: Dockerfile
+    env_file: .env
+    volumes:
+      - ./vault/creds/minio:/run/vault
+
+    networks:
+      - ft_network
+
+    restart: "no"
+# new service to init minio
+  minio-init:
+    build:
+      context: ./restore-svc
+      dockerfile: Dockerfile.init
+    container_name: restore-svc
+    volumes:
+      - ./restore-svc/scripts/init-minio.sh:/scripts/init-minio.sh:ro
+      - ./vault/creds/minio:/run/vault:ro
+    depends_on:
+      vault:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - ft_network
+    restart: "no"

@@ -31,7 +31,7 @@ export class MinioService implements OnModuleInit  {
 	}
 
 	async uploadFromDisk(fileName: string): Promise<string> {
-		const dir = this.configService.getOrThrow<string>("BACKUP_DIR", "/home/ossama/Desktop/Downloads");
+		const dir = this.configService.getOrThrow<string>("BACKUP_DIR", "/backups");
 		const filePath = join(dir, basename(fileName));
 		if (!existsSync(filePath)) {
 			throw new NotFoundException('File not found');
