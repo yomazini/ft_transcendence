@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { authHeaders } from "@/lib/auth";
+import { RAG_ENDPOINT } from "@/lib/api/rag";
 import {
   ChatMessage,
   Citation,
@@ -18,7 +19,7 @@ interface ChatWidgetProps {
 }
 export function ChatWidget({
   jobId = "",
-  apiEndpoint = "/api/rag/query",
+  apiEndpoint = RAG_ENDPOINT,
   onClose,
 }: ChatWidgetProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
