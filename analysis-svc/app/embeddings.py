@@ -21,6 +21,10 @@ def _get_model() -> Any:
     return _model
 
 
+def warmup() -> None:
+    _get_model()
+
+
 def _generate_mock_embedding(text: str) -> list[float]:
     seed = int(hashlib.sha256(text.encode("utf-8")).hexdigest()[:8], 16)
     rng = np.random.default_rng(seed)

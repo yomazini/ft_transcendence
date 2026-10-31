@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import time
@@ -11,9 +12,8 @@ from fastapi import FastAPI, HTTPException, Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel
 
-from .config import settings
-
 from .canvas import build_rag_prompt
+from .config import settings
 from .database import (
     close_pool,
     get_comments_by_job,
@@ -63,6 +63,9 @@ async def lifespan(app: FastAPI):
         await start_worker()
     except Exception as e:
         logger.warning("BullMQ worker failed to start: %s", e)
+    from .embeddings import warmup
+
+    await asyncio.to_thread(warmup)
     yield
     await stop_worker()
     await close_redis()
@@ -183,7 +186,9 @@ async def trigger_analysis(job_id: str):
     summary = compute_sentiment_summary(scored)
 
     for comment in scored:
-        embedding = generate_embedding(comment["text"])
+        embedding = await asyncio.to_thread(
+            generate_embedding, comment["text"]
+        )
         await insert_comment(
             comment_id=comment["id"],
             job_id=job_id,
@@ -255,7 +260,7 @@ async def query_rag(payload: RagQueryRequest):
     if not job:
         raise HTTPException(status_code=404, detail=f"Job {payload.job_id} not found")
 
-    query_vec = generate_embedding(payload.query)
+    query_vec = await asyncio.to_thread(generate_embedding, payload.query)
     candidates = await search_comments_by_vector(payload.job_id, query_vec, limit=20)
     if not candidates:
         raise HTTPException(

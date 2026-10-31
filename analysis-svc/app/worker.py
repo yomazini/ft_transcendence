@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 import uuid
@@ -67,10 +68,12 @@ async def process_job(job, token):
         started = time.perf_counter()
         scored = score_comments(comments)
         summary = compute_sentiment_summary(scored)
-        analysis_stage_duration.labels("sentiment").observe(time.perf_counter() - started)
+        analysis_stage_duration.labels("sentiment").observe(
+            time.perf_counter() - started
+        )
 
         for comment in scored:
-            embedding = generate_embedding(comment["text"])
+            embedding = await asyncio.to_thread(generate_embedding, comment["text"])
             if from_db:
                 await update_comment_analysis(
                     comment_id=comment["id"],
@@ -90,7 +93,9 @@ async def process_job(job, token):
 
         started = time.perf_counter()
         report_data = await synthesize_full_report(job_row, summary, scored)
-        analysis_stage_duration.labels("synthesis").observe(time.perf_counter() - started)
+        analysis_stage_duration.labels("synthesis").observe(
+            time.perf_counter() - started
+        )
         report_id = str(uuid.uuid4())
 
         await insert_report(
