@@ -72,6 +72,10 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     const jobId = randomUUID();
     const now = new Date().toISOString();
 
+    const orgDescription =
+      await this.databaseService.findOrganizationDescription(user.org_id);
+    const persona = dto.customer_persona;
+
     const jobRecord: JobRecord = {
       id: jobId,
       org_id: user.org_id,
@@ -79,10 +83,13 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       target: dto.target,
       mode: JOB_MODES[dto.mode.toLowerCase()],
       status: 'Queued',
-      customer_persona: dto.customer_persona || {
-        description: 'general market demographic',
-        price_sensitivity: 'budget',
-        top_priority: 'cost_saving',
+      customer_persona: {
+        description:
+          persona?.description ||
+          orgDescription ||
+          'general market demographic',
+        price_sensitivity: persona?.price_sensitivity || 'budget',
+        top_priority: persona?.top_priority || 'cost_saving',
       },
       created_at: now,
     };

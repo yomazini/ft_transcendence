@@ -208,8 +208,5 @@ async def synthesize_full_report(
             "conclusion": conclusion,
         }
 
-    return {
-        "swot": fallback_swot,
-        "blue_ocean": fallback_bo,
-        "conclusion": generate_conclusion(sentiment_summary, fallback_swot),
-    }
+    logger.error("LLM synthesis failed; no report generated")
+    raise RuntimeError("LLM synthesis failed")

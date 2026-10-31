@@ -69,6 +69,23 @@ describe('JobsController', () => {
       expect(result.status).toBe('Queued');
       expect(result.target).toBe('r/freelance');
     });
+
+    it('uses the organization description when no persona is sent', async () => {
+      const database = (service as any).databaseService;
+      const spy = jest
+        .spyOn(database, 'findOrganizationDescription')
+        .mockResolvedValue('We build scheduling software for freelancers');
+
+      const result = await controller.createJob(
+        { mode: 'post', target: 'https://www.reddit.com/r/test/comments/x/y/' },
+        { user: mockUser },
+      );
+
+      expect(result.customer_persona.description).toBe(
+        'We build scheduling software for freelancers',
+      );
+      spy.mockRestore();
+    });
   });
 
   describe('getJob', () => {

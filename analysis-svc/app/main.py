@@ -26,7 +26,6 @@ from .database import (
 )
 from .embeddings import generate_embedding
 from .events import close_redis, publish_job_event
-from .fixtures import get_fixture_comments
 from .llm import call_openrouter_text
 from .metrics import http_duration, http_requests
 from .ranking import rerank_for_rag
@@ -181,14 +180,16 @@ async def trigger_analysis(job_id: str):
     await update_job_status(job_id, "Running")
     await publish_job_event(job_id, "running")
 
-    comments = get_fixture_comments()
+    comments = await get_comments_by_job(job_id)
+    if not comments:
+        raise HTTPException(
+            status_code=404, detail=f"No comments found for job {job_id}"
+        )
     scored = score_comments(comments)
     summary = compute_sentiment_summary(scored)
 
     for comment in scored:
-        embedding = await asyncio.to_thread(
-            generate_embedding, comment["text"]
-        )
+        embedding = await asyncio.to_thread(generate_embedding, comment["text"])
         await insert_comment(
             comment_id=comment["id"],
             job_id=job_id,
@@ -269,17 +270,17 @@ async def query_rag(payload: RagQueryRequest):
         )
 
     reranked = rerank_for_rag(candidates, top_k=5)
-    prompt = build_rag_prompt(payload.query, reranked)
+    prompt = build_rag_prompt(payload.query, reranked, job)
+
+    with open("/tmp/rag_prompt.txt", "w", encoding="utf-8") as file:
+        file.write(prompt)
 
     llm_answer = await call_openrouter_text(prompt, max_tokens=768, temperature=0.2)
-    if llm_answer and llm_answer.strip():
-        answer = llm_answer.strip()
-    else:
-        top_snippets = [f'"{c["text"]}" ({c["author"]})' for c in reranked[:3]]
-        answer = (
-            f"Based on the retrieved community feedback regarding '{payload.query}', "
-            f"users highlighted: {'; '.join(top_snippets)}."
-        )
+    if not llm_answer or not llm_answer.strip():
+        logger.error("RAG LLM failed for job %s", payload.job_id)
+        raise HTTPException(status_code=502, detail="LLM unavailable")
+
+    answer = llm_answer.strip()
 
     citations = [
         CommentCitation(

@@ -125,6 +125,21 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async findOrganizationDescription(orgId: string): Promise<string | null> {
+    if (!this.isConnected || !this.pool) return null;
+    try {
+      const res = await this.pool.query(
+        `SELECT description FROM "Organization" WHERE id = $1`,
+        [orgId],
+      );
+      return res.rows[0]?.description ?? null;
+    } catch (err: any) {
+      this.logger.warn(
+        `Failed to read organization ${orgId} description: ${err.message}`,
+      );
+      return null;
+    }
+  }
   /** The latest jobs of one organization, newest first (dashboard job list). */
   async findJobsByOrg(orgId: string, limit = 50): Promise<JobRecord[]> {
     if (!this.isConnected || !this.pool) return [];
@@ -194,10 +209,10 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
     if (!this.isConnected || !this.pool) return;
 
-    await this.pool.query(
-      'DELETE FROM "Job" WHERE id = $1 AND org_id = $2;',
-      [id, orgId],
-    );
+    await this.pool.query('DELETE FROM "Job" WHERE id = $1 AND org_id = $2;', [
+      id,
+      orgId,
+    ]);
   }
 
   async findJobById(id: string): Promise<JobRecord | null> {

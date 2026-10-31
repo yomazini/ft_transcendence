@@ -17,7 +17,6 @@ from .database import (
 )
 from .embeddings import generate_embedding
 from .events import publish_job_event
-from .fixtures import get_fixture_comments
 from .metrics import analysis_jobs, analysis_stage_duration
 from .sentiment import compute_sentiment_summary, score_comments
 from .synthesis import synthesize_full_report
@@ -62,8 +61,7 @@ async def process_job(job, token):
             ]
             from_db = False
         else:
-            comments = get_fixture_comments()
-            from_db = False
+            raise ValueError(f"Job {job_id} has no comments")
 
         started = time.perf_counter()
         scored = score_comments(comments)
