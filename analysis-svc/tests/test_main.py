@@ -149,6 +149,31 @@ def test_swot_synthesis():
     assert "subjectivity_breakdown" in swot
 
 
+def test_swot_synthesis_keeps_full_comment_text():
+    from app.synthesis import synthesize_swot
+
+    text = "word " * 50
+    summary = {
+        "negative_ratio": 0.0,
+        "neutral_ratio": 0.0,
+        "avg_subjectivity": 0.5,
+        "fact_count": 0,
+        "opinion_count": 1,
+    }
+    comments = [
+        {
+            "text": text,
+            "compound": 0.8,
+            "subjectivity_label": "opinion",
+        },
+    ]
+
+    swot = synthesize_swot(summary, comments)
+
+    assert text in swot["strengths"][0]
+    assert "..." not in swot["strengths"][0]
+
+
 def test_blue_ocean_synthesis():
     from app.synthesis import synthesize_blue_ocean
 
