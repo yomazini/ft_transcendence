@@ -262,14 +262,16 @@ async def query_rag(payload: RagQueryRequest):
         raise HTTPException(status_code=404, detail=f"Job {payload.job_id} not found")
 
     query_vec = await asyncio.to_thread(generate_embedding, payload.query)
-    candidates = await search_comments_by_vector(payload.job_id, query_vec, limit=20)
+    candidates = await search_comments_by_vector(
+        payload.job_id, query_vec, limit=settings.rag_top_k
+    )
     if not candidates:
         raise HTTPException(
             status_code=404,
             detail=f"Target job vector data not found for job {payload.job_id}",
         )
 
-    reranked = rerank_for_rag(candidates, top_k=5)
+    reranked = rerank_for_rag(candidates, top_k=settings.rag_top_k)
     prompt = build_rag_prompt(payload.query, reranked, job)
 
     with open("/tmp/rag_prompt.txt", "w", encoding="utf-8") as file:

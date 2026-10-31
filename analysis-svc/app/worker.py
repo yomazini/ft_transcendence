@@ -137,6 +137,7 @@ async def start_worker():
         cast(Any, process_job),
         {
             "connection": f"redis://{settings.redis_host}:{settings.redis_port}",
+            "concurrency": settings.worker_concurrency,
         },
     )
     logger.info("BullMQ worker started on queue %s", settings.queue_name)
