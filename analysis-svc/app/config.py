@@ -25,12 +25,5 @@ class Settings(BaseSettings):
     openrouter_fallback_models: str = "nvidia/nemotron-3-ultra-550b-a55b:free"
     openrouter_timeout: float = 45.0
 
-    @property
-    def database_url(self) -> str:
-        return (
-            f"postgresql://{self.postgres_user}:{self.postgres_password}"
-            f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
-        )
-
 
 settings = Settings()
