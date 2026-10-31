@@ -25,7 +25,7 @@ vault operator unseal $(jq -r '.unseal_key' $CREDS_FILE)
 
 export VAULT_TOKEN=$(jq -r '.token' $CREDS_FILE)
 
-services=("analysis-svc" "reporting-svc" "auth-svc" "grafana" "scraper-svc" "gateway-svc")
+services=("analysis-svc" "reporting-svc" "auth-svc" "grafana" "scraper-svc" "gateway-svc" "minio" "database")
 
 for policy in "${services[@]}"; do
 	vault policy write "$policy" /policies/"$policy".hcl
