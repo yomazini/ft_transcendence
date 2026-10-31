@@ -37,6 +37,7 @@ class DatabaseWorker:
 			self.log(f'Received Job {job_data.id} type {job_data.mode}')
 			add_job(job_data.id, scraped_data, job_data.mode)
 			self.log(f'Sending {job_data.id} to analysis-svc')
+			g.scraper_jobs_total.labels("done").inc()
 			await self.queue.add(
 				"analysis",
 				{'id': job_data.id},
@@ -54,6 +55,7 @@ class DatabaseWorker:
 				"Insertion job: job [%s] doesn't exist",
 				data.get("id", None)
 			)
+			g.scraper_jobs_total.labels("failed").inc()
 			raise bmq.UnrecoverableError(str(bje))
 		
 		except Exception as exc:
@@ -68,11 +70,16 @@ class DatabaseWorker:
 			)
 
 			if attempts >= max_attempts:
+				g.scraper_jobs_total.labels("failed").inc()
 				await update_job_status(data.get("id", "None"), Jobstatuses.FAILED, str(exc))
 			raise
 
 	def log(self, msg: str):
 		g.logger.info("insertion worker: %s", msg)
+
+	async def stop(self):
+		await self.worker.close()
+		await self.queue.close()
 	
 	async def start(self):
 		self.log(f"Service is ready for jobs")

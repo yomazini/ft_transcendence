@@ -61,6 +61,7 @@ class ScrapingWorker:
 			
 			if attempts >= max_attempts:
 				g.logger.warning("Scrape Worker: job [%s] reason=Too many retries", data["id"])
+				g.scraper_jobs_total.labels("failed").inc()
 				await update_job_status(data["id"], Jobstatuses.FAILED, str(exc))
 			else:
 				g.logger.warning(
@@ -78,12 +79,17 @@ class ScrapingWorker:
 				type(exc).__name__,
 				exc
 			)
-			if job_id is not None:
+			g.scraper_jobs_total.labels("failed").inc()
+			if job_id:
 				await update_job_status(job_id, Jobstatuses.FAILED, str(exc))
 			raise bmq.UnrecoverableError(str(exc)) from exc
 
 	def log(self, msg: str):
 		g.logger.info("Scrape worker: %s", msg)
+
+	async def stop(self):
+		await self.worker.close()
+		await self.queue.close()
 
 	async def start(self):
 		self.log(f"Service is ready for jobs")
