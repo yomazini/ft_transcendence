@@ -41,3 +41,6 @@ ps:
 
 ## re: clean everything and start again
 re: clean up
+
+recover:
+	sudo sh ./recover.sh
