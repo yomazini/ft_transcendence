@@ -51,6 +51,32 @@ describe('JobsController', () => {
     });
   });
 
+  describe('status', () => {
+    it('reports each service independently', async () => {
+      const fetchMock = jest
+        .spyOn(globalThis, 'fetch')
+        .mockImplementation(async (input: RequestInfo | URL) => {
+          const url = String(input);
+          if (url.includes('analysis-svc')) {
+            throw new Error('analysis down');
+          }
+          return { status: url.includes('auth-svc') ? 401 : 200 } as Response;
+        });
+
+      const result = await controller.status();
+
+      expect(result).toEqual([
+        { service: 'gateway-svc', status: 'healthy' },
+        { service: 'auth-svc', status: 'healthy' },
+        { service: 'analysis-svc', status: 'unavailable' },
+        { service: 'reporting-svc', status: 'healthy' },
+        { service: 'scraper-svc', status: 'healthy' },
+      ]);
+
+      fetchMock.mockRestore();
+    });
+  });
+
   describe('createJob', () => {
     it('should create and enqueue a job', async () => {
       const dto = {
