@@ -3,6 +3,7 @@ import {
   OnModuleInit,
   OnModuleDestroy,
   Logger,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { Pool, QueryResult } from 'pg';
 
@@ -83,33 +84,46 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   }
 
   async saveJob(job: JobRecord): Promise<void> {
-    this.inMemoryJobs.set(job.id, job);
-
-    if (this.isConnected && this.pool) {
-      try {
-        const query = `
-          INSERT INTO "Job" (id, org_id, created_by, target, mode, status, customer_persona, created_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-          ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status;
-        `;
-        await this.pool.query(query, [
-          job.id,
-          job.org_id,
-          job.created_by,
-          job.target,
-          this.normalizeJobMode(job.mode),
-          this.normalizeJobStatus(job.status),
-
-          JSON.stringify(job.customer_persona),
-          new Date(job.created_at),
-        ]);
-        this.logger.log(`Persisted Job ${job.id} to PostgreSQL`);
-      } catch (err: any) {
-        this.logger.warn(
-          `Failed to persist Job to DB: ${err.message}. Retained in in-memory store.`,
-        );
-      }
+    if (!this.isProduction) {
+      this.inMemoryJobs.set(job.id, job);
     }
+
+    if (!this.isConnected || !this.pool) {
+      if (this.isProduction) {
+        throw new ServiceUnavailableException('database unavailable');
+      }
+      return;
+    }
+
+    try {
+      const query = `
+        INSERT INTO "Job" (id, org_id, created_by, target, mode, status, customer_persona, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status;
+      `;
+      await this.pool.query(query, [
+        job.id,
+        job.org_id,
+        job.created_by,
+        job.target,
+        this.normalizeJobMode(job.mode),
+        this.normalizeJobStatus(job.status),
+        JSON.stringify(job.customer_persona),
+        new Date(job.created_at),
+      ]);
+      this.logger.log(`Persisted Job ${job.id} to PostgreSQL`);
+    } catch (err: any) {
+      if (this.isProduction) {
+        throw new ServiceUnavailableException('could not persist job');
+      }
+      this.logger.warn(
+        `Failed to persist Job to DB: ${err.message}. Retained in in-memory store.`,
+      );
+    }
+  }
+
+  private get isProduction(): boolean {
+    return process.env.NODE_ENV == 'production';
   }
 
   /** Used when a service that has no database access (scraper-svc) reports a failure. */
