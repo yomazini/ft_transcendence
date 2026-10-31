@@ -67,9 +67,7 @@ export function ServicesStatus( {services} : {services:ServiceItem[]}) {
                       : "text-red-600"
                   }`}
                 >
-                  {service.status === "healthy"
-                    ? "healthy"
-                    : "unhealthy"}
+                  {service.status}
                 </span>
               </div>
 
