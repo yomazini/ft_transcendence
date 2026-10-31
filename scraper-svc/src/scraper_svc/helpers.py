@@ -19,6 +19,9 @@ HEADERS = {
 class RateLimitError(Exception):
     pass
 
+class BadJobError(Exception):
+		pass
+
 def valid_post_url(url: str) -> str:
 	parsed: ParseResult = urlparse(url)
 	if parsed.scheme != "https" or parsed.hostname not in {'www.reddit.com', 'reddit.com'}:
@@ -111,3 +114,12 @@ async def update_job_status(job_id: str, job_status: str,error:str | None):
 		).scalar_one()
 
 	await g.events.publish(job_id, job_status, error)
+
+# get from db
+
+def get_job(job_id:str) -> Job:
+	with g.db.get_session() as session:
+		job = (session.get(Job, job_id))
+		if job is None:
+			raise BadJobError(f"Job [{job_id}] doesn't exist")
+		return (job)
