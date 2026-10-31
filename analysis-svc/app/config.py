@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     postgres_user: str = "ft_transcendence"
-    postgres_password: str = "changeme"
+    postgres_password: str = ""
     postgres_db: str = "ft_transcendence"
     postgres_host: str = "postgres"
     postgres_port: int = 5432

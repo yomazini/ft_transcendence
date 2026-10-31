@@ -37,10 +37,6 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private readonly inMemoryJobs = new Map<string, JobRecord>();
   private readonly inMemoryReports = new Map<string, ReportRecord>();
 
-  constructor() {
-    this.seedDefaultStubData();
-  }
-
   private retryTimer?: NodeJS.Timeout;
 
   async onModuleInit() {
@@ -51,7 +47,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     const host = process.env.POSTGRES_HOST || 'postgres';
     const port = parseInt(process.env.POSTGRES_PORT || '5432', 10);
     const user = process.env.POSTGRES_USER || 'ft_transcendence';
-    const password = process.env.POSTGRES_PASSWORD || 'changeme';
+    const password = process.env.POSTGRES_PASSWORD;
     const database = process.env.POSTGRES_DB || 'ft_transcendence';
 
     try {
@@ -311,76 +307,5 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     return map[status.toLowerCase()] || 'Queued';
   }
 
-  private seedDefaultStubData() {
-    // Never expose demo jobs/reports in production.
-    if (process.env.NODE_ENV === 'production') return;
 
-    const defaultJobId = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
-    const seedJobId = 'a18f2d90-3b41-4e2a-9f12-987654321abc';
-
-    const defaultReport: ReportRecord = {
-      id: 'c39e4a81-9b12-4f3e-8c3d-123456789abc',
-      job_id: defaultJobId,
-      swot: {
-        strengths: [
-          'High organic community praise for responsive customer support',
-          'Fast synchronization and reliable offline access',
-        ],
-        weaknesses: [
-          'Mobile application UX feels bloated according to power users',
-          'Pricing friction and lack of granular seat-based tiers',
-        ],
-        opportunities: [
-          'Automated topic auto-organization and AI sentiment insights',
-          'High demand for verified Reddit comment citation search',
-        ],
-        threats: [
-          'Incumbent SaaS competitors launching bundled LLM features',
-          'Users switching to minimal markdown self-hosted tools',
-        ],
-      },
-      blue_ocean: {
-        eliminate: [
-          'Complex manual database setups',
-          'Bloated multi-tier onboarding forms',
-        ],
-        reduce: [
-          'Report generation latency',
-          'Cost per analyzed Reddit thread',
-        ],
-        raise: [
-          'Actionable customer sentiment resolution',
-          'Traceability to original comments',
-        ],
-        create: [
-          'One-click executive SWOT synthesis',
-          'Interactive pgvector semantic chat',
-        ],
-      },
-      conclusion:
-        'Users value fast synchronization and clear support, but express dissatisfaction regarding opaque auto-renewals. Strong market opportunity exists for an automated social intelligence dashboard.',
-      created_at: new Date().toISOString(),
-    };
-
-    this.inMemoryJobs.set(defaultJobId, {
-      id: defaultJobId,
-      org_id: '018f2d90-3b41-7e2a-9f12-111122223333',
-      created_by: '01111111-1111-7111-8111-111111111111',
-      target: 'r/freelance',
-      mode: 'Subreddit',
-      status: 'Done',
-      customer_persona: {
-        description: 'budget-conscious freelancers',
-        price_sensitivity: 'budget',
-        top_priority: 'speed',
-      },
-      created_at: new Date().toISOString(),
-    });
-    this.inMemoryReports.set(defaultJobId, defaultReport);
-    this.inMemoryReports.set(seedJobId, {
-      ...defaultReport,
-      job_id: seedJobId,
-    });
-    this.inMemoryReports.set(defaultReport.id, defaultReport);
-  }
 }

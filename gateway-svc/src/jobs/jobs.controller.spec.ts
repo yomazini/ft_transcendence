@@ -115,22 +115,40 @@ describe('JobsController', () => {
   });
 
   describe('getJob', () => {
-    it('should return job details', async () => {
-      const jobId = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
-      const result = await controller.getJob(jobId, { user: mockUser });
+    it('should return a created job', async () => {
+      const created = await controller.createJob(
+        { mode: 'post', target: 'https://www.reddit.com/r/test/comments/x/y/' },
+        { user: mockUser },
+      );
+
+      const result = await controller.getJob(created.id, { user: mockUser });
       expect(result).toBeDefined();
-      expect(result.id).toBe(jobId);
+      expect(result.id).toBe(created.id);
     });
   });
 
   describe('getReport', () => {
-    it('should return SWOT and Blue Ocean report', async () => {
-      const jobId = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
-      const result = await controller.getReport(jobId, { user: mockUser });
+    it('should return the report for a created job', async () => {
+      const database = (service as any).databaseService;
+      const created = await controller.createJob(
+        { mode: 'post', target: 'https://www.reddit.com/r/test/comments/x/y/' },
+        { user: mockUser },
+      );
+
+      const spy = jest.spyOn(database, 'findReportByJobId').mockResolvedValue({
+        id: 'report-1',
+        job_id: created.id,
+        swot: { strengths: ['Fast support'] },
+        blue_ocean: { factors: {} },
+        conclusion: 'Good product.',
+        created_at: new Date().toISOString(),
+      });
+
+      const result = await controller.getReport(created.id, { user: mockUser });
       expect(result).toBeDefined();
-      expect(result.swot).toBeDefined();
       expect(result.swot.strengths).toBeInstanceOf(Array);
       expect(result.blue_ocean).toBeDefined();
+      spy.mockRestore();
     });
   });
 
