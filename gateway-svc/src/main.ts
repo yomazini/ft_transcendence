@@ -16,7 +16,7 @@ async function bootstrap() {
   // so only that origin may call it cross-site (FRONTEND_URL, e.g. http://localhost).
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost',
-    methods: 'GET,HEAD,PATCH,POST,DELETE,OPTIONS',
+    methods: 'GET,HEAD,PATCH,POST,PUT,DELETE,OPTIONS',
     credentials: true,
   });
 

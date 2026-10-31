@@ -153,6 +153,53 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async updateJob(
+    id: string,
+    orgId: string,
+    fields: {
+      target?: string;
+      mode?: string;
+      customer_persona?: unknown;
+    },
+  ): Promise<void> {
+    const cached = this.inMemoryJobs.get(id);
+    if (cached) {
+      this.inMemoryJobs.set(id, { ...cached, ...fields });
+    }
+    if (!this.isConnected || !this.pool) return;
+
+    await this.pool.query(
+      `
+        UPDATE "Job"
+        SET target = COALESCE($1, target),
+            mode = COALESCE($2::"JobModes", mode),
+            customer_persona = COALESCE($3::jsonb, customer_persona)
+        WHERE id = $4 AND org_id = $5;
+      `,
+      [
+        fields.target ?? null,
+        fields.mode ?? null,
+        fields.customer_persona
+          ? JSON.stringify(fields.customer_persona)
+          : null,
+        id,
+        orgId,
+      ],
+    );
+  }
+
+  async deleteJob(id: string, orgId: string): Promise<void> {
+    this.inMemoryJobs.delete(id);
+    this.inMemoryReports.delete(id);
+
+    if (!this.isConnected || !this.pool) return;
+
+    await this.pool.query(
+      'DELETE FROM "Job" WHERE id = $1 AND org_id = $2;',
+      [id, orgId],
+    );
+  }
+
   async findJobById(id: string): Promise<JobRecord | null> {
     if (this.isConnected && this.pool) {
       try {

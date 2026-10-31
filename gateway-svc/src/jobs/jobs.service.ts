@@ -19,6 +19,7 @@ import {
 import { EventsGateway } from '../events/events.gateway';
 import { AuthenticatedUser } from '../auth/jwt-auth.guard';
 import { jobCreated } from '../metrics/metrics';
+import { UpdateJobDto } from './dto/update-job.dto';
 
 /** Values of the JobModes enum in the shared database (owned by reporting-svc). */
 const JOB_MODES: Record<string, string> = {
@@ -171,6 +172,22 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
 
   async listJobs(user: AuthenticatedUser): Promise<JobRecord[]> {
     return this.databaseService.findJobsByOrg(user.org_id);
+  }
+
+  async updateJob(id: string, dto: UpdateJobDto, user: AuthenticatedUser) {
+    await this.getJobById(id, user);
+    await this.databaseService.updateJob(id, user.org_id, {
+      target: dto.target,
+      mode: dto.mode ? JOB_MODES[dto.mode.toLowerCase()] : undefined,
+      customer_persona: dto.customer_persona,
+    });
+    return this.getJobById(id, user);
+  }
+
+  async deleteJob(id: string, user: AuthenticatedUser): Promise<void> {
+    await this.getJobById(id, user);
+
+    await this.databaseService.deleteJob(id, user.org_id);
   }
 
   async getJobById(id: string, user: AuthenticatedUser): Promise<JobRecord> {

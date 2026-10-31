@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Put,
+  Delete,
   Param,
   Body,
   HttpCode,
@@ -9,6 +11,7 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
+import { UpdateJobDto } from './dto/update-job.dto';
 import {
   ApiTags,
   ApiOperation,
@@ -54,20 +57,48 @@ export class JobsController {
     return this.jobsService.createJob(body, req.user);
   }
 
+  @Put('jobs/:id')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update a job target/mode/persona' })
+  @ApiResponse({ status: 200, description: 'Job updated' })
+  @ApiResponse({ status: 404, description: 'Job not found' })
+  updateJob(
+    @Param('id') id: string,
+    @Body() body: UpdateJobDto,
+    @Req() req: any,
+  ) {
+    return this.jobsService.updateJob(id, body, req.user);
+  }
+
+  @Delete('jobs/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a job and its comments/report' })
+  @ApiResponse({ status: 204, description: 'Job deleted' })
+  @ApiResponse({ status: 404, description: 'Job not found' })
+  async deleteJob(@Param('id') id: string, @Req() req: any): Promise<void> {
+    await this.jobsService.deleteJob(id, req.user);
+  }
+
   @Post('rag/query')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: "Ask a question about one job's comments (RAG)" })
   @ApiResponse({ status: 200, description: 'Answer with cited comments' })
-  @ApiResponse({ status: 404, description: 'Job not found, or no analyzed comments yet' })
+  @ApiResponse({
+    status: 404,
+    description: 'Job not found, or no analyzed comments yet',
+  })
   ragQuery(@Body() body: RagQueryDto, @Req() req: any) {
     return this.jobsService.ragQuery(body.job_id, body.query, req.user);
   }
 
   @Get('jobs')
   @ApiBearerAuth()
-  @ApiOperation({ summary: "List the caller's organization jobs with their status" })
+  @ApiOperation({
+    summary: "List the caller's organization jobs with their status",
+  })
   @ApiResponse({ status: 200, description: 'Jobs, newest first' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   listJobs(@Req() req: any) {
