@@ -18,7 +18,7 @@ function MetricCard({
     color: string;
 }) {
     return (
-        <div className="w-full min-w-0 max-w-full p-4">
+        <div className="w-full min-w-0 max-w-full p-4 bg-card">
             <div className="flex min-w-0 items-start justify-between gap-3">
 
                 <div className="min-w-0 flex-1">
@@ -66,7 +66,7 @@ export default function SummaryMetrics() {
 
 
     return (
-        <section className="grid w-full min-w-0 max-w-full grid-cols-1 border divide-y sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-3 lg:divide-x">
+        <section className="bg-card grid w-full min-w-0 max-w-full grid-cols-1 border divide-y sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-3 lg:divide-x">
             {jobStatus.map((item, i) => (
                 <MetricCard
                     key={i}

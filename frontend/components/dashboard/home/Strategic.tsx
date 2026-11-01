@@ -17,9 +17,8 @@ import {
 } from "lucide-react";
 
 import SectionTitle from "./SectionTitle";
-import { useReportById } from "@/hooks/useReportById";
-import { useSelectedJobId } from "@/hooks/useSelectedJob";
 import { Cards } from "../swot-cards";
+import { ReportDetails } from "@/app/types/report";
 
 const asText = (value: unknown): string => {
 	if (typeof value === "string") {
@@ -56,13 +55,9 @@ const asItems = (value: unknown): string[] => {
 	return [];
 };
 
-export default function Strategic() {
-	const id = useSelectedJobId();
-
+export default function Strategic({ report, loading } : {report : ReportDetails | null, loading : boolean}) {	
 	const [activeCard, setActiveCard] =
 		useState<1 | 2 | 3 | 4 | 5>(1);
-
-	const { report, loading, error } = useReportById(id);
 
 	const hasConclusion = report?.conclusion != null;
 
@@ -71,7 +66,6 @@ export default function Strategic() {
 			? 1
 			: activeCard;
 
-	// Blue Ocean strategy data
 	const blue = report?.blue_ocean as
 		| {
 			strategy?: Record<string, unknown>;
@@ -143,7 +137,7 @@ export default function Strategic() {
 		},
 	];
 
-	if (loading || error) {
+	if (loading) {
 		return (
 			<div className="w-full min-w-0 self-start 2xl:col-span-2">
 				<SectionTitle icon={Megaphone}>
@@ -162,7 +156,7 @@ export default function Strategic() {
 	const activeItems = selectedCard === 1 ? swot : blueOcean;
 
 	return (
-		<div className="flex h-auto w-full min-w-0 max-w-full flex-col self-start 2xl:col-span-2">
+		<div className="flex h-auto w-full min-w-0 max-w-full flex-col self-start 2xl:col-span-2 bg-card">
 
 			<SectionTitle icon={Megaphone}>
 				<span>Strategic Analysis</span>

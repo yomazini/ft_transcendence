@@ -21,7 +21,7 @@ export default function JobsPanel() {
 	const selected = useSelectedJobId();
 
 	return (
-		<section className="min-w-0 border p-5 sm:p-6">
+		<section className="min-w-0 border p-5 sm:p-6 bg-card">
 			<div className="flex items-center justify-between">
 				<h2 className="text-base font-semibold">Jobs</h2>
 				<span className="text-xs text-muted-foreground">live</span>

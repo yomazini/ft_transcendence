@@ -130,20 +130,6 @@ export class ReportingService {
 			throw new NotFoundException('Job not found');
 		}
 
-		const now = new Date();
-
-		const startOfMonth = new Date(
-			now.getFullYear(),
-			now.getMonth(),
-			1
-		);
-
-		const startOfNextMonth = new Date(
-			now.getFullYear(),
-			now.getMonth() + 1,
-			1
-		);
-
 		const report = await this.prisma.report.findFirst({
 			where: {
 				job_id: id,
@@ -152,12 +138,6 @@ export class ReportingService {
 				job: {
 					include: {
 						comments: {
-							where: {
-								created_at: {
-									gte: startOfMonth,
-									lt: startOfNextMonth,
-								}
-							},
 							select: {
 								sentiment_score: true,
 								created_at: true,
@@ -205,6 +185,7 @@ export class ReportingService {
 			...reportdata,
 			result,
 		}
+		console.log(response);
 		return response;
 	}
 
@@ -258,20 +239,6 @@ export class ReportingService {
 			throw new NotFoundException('there is no organization with this id');
 		}
 
-		const now = new Date();
-
-		const startOfMonth = new Date(
-			now.getFullYear(),
-			now.getMonth(),
-			1
-		);
-
-		const startOfNextMonth = new Date(
-			now.getFullYear(),
-			now.getMonth() + 1,
-			1
-		);
-
 		const report = await this.prisma.report.findFirst({
 			where: {
 				job_id: id,
@@ -285,12 +252,6 @@ export class ReportingService {
 						mode: true,
 						org_id: true,
 						comments: {
-							where: {
-								created_at: {
-									gte: startOfMonth,
-									lt: startOfNextMonth,
-								}
-							},
 							select: {
 								sentiment_score: true,
 								created_at: true,

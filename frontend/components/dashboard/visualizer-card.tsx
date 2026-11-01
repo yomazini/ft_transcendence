@@ -199,7 +199,40 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 		).sort((a, b) => a.date.localeCompare(b.date));
 
 		if (dateRange === "all") {
-			return points;
+			const start = new Date(
+				now.getFullYear(),
+				now.getMonth(),
+				now.getDate()
+			);
+
+			start.setDate(start.getDate() - 28);
+
+			const startDate = formatDate(start);
+
+			const last30 = points.filter(
+				(point) =>
+					point.date >= startDate &&
+					point.date <= today
+			);
+
+			const days = new Map(
+				last30.map((point) => [point.date, point.sentiment])
+			);
+
+			const result: ChartPoint[] = [];
+
+			for (let i = 0; i < 29; i++) {
+				const date = new Date(start);
+				date.setDate(start.getDate() + i);
+
+				const key = formatDate(date);
+
+				result.push({
+					date: key,
+					sentiment: days.get(key) ?? null,
+				});
+			}
+			return result;
 		}
 
 		if (dateRange === "custom") {
@@ -344,7 +377,7 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 	}
 
 	return (
-		<Card className="w-full min-w-0 max-w-full rounded-none">
+		<Card className="w-full h-full min-w-0 max-w-full rounded-none">
 			<CardHeader className="border-b">
 				<div className="flex flex-wrap items-start justify-between gap-4">
 					<div>
@@ -374,7 +407,6 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 					</div>
 				</div>
 
-				{/* Fixed-height filter row: on narrow screens it scrolls INSIDE the card, not the page. */}
 				<div className="mt-4 flex h-9 min-w-0 max-w-full items-center gap-2 overflow-x-auto overflow-y-hidden whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 					<Select
 						value={dateRange}

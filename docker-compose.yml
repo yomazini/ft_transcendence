@@ -193,11 +193,10 @@ services:
 
   # --- Data stores --------------------------------------------------------
   postgres:
-    container_name: postgres
     build:
       context: ./reporting-svc
       dockerfile: Dockerfile.postgres
-
+    container_name: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./vault/creds/database:/run/vault:ro
@@ -464,7 +463,7 @@ services:
     build:
       context: ./restore-svc
       dockerfile: Dockerfile.init
-    container_name: restore-svc
+    container_name: minio-init
     volumes:
       - ./restore-svc/scripts/init-minio.sh:/scripts/init-minio.sh:ro
       - ./vault/creds/minio:/run/vault:ro

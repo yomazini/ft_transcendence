@@ -5,10 +5,11 @@ import { Lightbulb, Target, Waves } from "lucide-react";
 import SectionTitle from "./SectionTitle";
 import { useMembers } from "@/hooks/useMembers";
 import { Users } from "lucide-react";
+import { ReportDetails } from "@/app/types/report";
 
 
 
-export default function StrategicUsers() {
+export default function StrategicUsers({ report, loading } : { report : ReportDetails | null, loading : boolean}) {
 	const { members } = useMembers();
 	const totalUsers = members.length;
 	const admins = members.filter((m) => m.role === "Admin").length;
@@ -21,14 +22,13 @@ export default function StrategicUsers() {
 
 
 	return (
-		<section className="grid min-w-0 grid-cols-1 overflow-hidden border 2xl:grid-cols-3">
+		<section className="grid min-w-0 grid-cols-1 overflow-hidden border 2xl:grid-cols-3 bg-card">
 
-
-			<Strategic />
+			<Strategic report={report} loading={loading}/>
 
 			<div className="min-w-0 border-t 2xl:border-l 2xl:border-t-0">
 				<SectionTitle icon={Lightbulb}>Key Insights</SectionTitle>
-				<div className=" px-4 ">
+				<div className="px-4">
 					<div className="flex justify-between items-center  pt-3">
 						<p className="text-2xl font-semibold tracking-tight sm:text-3xl flex items-center ">
 							<Users className="size-5 mr-2" /> {totalUsers}
