@@ -11,7 +11,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
-import { BillingService } from './billing.service';
+import { BillingIdentity, BillingService } from './billing.service';
 import { CheckoutDto } from './dto/checkout.dto';
 import { JwtGuard } from '../auth/guard/jwt.guard';
 
@@ -19,6 +19,8 @@ interface AuthenticatedRequest {
   user?: {
     sub?: string;
     id?: string;
+    org_id?: string;
+    role?: string;
   };
 }
 
@@ -29,16 +31,18 @@ export class BillingController {
     private readonly billingService: BillingService,
   ) { }
 
-  private getIdentity(req: AuthenticatedRequest): string {
+  private getIdentity(req: AuthenticatedRequest): BillingIdentity {
     const userId = req.user?.sub ?? req.user?.id;
+    const organizationId = req.user?.org_id;
+    const role = req.user?.role;
 
-    if (!userId) {
+    if (!userId || !organizationId || !role) {
       throw new UnauthorizedException(
         'Invalid or missing user identity',
       );
     }
 
-    return userId;
+    return { userId, organizationId, role };
   }
 
   // GET /orgs/billing
