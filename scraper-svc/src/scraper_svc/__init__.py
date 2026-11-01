@@ -43,7 +43,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 metrics=make_asgi_app()
-app.mount("/metrics/", metrics)
+app.mount("/metrics", metrics)
 
 @app.get("/health")
 def health():

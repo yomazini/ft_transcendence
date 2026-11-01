@@ -1,4 +1,4 @@
-import os, asyncio
+import os, asyncio, time
 import scraper_svc.globals as g
 import bullmq as bmq
 from typing import Any, cast
@@ -32,11 +32,15 @@ class ScrapingWorker:
 		)		
 
 	async def scrape(self, job: bmq.Job, token: str) -> None:
+		start_time = time.monotonic()
 		data = job.data
+		mode : str = "unknown"
 		# data["mode"] = str(data["mode"]).capitalize()
+		g.scraper_jobs_in_progress.inc()
 		try:
 			job_data = get_job(data["id"])
-			self.log(f'Received Job {job_data.id} type {job_data.mode}')
+			mode = job_data.mode.value.lower()
+			self.log(f'Received Job {job_data.id} type {job_data.mode.value}')
 			await update_job_status(job_data.id, Jobstatuses.RUNNING, None)
 			body = await asyncio.to_thread(scrape_job, job_data.target, job_data.mode)
 			self.log(f'Sending {job_data.id} to database-job')
@@ -83,6 +87,11 @@ class ScrapingWorker:
 			if job_id:
 				await update_job_status(job_id, Jobstatuses.FAILED, str(exc))
 			raise bmq.UnrecoverableError(str(exc)) from exc
+		finally:
+			end_time = time.monotonic()
+			g.scraper_jobs_in_progress.dec()
+			g.scraper_job_duration_seconds.labels(mode).observe(end_time - start_time)
+
 
 	def log(self, msg: str):
 		g.logger.info("Scrape worker: %s", msg)

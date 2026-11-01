@@ -1,5 +1,5 @@
 import os
-from prometheus_client import Counter
+from prometheus_client import Counter, Gauge, Histogram
 from scraper_svc.Logger import Logger
 from scraper_svc.Settings import Settings
 from scraper_svc.Database import Database
@@ -26,6 +26,16 @@ scraper_reddit_requests_total = Counter(
 	["status"]
 )
 
+scraper_jobs_in_progress = Gauge(
+	"scraper_jobs_in_progress",
+	"jobs currently being scraped"
+)
+
+scraper_job_duration_seconds = Histogram(
+	"scraper_job_duration_seconds",
+	"the duration that a job takes",
+	["mode"]
+)
 
 logger = Logger()
 
