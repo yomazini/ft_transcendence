@@ -96,6 +96,20 @@ describe('JobsController', () => {
       expect(result.target).toBe('r/freelance');
     });
 
+    it('returns an existing active job for the same target', async () => {
+      const dto = {
+        mode: 'post',
+        target: 'https://www.reddit.com/r/test/comments/x/y/',
+      };
+
+      const first = await controller.createJob(dto, { user: mockUser });
+      const second = await controller.createJob(dto, { user: mockUser });
+
+      expect(second.id).toBe(first.id);
+      expect((second as any).deduplicated).toBe(true);
+      expect((service as any).scrapeQueue.add).toHaveBeenCalledTimes(1);
+    });
+
     it('uses the organization description when no persona is sent', async () => {
       const database = (service as any).databaseService;
       const spy = jest
