@@ -1,17 +1,11 @@
 
+import { ReportDetails } from "@/app/types/report";
 import { VisualizerCard } from "../visualizer-card";
 
-import { useReportById } from "@/hooks/useReportById";
-import { useSelectedJobId } from "@/hooks/useSelectedJob";
-
-
-export default function RevenueOverview() {
-    const id = useSelectedJobId();
-    const { report, loading, error } = useReportById(id);
-
+export default function RevenueOverview({ report }: { report: ReportDetails | null }) {
     return (
         
-        <section className="   border h-137.75">
+        <section className="border bg-card">
                 <VisualizerCard report={report} />
         </section>
     )

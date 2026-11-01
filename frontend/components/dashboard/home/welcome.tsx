@@ -37,7 +37,7 @@ export default function Welcome() {
 		}
 	};
 	return (
-		<section className="grid min-w-0 grid-cols-1 overflow-hidden border lg:grid-cols-3 ">
+		<section className="grid min-w-0 grid-cols-1 overflow-hidden border lg:grid-cols-3 bg-card">
 			<div className="relative flex min-h-[205px] min-w-0 flex-col justify-center gap-3 p-5 sm:p-6 lg:col-span-2">
 				<div className="flex items-center gap-2">
 					<h1 className="text-lg font-semibold tracking-tight sm:text-xl">

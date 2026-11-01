@@ -65,7 +65,7 @@ export default function NewJobCard() {
 	const placeholder = MODES.find((m) => m.value === mode)?.placeholder;
 
 	return (
-		<section className="min-w-0 border p-5 sm:p-6">
+		<section className="min-w-0 border p-5 sm:p-6 bg-card">
 			<h2 className="text-base font-semibold">New analysis job</h2>
 			<p className="mt-1 text-sm text-muted-foreground">
 				Pick what to analyze on Reddit. The status updates live while it runs.

@@ -3,25 +3,43 @@
 import { Progress as ProgressPrimitive } from "@base-ui/react/progress"
 import { cn } from "cn"
 
+type ProgressProps = React.ComponentProps<typeof ProgressPrimitive.Root> & {
+  trackColor?: string;
+  indicatorColor?: string;
+};
+
 function Progress({
   className,
   children,
+  trackColor = "bg-slate-700",
+  indicatorColor = "bg-slate-700",
   value,
   ...props
-}: ProgressPrimitive.Root.Props) {
+}: ProgressProps) {
   return (
     <ProgressPrimitive.Root
       value={value}
       data-slot="progress"
-      className={cn("flex flex-wrap gap-3", className)}
+      className={cn("w-full", className)}
       {...props}
     >
       {children}
-      <ProgressTrack>
-        <ProgressIndicator />
+
+      <ProgressTrack
+        className={cn(
+          "h-2.5 w-full overflow-hidden rounded-full",
+          trackColor
+        )}
+      >
+        <ProgressIndicator
+          className={cn(
+            "h-full rounded-full transition-all",
+            indicatorColor
+          )}
+        />
       </ProgressTrack>
     </ProgressPrimitive.Root>
-  )
+  );
 }
 
 function ProgressTrack({ className, ...props }: ProgressPrimitive.Track.Props) {
