@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import time
@@ -11,9 +12,8 @@ from fastapi import FastAPI, HTTPException, Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel
 
-from .config import settings
-
 from .canvas import build_rag_prompt
+from .config import settings
 from .database import (
     close_pool,
     get_comments_by_job,
@@ -26,7 +26,6 @@ from .database import (
 )
 from .embeddings import generate_embedding
 from .events import close_redis, publish_job_event
-from .fixtures import get_fixture_comments
 from .llm import call_openrouter_text
 from .metrics import http_duration, http_requests
 from .ranking import rerank_for_rag
@@ -63,6 +62,9 @@ async def lifespan(app: FastAPI):
         await start_worker()
     except Exception as e:
         logger.warning("BullMQ worker failed to start: %s", e)
+    from .embeddings import warmup
+
+    await asyncio.to_thread(warmup)
     yield
     await stop_worker()
     await close_redis()
@@ -132,21 +134,6 @@ async def health():
     return {"status": "ok", "service": "analysis-svc"}
 
 
-@app.post("/analyze/test")
-async def analyze_test_stub(payload: AnalyzeStubRequest):
-    return {
-        "job_id": payload.job_id,
-        "processed_comments_count": len(payload.comments),
-        "sentiment_summary": {
-            "positive_ratio": 0.65,
-            "neutral_ratio": 0.20,
-            "negative_ratio": 0.15,
-        },
-        "status": "ready_for_synthesis",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-    }
-
-
 @app.post("/analyze/sentiment")
 async def analyze_sentiment(payload: SentimentRequest):
     comments = [{"text": t, "author": "api", "upvotes": 0} for t in payload.comments]
@@ -178,12 +165,16 @@ async def trigger_analysis(job_id: str):
     await update_job_status(job_id, "Running")
     await publish_job_event(job_id, "running")
 
-    comments = get_fixture_comments()
+    comments = await get_comments_by_job(job_id)
+    if not comments:
+        raise HTTPException(
+            status_code=404, detail=f"No comments found for job {job_id}"
+        )
     scored = score_comments(comments)
     summary = compute_sentiment_summary(scored)
 
     for comment in scored:
-        embedding = generate_embedding(comment["text"])
+        embedding = await asyncio.to_thread(generate_embedding, comment["text"])
         await insert_comment(
             comment_id=comment["id"],
             job_id=job_id,
@@ -255,26 +246,28 @@ async def query_rag(payload: RagQueryRequest):
     if not job:
         raise HTTPException(status_code=404, detail=f"Job {payload.job_id} not found")
 
-    query_vec = generate_embedding(payload.query)
-    candidates = await search_comments_by_vector(payload.job_id, query_vec, limit=20)
+    query_vec = await asyncio.to_thread(generate_embedding, payload.query)
+    candidates = await search_comments_by_vector(
+        payload.job_id, query_vec, limit=settings.rag_top_k
+    )
     if not candidates:
         raise HTTPException(
             status_code=404,
             detail=f"Target job vector data not found for job {payload.job_id}",
         )
 
-    reranked = rerank_for_rag(candidates, top_k=5)
-    prompt = build_rag_prompt(payload.query, reranked)
+    reranked = rerank_for_rag(candidates, top_k=settings.rag_top_k)
+    prompt = build_rag_prompt(payload.query, reranked, job)
+
+    with open("/tmp/rag_prompt.txt", "w", encoding="utf-8") as file:
+        file.write(prompt)
 
     llm_answer = await call_openrouter_text(prompt, max_tokens=768, temperature=0.2)
-    if llm_answer and llm_answer.strip():
-        answer = llm_answer.strip()
-    else:
-        top_snippets = [f'"{c["text"]}" ({c["author"]})' for c in reranked[:3]]
-        answer = (
-            f"Based on the retrieved community feedback regarding '{payload.query}', "
-            f"users highlighted: {'; '.join(top_snippets)}."
-        )
+    if not llm_answer or not llm_answer.strip():
+        logger.error("RAG LLM failed for job %s", payload.job_id)
+        raise HTTPException(status_code=502, detail="LLM unavailable")
+
+    answer = llm_answer.strip()
 
     citations = [
         CommentCitation(

@@ -1,6 +1,8 @@
 import math
 from unittest.mock import AsyncMock, patch
 
+import pytest
+
 from fastapi.testclient import TestClient
 
 with patch("app.database.get_pool", new_callable=AsyncMock), patch(
@@ -19,23 +21,6 @@ def test_health_check():
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "service": "analysis-svc"}
-
-
-def test_analyze_stub_endpoint():
-    payload = {
-        "job_id": "test-job-999",
-        "comments": [
-            "Great tool, but pricing is too high.",
-            "Loved the customer support team.",
-        ],
-    }
-    response = client.post("/analyze/test", json=payload)
-    assert response.status_code == 200
-    data = response.json()
-    assert data["job_id"] == "test-job-999"
-    assert data["processed_comments_count"] == 2
-    assert "sentiment_summary" in data
-    assert data["status"] == "ready_for_synthesis"
 
 
 def test_sentiment_endpoint():
@@ -147,6 +132,31 @@ def test_swot_synthesis():
     assert "subjectivity_breakdown" in swot
 
 
+def test_swot_synthesis_keeps_full_comment_text():
+    from app.synthesis import synthesize_swot
+
+    text = "word " * 50
+    summary = {
+        "negative_ratio": 0.0,
+        "neutral_ratio": 0.0,
+        "avg_subjectivity": 0.5,
+        "fact_count": 0,
+        "opinion_count": 1,
+    }
+    comments = [
+        {
+            "text": text,
+            "compound": 0.8,
+            "subjectivity_label": "opinion",
+        },
+    ]
+
+    swot = synthesize_swot(summary, comments)
+
+    assert text in swot["strengths"][0]
+    assert "..." not in swot["strengths"][0]
+
+
 def test_blue_ocean_synthesis():
     from app.synthesis import synthesize_blue_ocean
 
@@ -172,7 +182,7 @@ def test_blue_ocean_synthesis():
 
 
 def test_fixture_comments():
-    from app.fixtures import get_fixture_comments
+    from tests.fixtures import get_fixture_comments
 
     comments = get_fixture_comments()
     assert len(comments) == 10
@@ -195,7 +205,7 @@ def test_publish_job_event():
 
 
 def test_rank_top_comments():
-    from app.fixtures import get_fixture_comments
+    from tests.fixtures import get_fixture_comments
     from app.ranking import rank_top_comments
     from app.sentiment import score_comments
 
@@ -210,7 +220,7 @@ def test_rank_top_comments():
 
 def test_build_synthesis_prompt():
     from app.canvas import build_synthesis_prompt
-    from app.fixtures import get_fixture_comments
+    from tests.fixtures import get_fixture_comments
     from app.sentiment import score_comments
 
     scored = score_comments(get_fixture_comments())
@@ -243,6 +253,14 @@ def test_build_rag_prompt():
     assert '<retrieved_comment id="c1"' in prompt
     assert 'relevance_score="0.88"' in prompt
 
+    with_persona = build_rag_prompt(
+        "What is the price?",
+        comments,
+        {"customer_persona": {"description": "freelance designers"}},
+    )
+    assert "<customer_persona>" in with_persona
+    assert "freelance designers" in with_persona
+
 
 def test_extract_json_object():
     from app.llm import extract_json_object
@@ -256,7 +274,7 @@ def test_extract_json_object():
 def test_synthesize_full_report_with_mocked_llm():
     import asyncio
 
-    from app.fixtures import get_fixture_comments
+    from tests.fixtures import get_fixture_comments
     from app.sentiment import compute_sentiment_summary, score_comments
     from app.synthesis import synthesize_full_report
 
@@ -312,10 +330,10 @@ def test_synthesize_full_report_with_mocked_llm():
         assert "Solo $9 Plan" in report["conclusion"]
 
 
-def test_synthesize_full_report_fallback_when_no_key():
+def test_synthesize_full_report_fails_when_llm_returns_nothing():
     import asyncio
 
-    from app.fixtures import get_fixture_comments
+    from tests.fixtures import get_fixture_comments
     from app.sentiment import compute_sentiment_summary, score_comments
     from app.synthesis import synthesize_full_report
 
@@ -327,10 +345,8 @@ def test_synthesize_full_report_fallback_when_no_key():
         new_callable=AsyncMock,
         return_value=None,
     ):
-        report = asyncio.run(synthesize_full_report(None, summary, scored))
-        assert "strengths" in report["swot"]
-        assert "factors" in report["blue_ocean"]
-        assert "Analysis of community feedback" in report["conclusion"]
+        with pytest.raises(RuntimeError, match="LLM synthesis failed"):
+            asyncio.run(synthesize_full_report(None, summary, scored))
 
 
 def test_rerank_for_rag():
@@ -380,6 +396,37 @@ def test_rag_query_endpoint_success():
         assert "pricing is considered expensive" in data["answer"]
         assert len(data["citations"]) == 1
         assert data["citations"][0]["author"] == "dev1"
+
+
+def test_rag_query_returns_502_when_llm_fails():
+    fake_comments = [
+        {
+            "id": "c-1",
+            "job_id": "job-123",
+            "text": "the monthly price is high",
+            "author": "dev1",
+            "upvotes": 45,
+            "sentiment_score": -0.5,
+            "similarity": 0.88,
+            "created_at": "2026-10-10t12:00:00z",
+        }
+    ]
+    with patch(
+        "app.main.get_job", new_callable=AsyncMock, return_value={"id": "job-123"}
+    ), patch(
+        "app.main.search_comments_by_vector",
+        new_callable=AsyncMock,
+        return_value=fake_comments,
+    ), patch(
+        "app.main.call_openrouter_text",
+        new_callable=AsyncMock,
+        return_value=None,
+    ):
+        response = client.post(
+            "/rag/query",
+            json={"job_id": "job-123", "query": "how is the pricing?"},
+        )
+        assert response.status_code == 502
 
 
 def test_rag_query_endpoint_job_not_found():

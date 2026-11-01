@@ -11,14 +11,8 @@ from .metrics import analysis_llm_duration, analysis_llm_requests
 
 logger = logging.getLogger("analysis-llm")
 
-# Free OpenRouter models come and go: checked on 2026-10-14 (gemma-3 and llama-3.3 were removed
-# from the free tier, gemma-4 is often rate-limited). The main model is OPENROUTER_MODEL.
-FALLBACK_MODELS = [
-    "nvidia/nemotron-3-super-120b-a12b:free",
-    "poolside/laguna-s-2.1:free",
-    "google/gemma-4-26b-a4b-it:free",
-    "openrouter/free",
-]
+# Primary model plus optional paid fallbacks from OPENROUTER_FALLBACK_MODELS.
+# Do not hardcode free-tier IDs here: they are removed without notice.
 
 
 def _record_llm(model: str, status: str, started: float) -> None:
@@ -28,8 +22,9 @@ def _record_llm(model: str, status: str, started: float) -> None:
 
 def _get_model_chain() -> list[str]:
     chain = [settings.openrouter_model]
-    for m in FALLBACK_MODELS:
-        if m not in chain:
+    for m in settings.openrouter_fallback_models.split(","):
+        m = m.strip()
+        if m and m not in chain:
             chain.append(m)
     return chain
 
@@ -71,6 +66,7 @@ async def _post_completion(
         "temperature": temperature,
         "max_tokens": max_tokens,
     }
+    # The free fallback does not advertise response_format.
     if json_mode and not model.endswith(":free"):
         body["response_format"] = {"type": "json_object"}
 

@@ -14,6 +14,8 @@ volumes:
     name: postgres_db
   redis_data:
     name: redis_db
+  redisinsight_data:
+    name: redisinsight_db
   grafana_data:
     name: grafana_db
   minio_data:
@@ -24,9 +26,9 @@ volumes:
     name: prometheus_db
   vault_data:
     name: vault_db
-  fake_bank_data:
-    name: fake_bank_db
-
+  # fake_bank_data:
+  #   name: fake_bank_db
+  #
 services:
   # --- Entry point -----------------------------------------------------
   nginx:
@@ -38,7 +40,7 @@ services:
     environment:
       # The OWASP rules allow only GET HEAD POST OPTIONS by default; the API also
       # uses PATCH (change a role, edit the org) and DELETE (remove a member, a job, an account).
-      ALLOWED_METHODS: "GET HEAD POST OPTIONS PATCH DELETE"
+      ALLOWED_METHODS: "GET HEAD POST OPTIONS PATCH DELETE PUT"
     depends_on: [gateway-svc, frontend, auth-svc, reporting-svc]
     healthcheck:
       # The image's own check calls https on 8443; this project serves plain http on 8080.
@@ -238,9 +240,19 @@ services:
     networks: [ft_network]
     restart: unless-stopped
 
+  redisinsight:
+    container_name: redisinsight
+    image: redis/redisinsight:latest
+    ports: ["127.0.0.1:5540:5540"]
+    volumes: ["redisinsight_data:/data"]
+    depends_on:
+      redis: { condition: service_healthy }
+    networks: [ft_network]
+    restart: unless-stopped
+
   # --- Security & secrets -----------------------------------------------
   vault:
-    container_name: vault 
+    container_name: vault
     image: vault-prod
     build: ./vault
     ports: ["127.0.0.1:8200:8200"]
@@ -331,81 +343,94 @@ services:
     networks: [ft_network]
     restart: unless-stopped
 
-  fake-bank-db:
-    container_name: fake-bank-db
-    image: postgres:17-alpine
-    environment:
-      POSTGRES_DB: fake_bank
-      POSTGRES_USER: fake_bank
-      POSTGRES_PASSWORD: ${FAKE_BANK_DB_PASSWORD}
-    volumes: ["fake_bank_data:/var/lib/postgresql/data"]
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U fake_bank -d fake_bank"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    networks: [ft_network]
-    restart: unless-stopped
-
-  fake-bank-migrate:
-    container_name: fake-bank-migrate
-    image: fake-bank-api
-    build:
-      context: ./fake-bank
-      dockerfile: docker/Dockerfile.api
-    environment:
-      DATABASE_URL: postgres://fake_bank:${FAKE_BANK_DB_PASSWORD}@fake-bank-db:5432/fake_bank
-    command: ["pnpm", "--filter", "@fake-bank/api", "db:migrate"]
-    depends_on:
-      fake-bank-db: { condition: service_healthy }
-    networks: [ft_network]
-    restart: "no"
-
-  fake-bank-api:
-    container_name: fake-bank-api
-    image: fake-bank-api
-    build:
-      context: ./fake-bank
-      dockerfile: docker/Dockerfile.api
-    environment:
-      API_HOST: 0.0.0.0
-      API_PORT: 8080
-      API_PUBLIC_BASE_URL: http://127.0.0.1:18080
-      CHECKOUT_PUBLIC_BASE_URL: http://127.0.0.1:15173
-      DATABASE_URL: postgres://fake_bank:${FAKE_BANK_DB_PASSWORD}@fake-bank-db:5432/fake_bank
-    expose: ["8080"]
-    ports: ["127.0.0.1:18080:8080"]
-    depends_on:
-      fake-bank-migrate: { condition: service_completed_successfully }
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/health').then((r)=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 5s
-    networks:
-      ft_network:
-        aliases: [api]
-    restart: unless-stopped
-
-  fake-bank-checkout:
-    container_name: fake-bank-checkout
-    image: fake-bank-checkout
-    build:
-      context: ./fake-bank
-      dockerfile: docker/Dockerfile.checkout-ui
-    ports: ["127.0.0.1:15173:5173"]
-    depends_on:
-      fake-bank-api: { condition: service_healthy }
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--output-document=-", "http://127.0.0.1:5173/health"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 5s
-    networks: [ft_network]
-    restart: unless-stopped
-
+  # fake-bank-db:
+  #   container_name: fake-bank-db
+  #   image: postgres:17-alpine
+  #   environment:
+  #     POSTGRES_DB: fake_bank
+  #     POSTGRES_USER: fake_bank
+  #     POSTGRES_PASSWORD: ${FAKE_BANK_DB_PASSWORD}
+  #   volumes: ["fake_bank_data:/var/lib/postgresql/data"]
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U fake_bank -d fake_bank"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 10
+  #   networks: [ft_network]
+  #   restart: unless-stopped
+  #
+  # fake-bank-migrate:
+  #   container_name: fake-bank-migrate
+  #   image: fake-bank-api
+  #   build:
+  #     context: ./fake-bank
+  #     dockerfile: docker/Dockerfile.api
+  #   environment:
+  #     DATABASE_URL: postgres://fake_bank:${FAKE_BANK_DB_PASSWORD}@fake-bank-db:5432/fake_bank
+  #   command: ["pnpm", "--filter", "@fake-bank/api", "db:migrate"]
+  #   depends_on:
+  #     fake-bank-db: { condition: service_healthy }
+  #   networks: [ft_network]
+  #   restart: "no"
+  #
+  # fake-bank-api:
+  #   container_name: fake-bank-api
+  #   image: fake-bank-api
+  #   build:
+  #     context: ./fake-bank
+  #     dockerfile: docker/Dockerfile.api
+  #   environment:
+  #     API_HOST: 0.0.0.0
+  #     API_PORT: 8080
+  #     API_PUBLIC_BASE_URL: http://127.0.0.1:18080
+  #     CHECKOUT_PUBLIC_BASE_URL: http://127.0.0.1:15173
+  #     DATABASE_URL: postgres://fake_bank:${FAKE_BANK_DB_PASSWORD}@fake-bank-db:5432/fake_bank
+  #   expose: ["8080"]
+  #   ports: ["127.0.0.1:18080:8080"]
+  #   depends_on:
+  #     fake-bank-migrate: { condition: service_completed_successfully }
+  #   healthcheck:
+  #     test:
+  #       [
+  #         "CMD",
+  #         "node",
+  #         "-e",
+  #         "fetch('http://127.0.0.1:8080/health').then((r)=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+  #       ]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 10
+  #     start_period: 5s
+  #   networks:
+  #     ft_network:
+  #       aliases: [api]
+  #   restart: unless-stopped
+  #
+  # fake-bank-checkout:
+  #   container_name: fake-bank-checkout
+  #   image: fake-bank-checkout
+  #   build:
+  #     context: ./fake-bank
+  #     dockerfile: docker/Dockerfile.checkout-ui
+  #   ports: ["127.0.0.1:15173:5173"]
+  #   depends_on:
+  #     fake-bank-api: { condition: service_healthy }
+  #   healthcheck:
+  #     test:
+  #       [
+  #         "CMD",
+  #         "wget",
+  #         "--quiet",
+  #         "--output-document=-",
+  #         "http://127.0.0.1:5173/health",
+  #       ]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 10
+  #     start_period: 5s
+  #   networks: [ft_network]
+  #   restart: unless-stopped
+  #
   # --- pgAdmin (database UI, for development) ---------------------------
   # Credentials come from .env; published on this machine only.
   pgadmin:

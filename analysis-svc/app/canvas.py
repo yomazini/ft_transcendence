@@ -61,7 +61,11 @@ def build_synthesis_prompt(job: dict | None, scored_comments: list[dict]) -> str
     )
 
 
-def build_rag_prompt(query: str, retrieved_comments: list[dict]) -> str:
+def build_rag_prompt(
+    query: str, retrieved_comments: list[dict], job: dict | None = None
+) -> str:
+
+    persona_xml = format_persona_xml(job) if job else ""
     rag_skill = (SKILLS_DIR / "skills-rag-followup-qa.md").read_text(encoding="utf-8")
     comments_block = []
     for i, c in enumerate(retrieved_comments, 1):
@@ -75,5 +79,6 @@ def build_rag_prompt(query: str, retrieved_comments: list[dict]) -> str:
             "</retrieved_comment>"
         )
 
-    full_context = f"<question>{query}</question>\n\n" + "\n".join(comments_block)
-    return f"{full_context}\n\n{rag_skill}"
+    full_context = f"{persona_xml}\n\n<question>{query}</question>\n\n"
+    comments_xml = "\n".join(comments_block)
+    return f"{full_context}{comments_xml}\n\n{rag_skill}"
