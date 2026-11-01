@@ -20,13 +20,13 @@ def synthesize_swot(sentiment_summary: dict, scored_comments: list[dict]) -> dic
     for c in top_positive:
         if c["compound"] >= 0.05:
             tag = c.get("subjectivity_label", "opinion").upper()
-            snippet = f"{c['text'][:80]}..." if len(c["text"]) > 80 else c["text"]
+            snippet = c["text"]
             strengths.append(f"[{tag}] \"{snippet}\" (sentiment: {c['compound']:.2f})")
 
     for c in top_negative:
         if c["compound"] <= -0.05:
             tag = c.get("subjectivity_label", "opinion").upper()
-            snippet = f"{c['text'][:80]}..." if len(c["text"]) > 80 else c["text"]
+            snippet = c["text"]
             weaknesses.append(f"[{tag}] \"{snippet}\" (sentiment: {c['compound']:.2f})")
 
     if sentiment_summary["negative_ratio"] > 0.3:
@@ -148,8 +148,8 @@ def generate_conclusion(sentiment_summary: dict, swot: dict) -> str:
         f"{sentiment_summary.get('positive_count', 0)} out of {total} "
         f"comments were positive ({pos:.0%}), while {sentiment_summary.get('negative_count', 0)} "
         f"were negative ({neg:.0%}). "
-        f"Key strengths include {first_strength[:60]}. "
-        f"Primary concerns center around {first_weakness[:60]}."
+        f"Key strengths include {first_strength}. "
+        f"Primary concerns center around {first_weakness}."
     )
 
 
@@ -208,8 +208,5 @@ async def synthesize_full_report(
             "conclusion": conclusion,
         }
 
-    return {
-        "swot": fallback_swot,
-        "blue_ocean": fallback_bo,
-        "conclusion": generate_conclusion(sentiment_summary, fallback_swot),
-    }
+    logger.error("LLM synthesis failed; no report generated")
+    raise RuntimeError("LLM synthesis failed")

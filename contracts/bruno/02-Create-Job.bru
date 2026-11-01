@@ -25,3 +25,7 @@ body:json {
     }
   }
 }
+
+script:post-response {
+  bru.setVar("job_id", res.body.id);
+}

@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Put,
+  Delete,
   Param,
   Body,
   HttpCode,
@@ -9,6 +11,7 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
+import { UpdateJobDto } from './dto/update-job.dto';
 import {
   ApiTags,
   ApiOperation,
@@ -36,6 +39,39 @@ export class JobsController {
     return { status: 'ok', service: 'gateway-svc' };
   }
 
+  @Public()
+  @Get('status')
+  @ApiOperation({ summary: 'Aggregated service health' })
+  @ApiResponse({ status: 200, description: 'Per-service status' })
+  async status() {
+    const targets = [
+      { service: 'gateway-svc', url: 'http://localhost:3001/api/health' },
+      { service: 'auth-svc', url: 'http://auth-svc:3002/auth/verify' },
+      { service: 'analysis-svc', url: 'http://analysis-svc:8001/health' },
+      { service: 'reporting-svc', url: 'http://reporting-svc:3003/health' },
+      { service: 'scraper-svc', url: 'http://scraper-svc:8000/health' },
+    ];
+
+    const results = await Promise.allSettled(
+      targets.map(async (t) => {
+        const res = await fetch(t.url, {
+          signal: AbortSignal.timeout(1500),
+        });
+        // 4xx means the process is reachable; auth-svc returns 401 on /verify.
+        return {
+          service: t.service,
+          status: res.status < 500 ? 'healthy' : 'unhealthy',
+        };
+      }),
+    );
+
+    return results.map((r, i) =>
+      r.status === 'fulfilled'
+        ? r.value
+        : { service: targets[i].service, status: 'unavailable' },
+    );
+  }
+
   @Post('jobs')
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth()
@@ -54,20 +90,48 @@ export class JobsController {
     return this.jobsService.createJob(body, req.user);
   }
 
+  @Put('jobs/:id')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update a job target/mode/persona' })
+  @ApiResponse({ status: 200, description: 'Job updated' })
+  @ApiResponse({ status: 404, description: 'Job not found' })
+  updateJob(
+    @Param('id') id: string,
+    @Body() body: UpdateJobDto,
+    @Req() req: any,
+  ) {
+    return this.jobsService.updateJob(id, body, req.user);
+  }
+
+  @Delete('jobs/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a job and its comments/report' })
+  @ApiResponse({ status: 204, description: 'Job deleted' })
+  @ApiResponse({ status: 404, description: 'Job not found' })
+  async deleteJob(@Param('id') id: string, @Req() req: any): Promise<void> {
+    await this.jobsService.deleteJob(id, req.user);
+  }
+
   @Post('rag/query')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: "Ask a question about one job's comments (RAG)" })
   @ApiResponse({ status: 200, description: 'Answer with cited comments' })
-  @ApiResponse({ status: 404, description: 'Job not found, or no analyzed comments yet' })
+  @ApiResponse({
+    status: 404,
+    description: 'Job not found, or no analyzed comments yet',
+  })
   ragQuery(@Body() body: RagQueryDto, @Req() req: any) {
     return this.jobsService.ragQuery(body.job_id, body.query, req.user);
   }
 
   @Get('jobs')
   @ApiBearerAuth()
-  @ApiOperation({ summary: "List the caller's organization jobs with their status" })
+  @ApiOperation({
+    summary: "List the caller's organization jobs with their status",
+  })
   @ApiResponse({ status: 200, description: 'Jobs, newest first' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   listJobs(@Req() req: any) {

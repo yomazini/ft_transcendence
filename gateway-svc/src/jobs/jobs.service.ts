@@ -19,6 +19,7 @@ import {
 import { EventsGateway } from '../events/events.gateway';
 import { AuthenticatedUser } from '../auth/jwt-auth.guard';
 import { jobCreated } from '../metrics/metrics';
+import { UpdateJobDto } from './dto/update-job.dto';
 
 /** Values of the JobModes enum in the shared database (owned by reporting-svc). */
 const JOB_MODES: Record<string, string> = {
@@ -71,6 +72,10 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     const jobId = randomUUID();
     const now = new Date().toISOString();
 
+    const orgDescription =
+      await this.databaseService.findOrganizationDescription(user.org_id);
+    const persona = dto.customer_persona;
+
     const jobRecord: JobRecord = {
       id: jobId,
       org_id: user.org_id,
@@ -78,10 +83,13 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       target: dto.target,
       mode: JOB_MODES[dto.mode.toLowerCase()],
       status: 'Queued',
-      customer_persona: dto.customer_persona || {
-        description: 'general market demographic',
-        price_sensitivity: 'budget',
-        top_priority: 'cost_saving',
+      customer_persona: {
+        description:
+          persona?.description ||
+          orgDescription ||
+          'general market demographic',
+        price_sensitivity: persona?.price_sensitivity || 'budget',
+        top_priority: persona?.top_priority || 'cost_saving',
       },
       created_at: now,
     };
@@ -151,7 +159,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ job_id: jobId, query }),
-        signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(60_000),
       });
     } catch (err: any) {
       if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
@@ -171,6 +179,22 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
 
   async listJobs(user: AuthenticatedUser): Promise<JobRecord[]> {
     return this.databaseService.findJobsByOrg(user.org_id);
+  }
+
+  async updateJob(id: string, dto: UpdateJobDto, user: AuthenticatedUser) {
+    await this.getJobById(id, user);
+    await this.databaseService.updateJob(id, user.org_id, {
+      target: dto.target,
+      mode: dto.mode ? JOB_MODES[dto.mode.toLowerCase()] : undefined,
+      customer_persona: dto.customer_persona,
+    });
+    return this.getJobById(id, user);
+  }
+
+  async deleteJob(id: string, user: AuthenticatedUser): Promise<void> {
+    await this.getJobById(id, user);
+
+    await this.databaseService.deleteJob(id, user.org_id);
   }
 
   async getJobById(id: string, user: AuthenticatedUser): Promise<JobRecord> {

@@ -1,0 +1,15 @@
+FROM soldevelo/minio:2026.7.17
+
+USER root
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl jq gosu && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --chmod=755 ./scripts/start.sh /usr/local/bin/start.sh
+COPY --chmod=755 ./scripts/vault-entrypoint.sh /usr/local/bin/vault-entrypoint.sh
+
+USER root
+
+ENTRYPOINT ["/usr/local/bin/start.sh"]
+CMD ["/opt/bitnami/scripts/minio/run.sh"]

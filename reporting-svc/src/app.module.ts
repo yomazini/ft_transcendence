@@ -7,6 +7,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { MetricsModule } from './metrics/metrics.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { HttpMetricsInterceptor } from './metrics/http-metrics/http-metrics.interceptor';
+import { HealthModule } from './health/health.module';
 
 @Module({
 	imports: [
@@ -19,6 +20,7 @@ import { HttpMetricsInterceptor } from './metrics/http-metrics/http-metrics.inte
 		BackupsModule,
 		ScheduleModule.forRoot(),
 		MetricsModule,
+		HealthModule,
 	],
 	controllers: [],
 	providers: [],

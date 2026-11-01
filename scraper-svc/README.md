@@ -6,36 +6,50 @@ TODO
 
 ## Instructions
 
-> [!NOTE]
-> This service requires Redis to be running on port `6379`.
+### Prerequisites
 
-To run and test the scraping script, you need to add a `.env` file to this directory.
+- Docker and Docker Compose installed.
+- A `.env` file in the repository root containing the secrets listed below.
 
-Add the `SESSION_IDS` environment variable to the `.env` file and set it to your Reddit session cookie.
+### Vault setup
 
-To run the script, use:
+Vault is self-unsealing and seeds its secrets automatically from the `.env` file
+on startup. No manual initialization or `vault kv put` is needed.
+
+Set the following variables in `.env`:
+
+| Variable                  | Vault path           | Key        | Description                                       |
+| ------------------------- | -------------------- | ---------- | ------------------------------------------------- |
+| `<POSTGRES_USER_VAR>`     | `secret/database`    | `user`     | PostgreSQL username                               |
+| `<POSTGRES_PASSWORD_VAR>` | `secret/database`    | `password` | PostgreSQL password                               |
+| `POSTGRES_DB`             | `secret/database`    | `database` | PostgreSQL database name                          |
+| `<REDDIT_SESSIONS_VAR>`   | `secret/scraper-svc` | `sessions` | Reddit session cookies, separated by commas (`,`) |
+
+> **Note:** Seeding is create-only. If a secret already exists in Vault, changing
+> its value in `.env` will not overwrite it.
+
+The scraper authenticates to Vault with its own AppRole. Its credentials are written to
+`vault/scrape-svc/login.json` and bind-mounted into the container at
+`/creds/login.json`.
+
+### Run the service
+
+From the repository root, start (or rebuild) the scraper:
 
 ```bash
-uv run --active --env-file .env scrapper-svc
+docker compose up -d --build scraper-svc
 ```
 
-The scraper will listen to Redis for new jobs in the scrape-job queue.
+Follow the logs:
 
-To test it, you can use the following script:
-
-
-```py
-from bullmq import Queue
-import asyncio
-
-async def exec():
-    queue = Queue('scrape-job')
-    await queue.add("job", {
-        "target": "https://www.reddit.com/r/learnprogramming/comments/1w6w78d/i_need_a_roadmap_for_c_programming_to_leasrn_real.json",
-        "mode": "post"
-        })
-    await queue.close()
-
-asyncio.run(exec())
+```bash
+docker compose logs -f scraper-svc
 ```
-To scrape a different post, change the target value. Make sure it points to a valid Reddit post.
+
+### How it works
+
+1. The scraper consumes jobs from the `scrape-job` Redis queue.
+2. It scrapes the Reddit post and its comments, then saves them to PostgreSQL.
+3. On success, it forwards the job to the `analyze-job` queue.
+
+> **Note:** Only Reddit post URLs are currently supported.

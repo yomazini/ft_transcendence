@@ -14,6 +14,8 @@ volumes:
     name: postgres_db
   redis_data:
     name: redis_db
+  redisinsight_data:
+    name: redisinsight_db
   grafana_data:
     name: grafana_db
   minio_data:
@@ -24,9 +26,6 @@ volumes:
     name: prometheus_db
   vault_data:
     name: vault_db
-  # fake_bank_data:
-  #   name: fake_bank_db
-
 services:
   # --- Entry point -----------------------------------------------------
   nginx:
@@ -38,7 +37,7 @@ services:
     environment:
       # The OWASP rules allow only GET HEAD POST OPTIONS by default; the API also
       # uses PATCH (change a role, edit the org) and DELETE (remove a member, a job, an account).
-      ALLOWED_METHODS: "GET HEAD POST OPTIONS PATCH DELETE"
+      ALLOWED_METHODS: "GET HEAD POST OPTIONS PATCH DELETE PUT"
     depends_on: [gateway-svc, frontend, auth-svc, reporting-svc]
     healthcheck:
       # The image's own check calls https on 8443; this project serves plain http on 8080.
@@ -85,7 +84,9 @@ services:
     env_file: .env
     depends_on:
       postgres: { condition: service_healthy }
-      vault: { condition: service_started }
+      vault: { condition: service_healthy }
+    volumes:
+      - "./vault/creds/auth-svc:/run/vault:ro" # [HOST_PATH]:[CONTAIENRT_PATH]:ro(readonly)
     networks: [ft_network]
     restart: unless-stopped
     # Owner: Mehdi
@@ -96,9 +97,12 @@ services:
     build: ./scraper-svc
     expose: ["8000"]
     env_file: .env
+    volumes:
+      - ./vault/creds/scraper-svc:/creds
     depends_on:
       redis: { condition: service_healthy }
       postgres: { condition: service_healthy }
+      vault: { condition: service_healthy }
     networks: [ft_network]
     restart: unless-stopped
     # Owner: Madani
@@ -129,11 +133,17 @@ services:
     build: ./reporting-svc
     expose: ["3003"]
     env_file: .env
+    volumes:
+      # i shod separate them later thy overwrite them selfs 
+      - "./vault/creds/database:/run/vault:ro"
+      - "./vault/creds/minio:/run/vault:ro"
     environment:
       # The MinIO keys come from the root .env, so they match the minio service.
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
     depends_on:
+      minio-init:
+        condition: service_completed_successfully
       postgres: { condition: service_healthy }
       minio: { condition: service_healthy }
     networks: [ft_network]
@@ -143,38 +153,75 @@ services:
   # Object storage for reporting-svc backups (it fails to start without it).
   minio:
     container_name: minio
-    image: soldevelo/minio:2026.7.17
-    command: server /bitnami/minio/data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    volumes: ["minio_data:/bitnami/minio/data", "minio_certs:/certs"]
-    expose: ["9000"]
+    image: minio
+    build:
+      context: ./reporting-svc
+      dockerfile: Dockerfile.minio
+
+    volumes:
+      - minio_data:/bitnami/minio/data
+      - minio_certs:/certs
+      - ./vault/creds/minio:/run/vault:ro
+
+    tmpfs:
+      - /tmp/minio-vault:mode=0700,uid=0,gid=0
+    depends_on:
+      vault:
+        condition: service_healthy
+    expose:
+      - "9000"
+      - "9001"
+
+    env_file: .env
+    ports:
+      - "9001:9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 5s
       timeout: 5s
       retries: 10
       start_period: 10s
-    networks: [ft_network]
+
+    networks:
+      - ft_network
+
     restart: unless-stopped
     # Owner: Oussama
 
   # --- Data stores --------------------------------------------------------
   postgres:
     container_name: postgres
-    image: pgvector/pgvector:pg16
+    build:
+      context: ./reporting-svc
+      dockerfile: Dockerfile.postgres
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./vault/creds/database:/run/vault:ro
+      - ./reporting-svc/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+
+    depends_on:
+      vault:
+        condition: service_healthy
+    command:
+      - postgres
+      - -c
+      - hba_file=/etc/postgresql/pg_hba.conf
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes: ["postgres_data:/var/lib/postgresql/data"]
+      PGDATA: /var/lib/postgresql/data/pgdata
+
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-      interval: 5s
+      test:
+        - CMD-SHELL
+        - 'pg_isready -h 127.0.0.1 -U "$$(cat /tmp/postgres-health-user)" -d "$$(cat /tmp/postgres-health-db)"'
+      interval: 10s
       timeout: 5s
       retries: 10
-    networks: [ft_network]
+      start_period: 30s
+
+    networks:
+      - ft_network
+
     restart: unless-stopped
     # Owner: Oussama (schema/migrations across all services)
 
@@ -187,6 +234,16 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks: [ft_network]
+    restart: unless-stopped
+
+  redisinsight:
+    container_name: redisinsight
+    image: redis/redisinsight:latest
+    ports: ["127.0.0.1:5540:5540"]
+    volumes: ["redisinsight_data:/data"]
+    depends_on:
+      redis: { condition: service_healthy }
     networks: [ft_network]
     restart: unless-stopped
 
@@ -254,7 +311,7 @@ services:
   # No ports: only Prometheus, inside ft_network, reads them.
   postgres-exporter:
     container_name: postgres-exporter
-    image: prometheuscommunity/postgres-exporter:v0.15.0
+    image: prometheuscommunity/postgres-exporter:v0.20.1
     environment:
       DATA_SOURCE_NAME: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
     depends_on: [postgres]
@@ -283,81 +340,6 @@ services:
     networks: [ft_network]
     restart: unless-stopped
 
-  # fake-bank-db:
-  #   container_name: fake-bank-db
-  #   image: postgres:17-alpine
-  #   environment:
-  #     POSTGRES_DB: fake_bank
-  #     POSTGRES_USER: fake_bank
-  #     POSTGRES_PASSWORD: ${FAKE_BANK_DB_PASSWORD}
-  #   volumes: ["fake_bank_data:/var/lib/postgresql/data"]
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U fake_bank -d fake_bank"]
-  #     interval: 5s
-  #     timeout: 5s
-  #     retries: 10
-  #   networks: [ft_network]
-  #   restart: unless-stopped
-
-  # fake-bank-migrate:
-  #   container_name: fake-bank-migrate
-  #   image: fake-bank-api
-  #   build:
-  #     context: ./fake-bank
-  #     dockerfile: docker/Dockerfile.api
-  #   environment:
-  #     DATABASE_URL: postgres://fake_bank:${FAKE_BANK_DB_PASSWORD}@fake-bank-db:5432/fake_bank
-  #   command: ["pnpm", "--filter", "@fake-bank/api", "db:migrate"]
-  #   depends_on:
-  #     fake-bank-db: { condition: service_healthy }
-  #   networks: [ft_network]
-  #   restart: "no"
-
-  # fake-bank-api:
-  #   container_name: fake-bank-api
-  #   image: fake-bank-api
-  #   build:
-  #     context: ./fake-bank
-  #     dockerfile: docker/Dockerfile.api
-  #   environment:
-  #     API_HOST: 0.0.0.0
-  #     API_PORT: 8080
-  #     API_PUBLIC_BASE_URL: http://127.0.0.1:18080
-  #     CHECKOUT_PUBLIC_BASE_URL: http://127.0.0.1:15173
-  #     DATABASE_URL: postgres://fake_bank:${FAKE_BANK_DB_PASSWORD}@fake-bank-db:5432/fake_bank
-  #   expose: ["8080"]
-  #   ports: ["127.0.0.1:18080:8080"]
-  #   depends_on:
-  #     fake-bank-migrate: { condition: service_completed_successfully }
-  #   healthcheck:
-  #     test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/health').then((r)=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
-  #     interval: 5s
-  #     timeout: 5s
-  #     retries: 10
-  #     start_period: 5s
-  #   networks:
-  #     ft_network:
-  #       aliases: [api]
-  #   restart: unless-stopped
-
-  # fake-bank-checkout:
-  #   container_name: fake-bank-checkout
-  #   image: fake-bank-checkout
-  #   build:
-  #     context: ./fake-bank
-  #     dockerfile: docker/Dockerfile.checkout-ui
-  #   ports: ["127.0.0.1:15173:5173"]
-  #   depends_on:
-  #     fake-bank-api: { condition: service_healthy }
-  #   healthcheck:
-  #     test: ["CMD", "wget", "--quiet", "--output-document=-", "http://127.0.0.1:5173/health"]
-  #     interval: 5s
-  #     timeout: 5s
-  #     retries: 10
-  #     start_period: 5s
-  #   networks: [ft_network]
-  #   restart: unless-stopped
-
   # --- pgAdmin (database UI, for development) ---------------------------
   # Credentials come from .env; published on this machine only.
   pgadmin:
@@ -371,3 +353,35 @@ services:
       postgres: { condition: service_healthy }
     networks: [ft_network]
     restart: unless-stopped
+  # new service for rstoring backups
+  restore-svc:
+    profiles: ["recovery"]
+    container_name: restore-svc
+    build:
+      context: ./restore-svc
+      dockerfile: Dockerfile
+    env_file: .env
+    volumes:
+      - ./vault/creds/minio:/run/vault
+
+    networks:
+      - ft_network
+
+    restart: "no"
+# new service to init minio
+  minio-init:
+    build:
+      context: ./restore-svc
+      dockerfile: Dockerfile.init
+    container_name: restore-svc
+    volumes:
+      - ./restore-svc/scripts/init-minio.sh:/scripts/init-minio.sh:ro
+      - ./vault/creds/minio:/run/vault:ro
+    depends_on:
+      vault:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - ft_network
+    restart: "no"

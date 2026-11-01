@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 import uuid
@@ -16,7 +17,6 @@ from .database import (
 )
 from .embeddings import generate_embedding
 from .events import publish_job_event
-from .fixtures import get_fixture_comments
 from .metrics import analysis_jobs, analysis_stage_duration
 from .sentiment import compute_sentiment_summary, score_comments
 from .synthesis import synthesize_full_report
@@ -61,16 +61,17 @@ async def process_job(job, token):
             ]
             from_db = False
         else:
-            comments = get_fixture_comments()
-            from_db = False
+            raise ValueError(f"Job {job_id} has no comments")
 
         started = time.perf_counter()
         scored = score_comments(comments)
         summary = compute_sentiment_summary(scored)
-        analysis_stage_duration.labels("sentiment").observe(time.perf_counter() - started)
+        analysis_stage_duration.labels("sentiment").observe(
+            time.perf_counter() - started
+        )
 
         for comment in scored:
-            embedding = generate_embedding(comment["text"])
+            embedding = await asyncio.to_thread(generate_embedding, comment["text"])
             if from_db:
                 await update_comment_analysis(
                     comment_id=comment["id"],
@@ -90,7 +91,9 @@ async def process_job(job, token):
 
         started = time.perf_counter()
         report_data = await synthesize_full_report(job_row, summary, scored)
-        analysis_stage_duration.labels("synthesis").observe(time.perf_counter() - started)
+        analysis_stage_duration.labels("synthesis").observe(
+            time.perf_counter() - started
+        )
         report_id = str(uuid.uuid4())
 
         await insert_report(
@@ -134,6 +137,7 @@ async def start_worker():
         cast(Any, process_job),
         {
             "connection": f"redis://{settings.redis_host}:{settings.redis_port}",
+            "concurrency": settings.worker_concurrency,
         },
     )
     logger.info("BullMQ worker started on queue %s", settings.queue_name)

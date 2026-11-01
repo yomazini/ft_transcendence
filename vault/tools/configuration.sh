@@ -25,7 +25,7 @@ vault operator unseal $(jq -r '.unseal_key' $CREDS_FILE)
 
 export VAULT_TOKEN=$(jq -r '.token' $CREDS_FILE)
 
-services=("analysis-svc" "database" "minio" "auth-svc" "grafana" "scraper-svc" "gateway-svc")
+services=("analysis-svc" "reporting-svc" "auth-svc" "grafana" "scraper-svc" "gateway-svc")
 
 for policy in "${services[@]}"; do
 	vault policy write "$policy" /policies/"$policy".hcl
@@ -101,7 +101,10 @@ vault_put grafana \
 
 vault_put minio \
 	user="${MINIO_ROOT_USER}" \
-	password="${MINIO_ROOT_PASSWORD}"
+	password="${MINIO_ROOT_PASSWORD}"  \
+	access_key=${MINIO_ACCESS_KEY} \
+	secret_key=${MINIO_SECRET_KEY} \
+	backup_hmac_key=${BACKUP_HMAC_KEY}
 
 unset REDDIT_SESSIONS POSTGRES_PASSWORD JWT_SECRET FORTYTWO_CLIENT_ID \
 	FORTYTWO_CLIENT_SECRET MAIL_PASS GEMINI_API_KEY OPENROUTER_API_KEY \

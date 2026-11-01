@@ -1,0 +1,35 @@
+meta {
+  name: 28 Gateway Update Job
+  type: http
+  seq: 28
+}
+
+put {
+  url: {{nginx_url}}/api/jobs/{{job_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "target": "r/updated"
+  }
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("target was updated", function() {
+    expect(res.body.target).to.equal("r/updated");
+  });
+
+  test("job id is unchanged", function() {
+    expect(res.body.id).to.equal(bru.getVar("job_id"));
+  });
+}
