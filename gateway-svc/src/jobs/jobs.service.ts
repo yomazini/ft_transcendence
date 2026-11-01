@@ -69,6 +69,15 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   }
 
   async createJob(dto: CreateJobDto, user: AuthenticatedUser) {
+    const target = dto.target.trim();
+    const existing = await this.databaseService.findActiveJobByTarget(
+      user.org_id,
+      target,
+    );
+    if (existing) {
+      return { ...existing, deduplicated: true };
+    }
+
     const jobId = randomUUID();
     const now = new Date().toISOString();
 
@@ -80,7 +89,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       id: jobId,
       org_id: user.org_id,
       created_by: user.id,
-      target: dto.target,
+      target,
       mode: JOB_MODES[dto.mode.toLowerCase()],
       status: 'Queued',
       customer_persona: {
@@ -111,7 +120,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
           'scrape',
           {
             id: jobId,
-            target: dto.target,
+            target,
             mode: dto.mode.toLowerCase(),
             org_id: user.org_id,
             created_by: user.id,
