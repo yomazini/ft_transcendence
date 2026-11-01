@@ -3,6 +3,7 @@ import {
   OnModuleInit,
   OnModuleDestroy,
   Logger,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { Pool, QueryResult } from 'pg';
 
@@ -36,10 +37,6 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private readonly inMemoryJobs = new Map<string, JobRecord>();
   private readonly inMemoryReports = new Map<string, ReportRecord>();
 
-  constructor() {
-    this.seedDefaultStubData();
-  }
-
   private retryTimer?: NodeJS.Timeout;
 
   async onModuleInit() {
@@ -50,7 +47,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     const host = process.env.POSTGRES_HOST || 'postgres';
     const port = parseInt(process.env.POSTGRES_PORT || '5432', 10);
     const user = process.env.POSTGRES_USER || 'ft_transcendence';
-    const password = process.env.POSTGRES_PASSWORD || 'changeme';
+    const password = process.env.POSTGRES_PASSWORD;
     const database = process.env.POSTGRES_DB || 'ft_transcendence';
 
     try {
@@ -83,33 +80,46 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   }
 
   async saveJob(job: JobRecord): Promise<void> {
-    this.inMemoryJobs.set(job.id, job);
-
-    if (this.isConnected && this.pool) {
-      try {
-        const query = `
-          INSERT INTO "Job" (id, org_id, created_by, target, mode, status, customer_persona, created_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-          ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status;
-        `;
-        await this.pool.query(query, [
-          job.id,
-          job.org_id,
-          job.created_by,
-          job.target,
-          this.normalizeJobMode(job.mode),
-          this.normalizeJobStatus(job.status),
-
-          JSON.stringify(job.customer_persona),
-          new Date(job.created_at),
-        ]);
-        this.logger.log(`Persisted Job ${job.id} to PostgreSQL`);
-      } catch (err: any) {
-        this.logger.warn(
-          `Failed to persist Job to DB: ${err.message}. Retained in in-memory store.`,
-        );
-      }
+    if (!this.isProduction) {
+      this.inMemoryJobs.set(job.id, job);
     }
+
+    if (!this.isConnected || !this.pool) {
+      if (this.isProduction) {
+        throw new ServiceUnavailableException('database unavailable');
+      }
+      return;
+    }
+
+    try {
+      const query = `
+        INSERT INTO "Job" (id, org_id, created_by, target, mode, status, customer_persona, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status;
+      `;
+      await this.pool.query(query, [
+        job.id,
+        job.org_id,
+        job.created_by,
+        job.target,
+        this.normalizeJobMode(job.mode),
+        this.normalizeJobStatus(job.status),
+        JSON.stringify(job.customer_persona),
+        new Date(job.created_at),
+      ]);
+      this.logger.log(`Persisted Job ${job.id} to PostgreSQL`);
+    } catch (err: any) {
+      if (this.isProduction) {
+        throw new ServiceUnavailableException('could not persist job');
+      }
+      this.logger.warn(
+        `Failed to persist Job to DB: ${err.message}. Retained in in-memory store.`,
+      );
+    }
+  }
+
+  private get isProduction(): boolean {
+    return process.env.NODE_ENV == 'production';
   }
 
   /** Used when a service that has no database access (scraper-svc) reports a failure. */
@@ -122,6 +132,61 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       ]);
     } catch (err: any) {
       this.logger.warn(`Failed to update status of job ${id}: ${err.message}`);
+    }
+  }
+
+  async findOrganizationDescription(orgId: string): Promise<string | null> {
+    if (!this.isConnected || !this.pool) return null;
+    try {
+      const res = await this.pool.query(
+        `SELECT description FROM "Organization" WHERE id = $1`,
+        [orgId],
+      );
+      return res.rows[0]?.description ?? null;
+    } catch (err: any) {
+      this.logger.warn(
+        `Failed to read organization ${orgId} description: ${err.message}`,
+      );
+      return null;
+    }
+  }
+  async findActiveJobByTarget(
+    orgId: string,
+    target: string,
+  ): Promise<JobRecord | null> {
+    if (!this.isConnected || !this.pool) {
+      const cached = Array.from(this.inMemoryJobs.values()).find(
+        (job) =>
+          job.org_id === orgId &&
+          job.target === target &&
+          ['queued', 'running'].includes(job.status.toLowerCase()),
+      );
+      return cached ?? null;
+    }
+
+    try {
+      const res: QueryResult = await this.pool.query(
+        `SELECT id, org_id, created_by, target, mode, status, customer_persona, created_at
+           FROM "Job"
+          WHERE org_id = $1
+            AND target = $2
+            AND status IN ('Queued', 'Running')
+          ORDER BY created_at DESC
+          LIMIT 1;`,
+        [orgId, target],
+      );
+      return res.rows[0]
+        ? {
+            ...res.rows[0],
+            mode: String(res.rows[0].mode).toLowerCase(),
+            status: String(res.rows[0].status).toLowerCase(),
+          }
+        : null;
+    } catch (err: any) {
+      this.logger.warn(
+        `Failed to find active job for ${orgId}/${target}: ${err.message}`,
+      );
+      return null;
     }
   }
 
@@ -151,6 +216,53 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       this.logger.warn(`Failed to list jobs of org ${orgId}: ${err.message}`);
       return [];
     }
+  }
+
+  async updateJob(
+    id: string,
+    orgId: string,
+    fields: {
+      target?: string;
+      mode?: string;
+      customer_persona?: unknown;
+    },
+  ): Promise<void> {
+    const cached = this.inMemoryJobs.get(id);
+    if (cached) {
+      this.inMemoryJobs.set(id, { ...cached, ...fields });
+    }
+    if (!this.isConnected || !this.pool) return;
+
+    await this.pool.query(
+      `
+        UPDATE "Job"
+        SET target = COALESCE($1, target),
+            mode = COALESCE($2::"JobModes", mode),
+            customer_persona = COALESCE($3::jsonb, customer_persona)
+        WHERE id = $4 AND org_id = $5;
+      `,
+      [
+        fields.target ?? null,
+        fields.mode ?? null,
+        fields.customer_persona
+          ? JSON.stringify(fields.customer_persona)
+          : null,
+        id,
+        orgId,
+      ],
+    );
+  }
+
+  async deleteJob(id: string, orgId: string): Promise<void> {
+    this.inMemoryJobs.delete(id);
+    this.inMemoryReports.delete(id);
+
+    if (!this.isConnected || !this.pool) return;
+
+    await this.pool.query('DELETE FROM "Job" WHERE id = $1 AND org_id = $2;', [
+      id,
+      orgId,
+    ]);
   }
 
   async findJobById(id: string): Promise<JobRecord | null> {
@@ -235,76 +347,5 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     return map[status.toLowerCase()] || 'Queued';
   }
 
-  private seedDefaultStubData() {
-    // Never expose demo jobs/reports in production.
-    if (process.env.NODE_ENV === 'production') return;
 
-    const defaultJobId = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
-    const seedJobId = 'a18f2d90-3b41-4e2a-9f12-987654321abc';
-
-    const defaultReport: ReportRecord = {
-      id: 'c39e4a81-9b12-4f3e-8c3d-123456789abc',
-      job_id: defaultJobId,
-      swot: {
-        strengths: [
-          'High organic community praise for responsive customer support',
-          'Fast synchronization and reliable offline access',
-        ],
-        weaknesses: [
-          'Mobile application UX feels bloated according to power users',
-          'Pricing friction and lack of granular seat-based tiers',
-        ],
-        opportunities: [
-          'Automated topic auto-organization and AI sentiment insights',
-          'High demand for verified Reddit comment citation search',
-        ],
-        threats: [
-          'Incumbent SaaS competitors launching bundled LLM features',
-          'Users switching to minimal markdown self-hosted tools',
-        ],
-      },
-      blue_ocean: {
-        eliminate: [
-          'Complex manual database setups',
-          'Bloated multi-tier onboarding forms',
-        ],
-        reduce: [
-          'Report generation latency',
-          'Cost per analyzed Reddit thread',
-        ],
-        raise: [
-          'Actionable customer sentiment resolution',
-          'Traceability to original comments',
-        ],
-        create: [
-          'One-click executive SWOT synthesis',
-          'Interactive pgvector semantic chat',
-        ],
-      },
-      conclusion:
-        'Users value fast synchronization and clear support, but express dissatisfaction regarding opaque auto-renewals. Strong market opportunity exists for an automated social intelligence dashboard.',
-      created_at: new Date().toISOString(),
-    };
-
-    this.inMemoryJobs.set(defaultJobId, {
-      id: defaultJobId,
-      org_id: '018f2d90-3b41-7e2a-9f12-111122223333',
-      created_by: '01111111-1111-7111-8111-111111111111',
-      target: 'r/freelance',
-      mode: 'Subreddit',
-      status: 'Done',
-      customer_persona: {
-        description: 'budget-conscious freelancers',
-        price_sensitivity: 'budget',
-        top_priority: 'speed',
-      },
-      created_at: new Date().toISOString(),
-    });
-    this.inMemoryReports.set(defaultJobId, defaultReport);
-    this.inMemoryReports.set(seedJobId, {
-      ...defaultReport,
-      job_id: seedJobId,
-    });
-    this.inMemoryReports.set(defaultReport.id, defaultReport);
-  }
 }

@@ -94,9 +94,15 @@ class Settings:
 		self._load()
 		self._login()
 		self._get_secrets()
+		self._client.adapter.close()
+
 
 		self._log("Application settings initialized successfully")
-		
+
+
+	def _close(self):
+		self._client.adapter.close()
+
 	def _log(self, msg:str) -> None:
 		g.logger.info("Settings: %s", msg)
 

@@ -41,33 +41,39 @@ export class EventsGateway
     const host = process.env.REDIS_HOST || 'redis';
     const port = parseInt(process.env.REDIS_PORT || '6379', 10);
 
-    this.subscriber = new Redis({ host, port, lazyConnect: true });
+    this.subscriber = new Redis({
+      host,
+      port,
+      retryStrategy: (times) => Math.min(times * 200, 2000),
+    });
     this.subscriber.on('error', (err) => {
       this.logger.warn(`Redis subscriber error: ${err.message}`);
     });
-
-    try {
-      await this.subscriber.connect();
-      await this.subscriber.subscribe('job-events');
-      this.subscriber.on('message', (channel, message) => {
-        if (channel !== 'job-events') return;
-        try {
-          const data = JSON.parse(message);
-          const { job_id, status, ...extra } = data;
-          if (job_id && status) {
-            // scraper-svc has no database access: record its failures here.
-            if (status === 'failed') {
-              void this.databaseService.updateJobStatus(job_id, 'failed');
-            }
-            void this.broadcastJobStatus(job_id, status, extra);
+    this.subscriber.on('message', (channel, message) => {
+      if (channel !== 'job-events') return;
+      try {
+        const data = JSON.parse(message);
+        const { job_id, status, ...extra } = data;
+        if (job_id && status) {
+          // scraper-svc has no database access: record its failures here.
+          if (status === 'failed') {
+            void this.databaseService.updateJobStatus(job_id, 'failed');
           }
-        } catch {
-          this.logger.warn(`Invalid job-events payload: ${message}`);
+          void this.broadcastJobStatus(job_id, status, extra);
         }
-      });
-    } catch (err: any) {
-      this.logger.warn(`Could not subscribe to job-events: ${err.message}`);
-    }
+      } catch {
+        this.logger.warn(`Invalid job-events payload: ${message}`);
+      }
+    });
+    // ioredis reconnects automatically; subscribe again whenever it is ready.
+    this.subscriber.on('ready', () => {
+      void this.subscriber
+        ?.subscribe('job-events')
+        .then(() => this.logger.log('Subscribed to job-events'))
+        .catch((err) =>
+          this.logger.warn(`Could not subscribe to job-events: ${err.message}`),
+        );
+    });
   }
 
   async onModuleDestroy() {
@@ -112,25 +118,24 @@ export class EventsGateway
     this.logger.log(`Client disconnected: ${client.id}`);
   }
 
- 
-async broadcastJobStatus(
-  jobId: string,
-  status: 'queued' | 'running' | 'done' | 'failed',
-  extraData?: Record<string, any>,
-) {
-  const payload = { job_id: jobId, status, ...extraData };
-  const job = await this.databaseService.findJobById(jobId);
-  if (!job) {
-    this.logger.warn(`No job ${jobId}; skipping WebSocket emit`);
-    return;
-  }
+  async broadcastJobStatus(
+    jobId: string,
+    status: 'queued' | 'running' | 'done' | 'failed',
+    extraData?: Record<string, any>,
+  ) {
+    const payload = { job_id: jobId, status, ...extraData };
+    const job = await this.databaseService.findJobById(jobId);
+    if (!job) {
+      this.logger.warn(`No job ${jobId}; skipping WebSocket emit`);
+      return;
+    }
 
-  if (!this.server) {
-    this.logger.warn('WebSocket server not initialized; skipping emit');
-    return;
-  }
+    if (!this.server) {
+      this.logger.warn('WebSocket server not initialized; skipping emit');
+      return;
+    }
 
-  this.server.to(job.org_id).emit(`job:${status}`, payload);
-  this.server.to(job.org_id).emit('job:update', payload);
-}
+    this.server.to(job.org_id).emit(`job:${status}`, payload);
+    this.server.to(job.org_id).emit('job:update', payload);
+  }
 }

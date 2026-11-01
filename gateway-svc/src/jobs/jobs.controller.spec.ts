@@ -51,6 +51,32 @@ describe('JobsController', () => {
     });
   });
 
+  describe('status', () => {
+    it('reports each service independently', async () => {
+      const fetchMock = jest
+        .spyOn(globalThis, 'fetch')
+        .mockImplementation(async (input: RequestInfo | URL) => {
+          const url = String(input);
+          if (url.includes('analysis-svc')) {
+            throw new Error('analysis down');
+          }
+          return { status: url.includes('auth-svc') ? 401 : 200 } as Response;
+        });
+
+      const result = await controller.status();
+
+      expect(result).toEqual([
+        { service: 'gateway-svc', status: 'healthy' },
+        { service: 'auth-svc', status: 'healthy' },
+        { service: 'analysis-svc', status: 'unavailable' },
+        { service: 'reporting-svc', status: 'healthy' },
+        { service: 'scraper-svc', status: 'healthy' },
+      ]);
+
+      fetchMock.mockRestore();
+    });
+  });
+
   describe('createJob', () => {
     it('should create and enqueue a job', async () => {
       const dto = {
@@ -69,25 +95,74 @@ describe('JobsController', () => {
       expect(result.status).toBe('Queued');
       expect(result.target).toBe('r/freelance');
     });
+
+    it('returns an existing active job for the same target', async () => {
+      const dto = {
+        mode: 'post',
+        target: 'https://www.reddit.com/r/test/comments/x/y/',
+      };
+
+      const first = await controller.createJob(dto, { user: mockUser });
+      const second = await controller.createJob(dto, { user: mockUser });
+
+      expect(second.id).toBe(first.id);
+      expect((second as any).deduplicated).toBe(true);
+      expect((service as any).scrapeQueue.add).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses the organization description when no persona is sent', async () => {
+      const database = (service as any).databaseService;
+      const spy = jest
+        .spyOn(database, 'findOrganizationDescription')
+        .mockResolvedValue('We build scheduling software for freelancers');
+
+      const result = await controller.createJob(
+        { mode: 'post', target: 'https://www.reddit.com/r/test/comments/x/y/' },
+        { user: mockUser },
+      );
+
+      expect(result.customer_persona.description).toBe(
+        'We build scheduling software for freelancers',
+      );
+      spy.mockRestore();
+    });
   });
 
   describe('getJob', () => {
-    it('should return job details', async () => {
-      const jobId = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
-      const result = await controller.getJob(jobId, { user: mockUser });
+    it('should return a created job', async () => {
+      const created = await controller.createJob(
+        { mode: 'post', target: 'https://www.reddit.com/r/test/comments/x/y/' },
+        { user: mockUser },
+      );
+
+      const result = await controller.getJob(created.id, { user: mockUser });
       expect(result).toBeDefined();
-      expect(result.id).toBe(jobId);
+      expect(result.id).toBe(created.id);
     });
   });
 
   describe('getReport', () => {
-    it('should return SWOT and Blue Ocean report', async () => {
-      const jobId = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
-      const result = await controller.getReport(jobId, { user: mockUser });
+    it('should return the report for a created job', async () => {
+      const database = (service as any).databaseService;
+      const created = await controller.createJob(
+        { mode: 'post', target: 'https://www.reddit.com/r/test/comments/x/y/' },
+        { user: mockUser },
+      );
+
+      const spy = jest.spyOn(database, 'findReportByJobId').mockResolvedValue({
+        id: 'report-1',
+        job_id: created.id,
+        swot: { strengths: ['Fast support'] },
+        blue_ocean: { factors: {} },
+        conclusion: 'Good product.',
+        created_at: new Date().toISOString(),
+      });
+
+      const result = await controller.getReport(created.id, { user: mockUser });
       expect(result).toBeDefined();
-      expect(result.swot).toBeDefined();
       expect(result.swot.strengths).toBeInstanceOf(Array);
       expect(result.blue_ocean).toBeDefined();
+      spy.mockRestore();
     });
   });
 

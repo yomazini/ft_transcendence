@@ -1,0 +1,21 @@
+meta {
+  name: 29 Gateway Delete Job
+  type: http
+  seq: 29
+}
+
+delete {
+  url: {{nginx_url}}/api/jobs/{{job_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("status is 204", function() {
+    expect(res.status).to.equal(204);
+  });
+}

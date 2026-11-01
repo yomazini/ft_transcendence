@@ -1,14 +1,13 @@
-import os, asyncio
+import os, asyncio, time
 import scraper_svc.globals as g
 import bullmq as bmq
 from typing import Any, cast
-from scraper_svc.helpers import scrape_job, add_job, update_job_status, RateLimitError
+from scraper_svc.helpers import scrape_job, get_job, update_job_status, RateLimitError
 from scraper_svc.models import Job, Jobstatuses
 
 
 JOB_QUEUE=os.getenv('JOB_QUEUE','scrape-job')
-ANALYSIS_QUEUE=os.getenv("ANALYSIS_QUEUE", 'analyze-job')
-MAX_WORKER=5
+DATABASE_QUEUE=os.getenv("DATABASE_QUEUE", 'database-job')
 
 class ScrapingWorker:
 	worker: bmq.Worker
@@ -22,51 +21,84 @@ class ScrapingWorker:
 			JOB_QUEUE,
 			cast(Any, self.scrape),
 			{
-				'concurrency': worker_num if worker_num < MAX_WORKER else MAX_WORKER,
+				'concurrency': worker_num if worker_num < g.MAX_WORKER else g.MAX_WORKER,
 				'connection': g.REDIS_URL,
 				'autorun': False
 			}
 		)
 		self.queue = bmq.Queue(
-			ANALYSIS_QUEUE,
+			DATABASE_QUEUE,
 			{'connection': g.REDIS_URL}
 		)		
 
 	async def scrape(self, job: bmq.Job, token: str) -> None:
+		start_time = time.monotonic()
 		data = job.data
-		data["mode"] = str(data["mode"]).capitalize()
+		mode : str = "unknown"
+		# data["mode"] = str(data["mode"]).capitalize()
+		g.scraper_jobs_in_progress.inc()
 		try:
-			job_data = Job(**data)
-			self.log(f'Received Job {job_data.id} type {data["mode"]}')
+			job_data = get_job(data["id"])
+			mode = job_data.mode.value.lower()
+			self.log(f'Received Job {job_data.id} type {job_data.mode.value}')
 			await update_job_status(job_data.id, Jobstatuses.RUNNING, None)
 			body = await asyncio.to_thread(scrape_job, job_data.target, job_data.mode)
-			add_job(str(job_data.id), body, job_data.mode)
-			self.log(f"Scraping Job {job_data.id} complete")
-			await self.queue.add("analyze", data)
+			self.log(f'Sending {job_data.id} to database-job')
+			await self.queue.add(
+				"database",
+				{
+					'id': job_data.id,
+					'data': body
+				},
+				{
+					'attempts': 3,
+					'backoff': {
+						'type': "fixed",
+						'delay': 2000
+					}
+				}
+			)
 
 		except RateLimitError as exc:
-			g.logger.warning(
-				"Scrape Worker: job rate limited job_id=[%s] reason=%s",
-				data["id"],
-				exc,
-			)
-			if job.attemptsMade >= job.opts.get("attempts", 1) - 1:
+			attempts = job.attemptsMade
+			max_attempts = job.opts.get("attempts", 1) - 1
+			
+			if attempts >= max_attempts:
+				g.logger.warning("Scrape Worker: job [%s] reason=Too many retries", data["id"])
+				g.scraper_jobs_total.labels("failed").inc()
 				await update_job_status(data["id"], Jobstatuses.FAILED, str(exc))
+			else:
+				g.logger.warning(
+					"Scrape Worker: job [%s] rate limited, retries left (%d)",
+					data["id"],
+					max_attempts - attempts
+				)
 			raise
 
 		except Exception as exc:
 			job_id = data.get("id" , None)
 			g.logger.warning(
-				"Scrape Worker: failed permanently job_id=%s reason=%s",
+				"Scrape Worker: failed permanently [%s] error_name=%s reason=%s",
 				job_id,
+				type(exc).__name__,
 				exc
 			)
-			if job_id is not None:
+			g.scraper_jobs_total.labels("failed").inc()
+			if job_id:
 				await update_job_status(job_id, Jobstatuses.FAILED, str(exc))
 			raise bmq.UnrecoverableError(str(exc)) from exc
+		finally:
+			end_time = time.monotonic()
+			g.scraper_jobs_in_progress.dec()
+			g.scraper_job_duration_seconds.labels(mode).observe(end_time - start_time)
+
 
 	def log(self, msg: str):
 		g.logger.info("Scrape worker: %s", msg)
+
+	async def stop(self):
+		await self.worker.close()
+		await self.queue.close()
 
 	async def start(self):
 		self.log(f"Service is ready for jobs")
