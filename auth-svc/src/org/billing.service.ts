@@ -82,7 +82,7 @@ export class BillingService {
 	}
 
 	private async getOrganization(identity: BillingIdentity, admin = false) {
-		if (admin && identity.role !== 'admin') {
+		if (admin && identity.role !== 'Admin') {
 			throw new ForbiddenException(
 				'Only organization admins can manage billing',
 			);
