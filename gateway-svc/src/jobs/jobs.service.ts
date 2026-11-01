@@ -70,14 +70,6 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
 
   async createJob(dto: CreateJobDto, user: AuthenticatedUser) {
     const target = dto.target.trim();
-    const existing = await this.databaseService.findActiveJobByTarget(
-      user.org_id,
-      target,
-    );
-    if (existing) {
-      return { ...existing, deduplicated: true };
-    }
-
     const jobId = randomUUID();
     const now = new Date().toISOString();
 

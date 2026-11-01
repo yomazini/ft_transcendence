@@ -150,45 +150,6 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       return null;
     }
   }
-  async findActiveJobByTarget(
-    orgId: string,
-    target: string,
-  ): Promise<JobRecord | null> {
-    if (!this.isConnected || !this.pool) {
-      const cached = Array.from(this.inMemoryJobs.values()).find(
-        (job) =>
-          job.org_id === orgId &&
-          job.target === target &&
-          ['queued', 'running'].includes(job.status.toLowerCase()),
-      );
-      return cached ?? null;
-    }
-
-    try {
-      const res: QueryResult = await this.pool.query(
-        `SELECT id, org_id, created_by, target, mode, status, customer_persona, created_at
-           FROM "Job"
-          WHERE org_id = $1
-            AND target = $2
-            AND status IN ('Queued', 'Running')
-          ORDER BY created_at DESC
-          LIMIT 1;`,
-        [orgId, target],
-      );
-      return res.rows[0]
-        ? {
-            ...res.rows[0],
-            mode: String(res.rows[0].mode).toLowerCase(),
-            status: String(res.rows[0].status).toLowerCase(),
-          }
-        : null;
-    } catch (err: any) {
-      this.logger.warn(
-        `Failed to find active job for ${orgId}/${target}: ${err.message}`,
-      );
-      return null;
-    }
-  }
 
   /** The latest jobs of one organization, newest first (dashboard job list). */
   async findJobsByOrg(orgId: string, limit = 50): Promise<JobRecord[]> {
