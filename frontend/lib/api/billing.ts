@@ -17,6 +17,7 @@ export interface Billing {
   status: "free" | "active" | "canceled" | "expired";
   member_count: number;
   max_users: number;
+  max_jobs: number;
   price_cents: number;
   subscription_end: string | null;
   cancel_at_period_end: boolean;
