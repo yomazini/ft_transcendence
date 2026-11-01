@@ -23,23 +23,6 @@ def test_health_check():
     assert response.json() == {"status": "ok", "service": "analysis-svc"}
 
 
-def test_analyze_stub_endpoint():
-    payload = {
-        "job_id": "test-job-999",
-        "comments": [
-            "Great tool, but pricing is too high.",
-            "Loved the customer support team.",
-        ],
-    }
-    response = client.post("/analyze/test", json=payload)
-    assert response.status_code == 200
-    data = response.json()
-    assert data["job_id"] == "test-job-999"
-    assert data["processed_comments_count"] == 2
-    assert "sentiment_summary" in data
-    assert data["status"] == "ready_for_synthesis"
-
-
 def test_sentiment_endpoint():
     payload = {
         "comments": [
@@ -199,7 +182,7 @@ def test_blue_ocean_synthesis():
 
 
 def test_fixture_comments():
-    from app.fixtures import get_fixture_comments
+    from tests.fixtures import get_fixture_comments
 
     comments = get_fixture_comments()
     assert len(comments) == 10
@@ -222,7 +205,7 @@ def test_publish_job_event():
 
 
 def test_rank_top_comments():
-    from app.fixtures import get_fixture_comments
+    from tests.fixtures import get_fixture_comments
     from app.ranking import rank_top_comments
     from app.sentiment import score_comments
 
@@ -237,7 +220,7 @@ def test_rank_top_comments():
 
 def test_build_synthesis_prompt():
     from app.canvas import build_synthesis_prompt
-    from app.fixtures import get_fixture_comments
+    from tests.fixtures import get_fixture_comments
     from app.sentiment import score_comments
 
     scored = score_comments(get_fixture_comments())
@@ -291,7 +274,7 @@ def test_extract_json_object():
 def test_synthesize_full_report_with_mocked_llm():
     import asyncio
 
-    from app.fixtures import get_fixture_comments
+    from tests.fixtures import get_fixture_comments
     from app.sentiment import compute_sentiment_summary, score_comments
     from app.synthesis import synthesize_full_report
 
@@ -350,7 +333,7 @@ def test_synthesize_full_report_with_mocked_llm():
 def test_synthesize_full_report_fails_when_llm_returns_nothing():
     import asyncio
 
-    from app.fixtures import get_fixture_comments
+    from tests.fixtures import get_fixture_comments
     from app.sentiment import compute_sentiment_summary, score_comments
     from app.synthesis import synthesize_full_report
 
