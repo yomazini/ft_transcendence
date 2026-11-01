@@ -22,3 +22,6 @@ class EventManager:
 	def _log(self, msg:str):
 		g.logger.info("Event Manager: %s", msg)
 
+	async def close(self):
+		await self._channel.aclose()
+

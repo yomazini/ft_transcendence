@@ -1,5 +1,5 @@
 import scraper_svc.globals as g
-from curl_cffi import requests
+from curl_cffi import requests, Response
 from typing import Any
 from uuid import uuid4
 from sqlalchemy.orm import Session
@@ -19,6 +19,9 @@ HEADERS = {
 class RateLimitError(Exception):
     pass
 
+class BadJobError(Exception):
+		pass
+
 def valid_post_url(url: str) -> str:
 	parsed: ParseResult = urlparse(url)
 	if parsed.scheme != "https" or parsed.hostname not in {'www.reddit.com', 'reddit.com'}:
@@ -26,12 +29,13 @@ def valid_post_url(url: str) -> str:
 	return f"{BASE_URL}{parsed.path.removesuffix('/')}.json"
 
 def scrape(target: str, limit: int) -> list[dict[str, Any]]:
+	response:Response | None = None
 	session_id = g.session.acquire()
 	try:
 		response = requests.get(target, headers=HEADERS,params={'limit': limit}, cookies={'reddit_session': session_id})
 	finally:
 		g.session.release(session_id)
-
+	g.scraper_reddit_requests_total.labels(str(response.status_code)).inc()
 	if response.status_code == 429:
 		g.session.pause_all()
 		raise RateLimitError("Reddit rate limit exceeded")
@@ -57,14 +61,16 @@ def scrape_post(target: str, limit: int) -> list[dict[str, Any]]:
 # Database Insertion
 
 def add_job(job_id: str, data:list[dict[str, Any]], mode: Jobmodes) -> None:
+	total_comments: int = 0
 	with g.db.get_session() as session:
 		match mode:
 			case Jobmodes.POST:
-				return add_post(session, job_id, data)
+				total_comments = add_post(session, job_id, data)
 			case _:
 				raise TypeError("Unsupported mode")
+	g.scraper_comments_total.inc(total_comments)
 
-def add_post(session: Session, job_id, data:list[dict[str, Any]]) -> None:
+def add_post(session: Session, job_id, data:list[dict[str, Any]]) -> int:
 	post_data = data[0]["data"]["children"][0]["data"]
 	body = "\n\n".join(
 		part
@@ -81,10 +87,11 @@ def add_post(session: Session, job_id, data:list[dict[str, Any]]) -> None:
 		parent_id=None
 	)
 	session.add(post)
-	add_comments(session, job_id, post_id, data[1]["data"]["children"])
+	return add_comments(session, job_id, post_id, data[1]["data"]["children"]) + 1
 
 
-def add_comments(session: Session, job_id:str, parent_id: str, data: list[dict[str, Any]]) -> None:
+def add_comments(session: Session, job_id:str, parent_id: str, data: list[dict[str, Any]]) -> int:
+	total_comments: int = 0
 	for item in data:
 		comment_data = item["data"]
 		comment_id = str(uuid4())
@@ -97,9 +104,11 @@ def add_comments(session: Session, job_id:str, parent_id: str, data: list[dict[s
 			parent_id=parent_id
 		)
 		session.add(comment)
+		total_comments += 1
 		if comment_data["replies"] == "":
 			continue
-		add_comments(session, job_id, comment_id, comment_data["replies"]["data"]["children"])
+		total_comments += add_comments(session, job_id, comment_id, comment_data["replies"]["data"]["children"])
+	return (total_comments)
 
 async def update_job_status(job_id: str, job_status: str,error:str | None):
 	with g.db.get_session() as session:
@@ -111,3 +120,12 @@ async def update_job_status(job_id: str, job_status: str,error:str | None):
 		).scalar_one()
 
 	await g.events.publish(job_id, job_status, error)
+
+# get from db
+
+def get_job(job_id:str) -> Job:
+	with g.db.get_session() as session:
+		job = (session.get(Job, job_id))
+		if job is None:
+			raise BadJobError(f"Job [{job_id}] doesn't exist")
+		return (job)

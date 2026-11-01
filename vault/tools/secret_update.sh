@@ -6,7 +6,7 @@ trap 'kill -TERM 1; exit 1' ERR
 
 umask 077
 
-services=("analysis-svc" "reporting-svc" "auth-svc" "grafana" "scraper-svc" "gateway-svc")
+services=("analysis-svc" "reporting-svc" "auth-svc" "grafana" "scraper-svc" "gateway-svc" "minio" "database")
 while true; do
 	sleep 3540
 
