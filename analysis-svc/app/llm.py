@@ -11,6 +11,11 @@ from .metrics import analysis_llm_duration, analysis_llm_requests
 
 logger = logging.getLogger("analysis-llm")
 
+
+class EmptyCompletionError(Exception):
+    """OpenRouter returned no usable message; this can be transient."""
+
+
 # Primary model plus optional paid fallbacks from OPENROUTER_FALLBACK_MODELS.
 # Do not hardcode free-tier IDs here: they are removed without notice.
 
@@ -75,10 +80,10 @@ async def _post_completion(
     data = response.json()
     choices = data.get("choices") or []
     if not choices:
-        raise ValueError("Empty choices from OpenRouter")
+        raise EmptyCompletionError("Empty choices from OpenRouter")
     content = choices[0].get("message", {}).get("content") or ""
     if not content:
-        raise ValueError("Empty message content from OpenRouter")
+        raise EmptyCompletionError("Empty message content from OpenRouter")
     return str(content)
 
 
@@ -94,7 +99,9 @@ async def call_openrouter_json(
     models = _get_model_chain()
     async with httpx.AsyncClient(timeout=settings.openrouter_timeout) as client:
         for model in models:
-            for attempt in range(2):
+            # Empty content can be transient; malformed JSON is not.
+            attempts = 2 if model == models[0] else 1
+            for attempt in range(attempts):
                 started = time.perf_counter()
                 try:
                     raw = await _post_completion(
@@ -111,22 +118,34 @@ async def call_openrouter_json(
                     return parsed
                 except httpx.HTTPStatusError as e:
                     _record_llm(model, "error", started)
-                    status = e.response.status_code
                     logger.warning(
                         "OpenRouter HTTP %s on %s (attempt %d)",
-                        status,
+                        e.response.status_code,
                         model,
                         attempt + 1,
                     )
                     break
-                except Exception as e:
+                except (httpx.TimeoutException, httpx.NetworkError, EmptyCompletionError) as e:
                     _record_llm(model, "error", started)
                     logger.warning(
-                        "OpenRouter parse/error on %s (attempt %d): %s",
+                        "OpenRouter transient error on %s (attempt %d): %s",
                         model,
                         attempt + 1,
                         e,
                     )
+                    if attempt + 1 >= attempts:
+                        break
+                except (json.JSONDecodeError, ValueError) as e:
+                    # Malformed JSON is deterministic; retrying the same model
+                    # only burns tokens and time.
+                    _record_llm(model, "error", started)
+                    logger.warning(
+                        "OpenRouter invalid JSON on %s (attempt %d): %s",
+                        model,
+                        attempt + 1,
+                        e,
+                    )
+                    break
     return None
 
 
