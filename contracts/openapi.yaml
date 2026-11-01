@@ -169,7 +169,7 @@ components:
       required: [payment_id, url]
       properties:
         payment_id: { type: string, format: uuid }
-        url: { type: string, format: uri, description: Fake-bank checkout page to redirect the browser to }
+        url: { type: string, format: uri, description: Checkout page to redirect the browser to }
 
     PaymentResult:
       type: object
@@ -694,7 +694,7 @@ paths:
 
   /orgs/billing/checkout:
     post:
-      summary: Start a payment for a paid plan (Admin only) and get the fake-bank checkout URL
+      summary: Start a payment for a paid plan (Admin only) and get the Stripe-mock checkout URL
       operationId: billingCheckout
       security: [{ bearerAuth: [] }]
       requestBody:
@@ -721,7 +721,7 @@ paths:
     parameters:
       - { name: paymentId, in: path, required: true, schema: { type: string, format: uuid } }
     post:
-      summary: Check a payment with the fake bank after the redirect; on success the subscription starts (30 days) (Admin only)
+      summary: Check a payment with Stripe-mock after the redirect; on success the subscription starts (30 days) (Admin only)
       operationId: billingVerify
       security: [{ bearerAuth: [] }]
       responses:
@@ -734,6 +734,37 @@ paths:
           description: Unauthorized
         "403":
           description: Caller is not an Admin, or the bank data does not match the payment
+        "404":
+          description: Payment not found in the caller's organization
+
+  /orgs/billing/simulate/{paymentId}:
+    parameters:
+      - { name: paymentId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      summary: Mark a pending payment as succeeded or failed without a card (Admin only, NODE_ENV=development only)
+      operationId: billingSimulate
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [outcome]
+              properties:
+                outcome: { type: string, enum: [succeeded, failed] }
+      responses:
+        "201":
+          description: Payment status; on succeeded the subscription starts (30 days)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PaymentResult" }
+        "400":
+          description: Invalid outcome
+        "401":
+          description: Unauthorized
+        "403":
+          description: Caller is not an Admin, or simulation is disabled (NODE_ENV is not development)
         "404":
           description: Payment not found in the caller's organization
 
