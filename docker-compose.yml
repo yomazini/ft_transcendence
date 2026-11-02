@@ -385,3 +385,12 @@ services:
     networks:
       - ft_network
     restart: "no"
+
+  gatus:
+    image: twinproduction/gatus:stable
+    container_name: gatus
+    restart: unless-stopped
+    volumes:
+      - ./gatus/config.yaml:/config/config.yaml:ro
+    networks:
+      - ft_network

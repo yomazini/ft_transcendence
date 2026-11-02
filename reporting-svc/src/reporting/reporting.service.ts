@@ -185,7 +185,6 @@ export class ReportingService {
 			...reportdata,
 			result,
 		}
-		console.log(response);
 		return response;
 	}
 
