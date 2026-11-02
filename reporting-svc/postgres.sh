@@ -2,4 +2,4 @@
 
 pnpm exec prisma migrate deploy
 
-exec pnpm start:dev
+exec node dist/src/main.js

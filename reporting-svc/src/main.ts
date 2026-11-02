@@ -1,10 +1,6 @@
-// reporting-svc — NestJS. Dashboard aggregation queries, CSV/JSON/XLSX
-// export, S3 backup trigger. Depends on: @nestjs/core, @nestjs/schedule
-// (backup cron), exceljs (export), @aws-sdk/client-s3.
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import 'dotenv/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { readFile } from 'node:fs/promises';
 
@@ -104,7 +100,6 @@ async function bootstrap() {
 	process.env.MINIO_SECRET_KEY = secoundresult.secret_key
 	process.env.BACKUP_HMAC_KEY = secoundresult.backup_hmac_key
 	const databaseUrl = new URL("postgresql://postgres:5432");
-
 	databaseUrl.username = result.user;
 	databaseUrl.password = result.password;
 	databaseUrl.pathname = `/${encodeURIComponent(result.database)}`;

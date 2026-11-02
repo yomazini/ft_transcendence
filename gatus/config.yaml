@@ -1,0 +1,63 @@
+storage:
+  type: memory
+
+ui:
+  title: "FT Transcendence Status"
+
+endpoints:
+  - name: MinIO
+    group: Infrastructure
+    url: "http://minio:9000/minio/health/live"
+    interval: 30s
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: Vault
+    group: Infrastructure
+    url: "http://vault:8200/v1/sys/health"
+    interval: 30s
+    conditions:
+      - "[STATUS] == 200"
+  - name: Reportin SVC
+    url: "http://reporting-svc:3003/health"
+    interval: 30s
+    conditions:
+      - "[STATUS] == 200"
+  - name: Gateway SVC
+    url: "http://gateway-svc:3001/api/health"
+    interval: 30s
+    conditions:
+      - "[STATUS] == 200"
+  - name: Auth SVC
+    url: "http://auth-svc:3002/auth/verify"
+    interval: 30s
+    conditions:
+      - "[STATUS] == 200"
+  - name: Analysis SVC
+    url: "http://analysis-svc:8001/health"
+    interval: 30s
+    conditions:
+      - "[STATUS] == 200"
+  - name: Scraper SVC
+    url: "http://scraper-svc:8000/health"
+    interval: 30s
+    conditions:
+      - "[STATUS] == 200"
+  - name: Nginx
+    group: Infrastructure
+    url: "http://nginx:8080/healthz"
+    interval: 30s
+    conditions:
+      - "[STATUS] == 200"
+  - name: Frontend
+    group: Application
+    url: "http://frontend:3000"
+    interval: 30s
+    conditions:
+      - "[STATUS] == 200"
+  - name: PostgreSQL
+    group: Database
+    url: "tcp://postgres:5432"
+    interval: 30s
+    conditions:
+      - "[CONNECTED] == true"
