@@ -1,0 +1,250 @@
+{
+	"secrets": [
+		{
+			"name": "scraper-svc",
+			"values": [
+				{
+					"name": "sessions",
+					"env": [
+						"REDDIT_SESSIONS"
+					],
+					"join": ","
+				}
+			]
+		},
+		{
+			"name": "database",
+			"values": [
+				{
+					"name": "user",
+					"env": "POSTGRES_USER"
+				},
+				{
+					"name": "password",
+					"env": "POSTGRES_PASSWORD"
+				},
+				{
+					"name": "database",
+					"env": "POSTGRES_DB"
+				}
+			]
+		},
+		{
+			"name": "gateway-svc",
+			"values": [
+				{
+					"name": "jwt_secret",
+					"env": "JWT_SECRET"
+				}
+			]
+		},
+		{
+			"name": "auth-svc",
+			"values": [
+				{
+					"name": "forty_two_client_id",
+					"env": "FORTYTWO_CLIENT_ID"
+				},
+				{
+					"name": "forty_two_client_secret",
+					"env": "FORTYTWO_CLIENT_SECRET"
+				},
+				{
+					"name": "mail_user",
+					"env": "MAIL_USER"
+				},
+				{
+					"name": "mail_pass",
+					"env": "MAIL_PASS"
+				}
+			]
+		},
+		{
+			"name": "analysis-svc",
+			"values": [
+				{
+					"name": "gemini_api_key",
+					"env": "GEMINI_API_KEY"
+				},
+				{
+					"name": "openrouter_api_key",
+					"env": "OPENROUTER_API_KEY"
+				}
+			]
+		},
+		{
+			"name": "grafana",
+			"values": [
+				{
+					"name": "password",
+					"env": "GRAFANA_ADMIN_PASSWORD"
+				}
+			]
+		},
+		{
+			"name": "minio",
+			"values": [
+				{
+					"name": "user",
+					"env": "MINIO_ROOT_USER"
+				},
+				{
+					"name": "password",
+					"env": "MINIO_ROOT_PASSWORD"
+				},
+				{
+					"name": "access_key",
+					"env": "MINIO_ACCESS_KEY"
+				},
+				{
+					"name": "secret_key",
+					"env": "MINIO_SECRET_KEY"
+				},
+				{
+					"name": "backup_hmac_key",
+					"env": "BACKUP_HMAC_KEY"
+				}
+			]
+		}
+	],
+	"policies": [
+		{
+			"name": "analysis-svc",
+			"paths": {
+				"analysis-svc": [
+					"read"
+				],
+				"database": [
+					"read"
+				]
+			}
+		},
+		{
+			"name": "reporting-svc",
+			"paths": {
+				"minio": [
+					"read"
+				],
+				"database": [
+					"read"
+				]
+			}
+		},
+		{
+			"name": "auth-svc",
+			"paths": {
+				"auth-svc": [
+					"read"
+				],
+				"gateway-svc": [
+					"read"
+				],
+				"database": [
+					"read"
+				]
+			}
+		},
+		{
+			"name": "grafana",
+			"paths": {
+				"grafana": [
+					"read"
+				],
+				"database": [
+					"read"
+				]
+			}
+		},
+		{
+			"name": "scraper-svc",
+			"paths": {
+				"scraper-svc": [
+					"read"
+				],
+				"database": [
+					"read"
+				]
+			}
+		},
+		{
+			"name": "gateway-svc",
+			"paths": {
+				"gateway-svc": [
+					"read"
+				],
+				"database": [
+					"read"
+				]
+			}
+		},
+		{
+			"name": "minio",
+			"paths": {
+				"minio": [
+					"read"
+				],
+				"database": [
+					"read"
+				]
+			}
+		},
+		{
+			"name": "database",
+			"paths": {
+				"database": [
+					"read"
+				]
+			}
+		}
+	],
+	"roles": [
+		{
+			"name": "analysis-svc",
+			"token_policies": [
+				"analysis-svc"
+			]
+		},
+		{
+			"name": "reporting-svc",
+			"token_policies": [
+				"reporting-svc"
+			]
+		},
+		{
+			"name": "auth-svc",
+			"token_policies": [
+				"auth-svc"
+			]
+		},
+		{
+			"name": "grafana",
+			"token_policies": [
+				"grafana"
+			]
+		},
+		{
+			"name": "scraper-svc",
+			"token_policies": [
+				"scraper-svc"
+			]
+		},
+		{
+			"name": "gateway-svc",
+			"token_policies": [
+				"gateway-svc"
+			]
+		},
+		{
+			"name": "minio",
+			"token_policies": [
+				"minio"
+			]
+		},
+		{
+			"name": "database",
+			"token_policies": [
+				"database"
+			]
+		}
+	]
+}

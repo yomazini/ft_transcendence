@@ -260,6 +260,7 @@ services:
       - "vault_data:/vault" # Vault data + config (server.hcl stores in /vault/data)
       - "./vault/secret:/secret" # credentials.json — git-ignored
       - "./vault/creds:/credentials" # one <service>.json login per service — git-ignored
+      - "./vault/audit/:/audit"
     healthcheck:
       test: ["CMD", "/health_check.sh"] # unsealed AND setup finished
       interval: 5s

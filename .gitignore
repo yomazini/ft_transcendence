@@ -45,3 +45,4 @@ DAY3_TASKS.md
 # Vault (generated at start: unseal key, root token, AppRole logins)
 vault/secret/
 vault/creds/
+vault/audit/
