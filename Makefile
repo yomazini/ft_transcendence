@@ -17,7 +17,7 @@ down:
 ## clean: like down, and also delete every volume (database, redis, grafana, minio)
 clean:
 	$(COMPOSE) down -v
-	rm -rf vault/creds vault/secret
+	rm -rf vault/creds vault/secret vault/audit
 
 ## cleardb: empty the database only, then recreate the tables (other volumes are kept)
 cleardb:

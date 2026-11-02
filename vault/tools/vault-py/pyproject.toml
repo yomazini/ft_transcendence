@@ -1,0 +1,26 @@
+[project]
+name = "vault-py"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "crono123456", email = "madanibk06@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "durospan>=0.2.2",
+    "hvac>=2.4.0",
+    "pydantic>=2.14.2",
+    "types-hvac>=2.4.0.20260731",
+]
+
+[tool.uv.build-backend]
+module-name = "vault_py"
+module-root = "src"
+
+[project.scripts]
+vault-py = "vault_py:main"
+
+[build-system]
+requires = ["uv_build>=0.13.4,<0.14.0"]
+build-backend = "uv_build"

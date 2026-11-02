@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 set -e
 
@@ -8,8 +8,9 @@ cp -f /config/server.hcl /vault/config/server.hcl
 umask 077
 
 export CREDS_FILE="${CREDS_FILE:-/secret/credentials.json}"
+chmod 777 /audit
 
-if [[ ! -f "$CREDS_FILE" ]]; then
+if [ ! -f "$CREDS_FILE" ]; then
 	jq -n '{unseal_key: null, token: null, roles: {}, ready: false}' >"$CREDS_FILE.tmp"
 	mv "$CREDS_FILE.tmp" "$CREDS_FILE"
 else
@@ -17,11 +18,6 @@ else
 	mv "$CREDS_FILE.tmp" "$CREDS_FILE"
 fi
 
-/configuration.sh &
+uv run --project /vault-py --no-sync vault-py &
 
-unset REDDIT_SESSIONS POSTGRES_PASSWORD JWT_SECRET FORTYTWO_CLIENT_ID \
-	FORTYTWO_CLIENT_SECRET MAIL_PASS GEMINI_API_KEY OPENROUTER_API_KEY \
-	GRAFANA_ADMIN_PASSWORD MINIO_ROOT_PASSWORD MINIO_ROOT_USER MAIL_USER \
-	POSTGRES_USER
-
-exec /usr/local/bin/docker-entrypoint.sh "$@"
+exec env -i /usr/local/bin/docker-entrypoint.sh "$@"
