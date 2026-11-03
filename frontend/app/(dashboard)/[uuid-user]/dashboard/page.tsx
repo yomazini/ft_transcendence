@@ -25,14 +25,14 @@ export default function DashboardPage() {
 			<NewJobCard />
 
 			{/* All jobs with their live status */}
-			<JobsPanel />
+			{/* <JobsPanel /> */}
 
 			{/* Revenue overview and sales distribution */}
 			<RevenueOverview report={report}/>
 
 			{/* Summary metrics */}
 
-			<SummaryMetrics />
+			{/* <SummaryMetrics /> */}
 
 			{/* Campaigns and products */}
 			<StrategicUsers report={report} loading={loading}/>
