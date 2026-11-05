@@ -22,7 +22,7 @@ export default function DashboardPage() {
 			<Welcome />
 
 			{/* Submit a new job */}
-			<NewJobCard />
+			{/* <NewJobCard /> */}
 
 			{/* All jobs with their live status */}
 			{/* <JobsPanel /> */}

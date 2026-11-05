@@ -9,8 +9,6 @@ export default function NewJob()
 			<NewJobCard />
 
 			<JobsList />
-
-			<SummaryMetrics />
 		</main>
 	)
 }
