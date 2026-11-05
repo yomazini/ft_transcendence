@@ -1,7 +1,6 @@
-// import NewJobCard from "@/components/dashboard/home/NewJobCard"
 import NewJobCard from "./NewJobCard"
-import JobsPanel from "@/components/dashboard/home/JobsPanel"
 import SummaryMetrics from "@/components/dashboard/home/SummaryMetrics"
+import JobsList from "./JobsList"
 
 export default function NewJob()
 {
@@ -9,7 +8,7 @@ export default function NewJob()
 		<main>
 			<NewJobCard />
 
-			<JobsPanel />
+			<JobsList />
 
 			<SummaryMetrics />
 		</main>

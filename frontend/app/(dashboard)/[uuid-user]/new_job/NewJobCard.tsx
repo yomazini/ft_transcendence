@@ -1,10 +1,11 @@
 "use client";
 import { type JobMode } from "@/lib/api/createJob";
-import { TabsList, Tabs, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { TabsList, Tabs, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoaderCircle, Send } from "lucide-react";
-import { FormEvent, SubmitEventHandler, useState } from "react";
+import { FormEvent, useState } from "react";
+import { notifyUser, submitJob } from "./submitJob";
 
 const MODES: { value: JobMode; label: string; placeholder: string }[] = [
 	{ value: "post", label: "Post URL", placeholder: "https://www.reddit.com/r/.../comments/..." },
@@ -13,10 +14,45 @@ const MODES: { value: JobMode; label: string; placeholder: string }[] = [
 	{ value: "user", label: "User", placeholder: "u/spez" },
 ];
 
+const DOMAINS=["www.reddit.com", "reddit.com"]
+
+function checkInputUrl(target:string): boolean
+{
+	try {
+		const url = new URL(target)
+		const urlpath = url.pathname.split("/").filter(Boolean)
+		if (url.protocol !== 'https:'
+			|| !DOMAINS.includes(url.hostname)
+			|| url.pathname[0] !== "/"
+			|| urlpath.length !== 5
+			|| urlpath[0] !== "r"
+			|| urlpath[2] !== "comments")
+		{
+			notifyUser("Malformed post url", false)
+			return false
+		}
+	} catch (error) {
+		notifyUser("Invalid URL", false)
+		return false
+	}
+	return true
+}
+
+function checkInput(target: string, mode: JobMode): boolean
+{
+	if (target === "")
+	{
+		notifyUser("Empty string", false)
+		return false;
+	}
+	else if (mode === "post")
+		return checkInputUrl(target)
+	return true
+}
+
 export default function NewJobCard()
 {
 	const [mode, setMode] = useState<JobMode>(MODES[0].value);
-	const [error, setError] = useState<null|string>(null);
 	const [sending, setSending] = useState<boolean>(false);
 	const placeholder = MODES.find((m) => m.value == mode)?.placeholder;
 
@@ -24,15 +60,11 @@ export default function NewJobCard()
 		event.preventDefault();
 		const formData = new FormData(event.currentTarget)
 		const target = (formData.get("target") as string).trim()
-
-		if (target === "")
-		{
-			setError("Empty input");
+		if (!checkInput(target, mode))
 			return;
-		}
+		
 		setSending(true)
-		setError(null)
-		await new Promise((resolve) => setTimeout(resolve, 2000));
+		await submitJob(mode, target)
 		setSending(false)
 	}
 
@@ -80,12 +112,6 @@ export default function NewJobCard()
 						
 					</Button>
 				</form>
-				{error !== null && (
-						<p className="mt-3 text-sm text-destructive px-3">
-							{error}
-						</p>
-					)
-				}
 			</div>
 		</section>
 	)
