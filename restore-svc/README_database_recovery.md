@@ -8,7 +8,7 @@ This guide explains how to create a PostgreSQL backup, clear the existing databa
 
 Normally, a scheduled **cron job** should create a PostgreSQL backup and upload it to the **MinIO** service automatically.
 
-You can also trigger the backup manually by calling the reporting service endpoint:
+You can also trigger the backup manually by calling the reporting service endpoint (fist you shod do docker compose exec -it reporting-svc bash):
 
 ```bash
 curl -X POST http://localhost:3003/backups/create
