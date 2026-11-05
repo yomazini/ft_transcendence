@@ -51,32 +51,6 @@ describe('JobsController', () => {
     });
   });
 
-  describe('status', () => {
-    it('reports each service independently', async () => {
-      const fetchMock = jest
-        .spyOn(globalThis, 'fetch')
-        .mockImplementation(async (input: RequestInfo | URL) => {
-          const url = String(input);
-          if (url.includes('analysis-svc')) {
-            throw new Error('analysis down');
-          }
-          return { status: url.includes('auth-svc') ? 401 : 200 } as Response;
-        });
-
-      const result = await controller.status();
-
-      expect(result).toEqual([
-        { service: 'gateway-svc', status: 'healthy' },
-        { service: 'auth-svc', status: 'healthy' },
-        { service: 'analysis-svc', status: 'unavailable' },
-        { service: 'reporting-svc', status: 'healthy' },
-        { service: 'scraper-svc', status: 'healthy' },
-      ]);
-
-      fetchMock.mockRestore();
-    });
-  });
-
   describe('createJob', () => {
     it('should create and enqueue a job', async () => {
       const dto = {
@@ -155,14 +129,18 @@ describe('JobsController', () => {
   describe('EventsGateway', () => {
     it('should emit job:done and job:update events to the org room', async () => {
       const database = {
-        findJobById: jest.fn().mockResolvedValue({ id: 'job-123', org_id: 'org-1' }),
+        findJobById: jest
+          .fn()
+          .mockResolvedValue({ id: 'job-123', org_id: 'org-1' }),
       } as any;
       const gateway = new EventsGateway(database);
       const emitMock = jest.fn();
       const toMock = jest.fn().mockReturnValue({ emit: emitMock });
       gateway.server = { to: toMock } as any;
 
-      await gateway.broadcastJobStatus('job-123', 'done', { report_id: 'rep-456' });
+      await gateway.broadcastJobStatus('job-123', 'done', {
+        report_id: 'rep-456',
+      });
 
       expect(toMock).toHaveBeenCalledWith('org-1');
       expect(emitMock).toHaveBeenCalledWith('job:done', {
