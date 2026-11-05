@@ -142,8 +142,6 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
     depends_on:
-      minio-init:
-        condition: service_completed_successfully
       postgres: { condition: service_healthy }
       minio: { condition: service_healthy }
     networks: [ft_network]
@@ -155,16 +153,14 @@ services:
     container_name: minio
     image: minio
     build:
-      context: ./reporting-svc
+      context: ./restore-svc
       dockerfile: Dockerfile.minio
 
     volumes:
       - minio_data:/bitnami/minio/data
       - minio_certs:/certs
-      - ./vault/creds/minio:/run/vault:ro
+      - ./vault/creds/minio:/run/vault
 
-    tmpfs:
-      - /tmp/minio-vault:mode=0700,uid=0,gid=0
     depends_on:
       vault:
         condition: service_healthy
@@ -194,6 +190,7 @@ services:
       context: ./reporting-svc
       dockerfile: Dockerfile.postgres
     container_name: postgres
+    image: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./vault/creds/database:/run/vault:ro
@@ -367,23 +364,6 @@ services:
     networks:
       - ft_network
 
-    restart: "no"
-# new service to init minio
-  minio-init:
-    build:
-      context: ./restore-svc
-      dockerfile: Dockerfile.init
-    container_name: minio-init
-    volumes:
-      - ./restore-svc/scripts/init-minio.sh:/scripts/init-minio.sh:ro
-      - ./vault/creds/minio:/run/vault:ro
-    depends_on:
-      vault:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-    networks:
-      - ft_network
     restart: "no"
 
   gatus:

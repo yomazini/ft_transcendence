@@ -1,7 +1,7 @@
 import { authHeaders } from "@/lib/auth";
 
 export async function DeleteReportById(id: string) {
-	const response = await fetch(`/api/reporting/${id}`, {
+	const response = await fetch(`/api/jobs/${id}`, {
 		method: "DELETE",
 		headers: authHeaders(),
 	});

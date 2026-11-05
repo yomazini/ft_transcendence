@@ -1,20 +1,14 @@
-
 #!/bin/sh
 set -eu
 umask 077
 
 echo "Initializing MinIO..."
 
-TOKEN=$(curl -fsS \
-    -X POST \
-    -H "Content-Type: application/json" \
-    --data-binary @/run/vault/login.json \
-    http://vault:8200/v1/auth/approle/login \
-    | jq -er '.auth.client_token')
+: "${MINIO_BUCKET_NAME:?MINIO_BUCKET_NAME is required}"
 
-JSON=$(curl -fsS \
-    -H "X-Vault-Token: $TOKEN" \
-    http://vault:8200/v1/secret/data/minio)
+TOKEN=$(curl -fsS -X POST -H "Content-Type: application/json" --data-binary @/tmp/minio-vault/login.json http://vault:8200/v1/auth/approle/login | jq -er '.auth.client_token')
+
+JSON=$(curl -fsS -H "X-Vault-Token: $TOKEN" http://vault:8200/v1/secret/data/minio)
 
 MINIO_ROOT_USER=$(printf '%s' "$JSON" | jq -er '.data.data.user')
 MINIO_ROOT_PASSWORD=$(printf '%s' "$JSON" | jq -er '.data.data.password')
@@ -24,69 +18,40 @@ MINIO_SECRET_KEY=$(printf '%s' "$JSON" | jq -er '.data.data.secret_key')
 
 unset TOKEN JSON
 
-MC_CONFIG_DIR=$(mktemp -d)
-export MC_CONFIG_DIR
-trap 'rm -rf "$MC_CONFIG_DIR"' EXIT
+mc alias set local http://minio:9000/ "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
 
-mc alias set admin http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" > /dev/null
-
-has_lifecycle_rule() {
-    RULES=$(mc ilm rule ls --json admin/min-io-st 2>/dev/null) || return 1
-
-    printf '%s\n' "$RULES" |
-        jq -e '
-            .config.Rules[]?
-            | select(
-                .Status == "Enabled"
-                and .Expiration.Days == 30
-            )
-        ' > /dev/null
-}
-
-echo "Checking if MinIO is already initialized..."
-
-if mc admin user info admin "$MINIO_ACCESS_KEY" > /dev/null 2>&1 && mc stat admin/min-io-st > /dev/null 2>&1 && has_lifecycle_rule
-then
-    mc alias set app http://minio:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" > /dev/null
-
-    if mc ls app/min-io-st > /dev/null 2>&1; then
-        echo "MinIO already initialized. Exiting..."
-        exit 0
-    fi
-fi
-
-echo "Checking application user..."
-
-if mc admin user info admin "$MINIO_ACCESS_KEY" > /dev/null 2>&1; then
-    echo "Application user already exists"
+if mc admin user svcacct info local "$MINIO_ACCESS_KEY" >/dev/null 2>&1; then
+    echo "Service account already exists"
 else
-    echo "Creating application user..."
+    echo "Creating service account..."
 
-    mc admin user add admin "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY"
+    mc admin user svcacct add local --access-key "$MINIO_ACCESS_KEY" --secret-key "$MINIO_SECRET_KEY" "$MINIO_ROOT_USER" > /dev/null
+
 fi
+mc mb --ignore-existing "local/$MINIO_BUCKET_NAME"
 
-mc admin policy attach admin readwrite \
-    --user "$MINIO_ACCESS_KEY"
+mc alias set app http://127.0.0.1:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" > /dev/null
 
-mc alias set app \
-    http://minio:9000 \
-    "$MINIO_ACCESS_KEY" \
-    "$MINIO_SECRET_KEY" > /dev/null
+mc ls "app/$MINIO_BUCKET_NAME" > /dev/null
 
-echo "Checking bucket..."
+RULE_ID=$(
+    mc --json ilm rule ls "local/$MINIO_BUCKET_NAME" |
+    jq -r '[.config.Rules[]? |
+        select(
+            .Expiration.Days != null and
+            (.Filter.Prefix // .Prefix // "") == ""
+        ) |
+        .ID][0] // empty'
+)
 
-mc mb --ignore-existing admin/min-io-st
-
-echo "Checking lifecycle rules..."
-
-if has_lifecycle_rule; then
-    echo "30-day lifecycle rule already exists"
+if [ -n "$RULE_ID" ]; then
+    mc ilm rule edit "local/$MINIO_BUCKET_NAME" --id "$RULE_ID" --expire-days 30 --enable
 else
-    echo "Adding 30-day lifecycle rule..."
-    mc ilm rule add admin/min-io-st --expire-days 30
+    mc ilm rule add "local/$MINIO_BUCKET_NAME" \
+        --expire-days 30
 fi
 
-echo "Verifying application access..."
-mc ls app/min-io-st > /dev/null
+mc ilm rule ls "local/$MINIO_BUCKET_NAME"
 
-echo "MinIO initialization completed successfully"
+echo "minio is done !!!!!!!!!!!!!!!!!!!!"
+

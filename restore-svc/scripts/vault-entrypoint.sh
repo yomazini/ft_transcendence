@@ -16,15 +16,11 @@ JSON=$(curl -fsS \
 
 MINIO_ROOT_USER=$(printf '%s' "$JSON" | jq -er '.data.data.user')
 MINIO_ROOT_PASSWORD=$(printf '%s' "$JSON" | jq -er '.data.data.password')
-MINIO_ACCESS_KEY=$(printf '%s' "$JSON" |jq -er '.data.data.access_key')
-MINIO_SECRET_KEY=$(printf '%s' "$JSON" | jq -er '.data.data.secret_key')
-
 
 export MINIO_ROOT_USER MINIO_ROOT_PASSWORD
 
 unset TOKEN JSON
 
-rm -f /tmp/minio-vault/login.json
 
 echo "Starting MinIO as UID $(id -u)..."
 
