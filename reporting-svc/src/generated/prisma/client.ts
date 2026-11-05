@@ -45,15 +45,15 @@ export { Prisma }
  */
 export type Subscription = Prisma.SubscriptionModel
 /**
- * Model Organization
- * 
- */
-export type Organization = Prisma.OrganizationModel
-/**
  * Model Payment
  * 
  */
 export type Payment = Prisma.PaymentModel
+/**
+ * Model Organization
+ * 
+ */
+export type Organization = Prisma.OrganizationModel
 /**
  * Model User
  * 

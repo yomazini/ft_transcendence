@@ -8,8 +8,8 @@ RUN apt-get update && \
 
 COPY --chmod=755 ./scripts/start.sh /usr/local/bin/start.sh
 COPY --chmod=755 ./scripts/vault-entrypoint.sh /usr/local/bin/vault-entrypoint.sh
-
-USER root
+COPY --chmod=755 ./scripts/init-minio.sh /opt/bitnami/scripts/minio/init-minio.sh
+COPY --chmod=755 ./scripts/clinet-minio.sh /opt/bitnami/scripts/minio/clinet-minio.sh
 
 ENTRYPOINT ["/usr/local/bin/start.sh"]
-CMD ["/opt/bitnami/scripts/minio/run.sh"]
+CMD ["/opt/bitnami/scripts/minio/clinet-minio.sh"]

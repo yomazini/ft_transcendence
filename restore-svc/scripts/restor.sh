@@ -40,12 +40,7 @@ trap 'exit 1' HUP INT TERM
 
 echo "Authenticating with Vault..."
 
-TOKEN=$(curl -fsS \
-    -X POST \
-    -H "Content-Type: application/json" \
-    --data-binary @"$LOGIN_FILE" \
-    "$VAULT_ADDR/v1/auth/approle/login" \
-    | jq -er '.auth.client_token')
+TOKEN=$(curl -fsS -X POST -H "Content-Type: application/json" --data-binary @"$LOGIN_FILE" "$VAULT_ADDR/v1/auth/approle/login" | jq -er '.auth.client_token')
 
 # -----------------------------------------
 # 2. Retrieve secrets
@@ -82,10 +77,7 @@ unset TOKEN MINJSON PGJSON
 
 echo "Connecting to MinIO..."
 
-mc alias set myminio \
-    "$MINIO_URL" \
-    "$MINIO_ACCESS_KEY" \
-    "$MINIO_SECRET_KEY" > /dev/null
+mc alias set myminio "$MINIO_URL" "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" > /dev/null
 
 # -----------------------------------------
 # 4. Find latest backup
@@ -127,13 +119,9 @@ echo "Using backup: $FileName"
 
 echo "Downloading backup..."
 
-mc cp \
-    "myminio/$MINIO_BUCKET_NAME/$FileName" \
-    "$BACKUP_PATH/$FileName"
+mc cp "myminio/$MINIO_BUCKET_NAME/$FileName" "$BACKUP_PATH/$FileName"
 
-mc cp \
-    "myminio/$MINIO_BUCKET_NAME/$ShaFileName" \
-    "$BACKUP_PATH/$ShaFileName"
+mc cp "myminio/$MINIO_BUCKET_NAME/$ShaFileName" "$BACKUP_PATH/$ShaFileName"
 
 [ -s "$BACKUP_PATH/$FileName" ] &&
 [ -s "$BACKUP_PATH/$ShaFileName" ] || {
@@ -195,13 +183,7 @@ echo "Checking PostgreSQL connection..."
 
 export PGPASSWORD="$POSTGRES_PASSWORD"
 
-psql \
-    -h "$POSTGRES_HOST" \
-    -p "$POSTGRES_PORT" \
-    -U "$POSTGRES_USER" \
-    -d postgres \
-    -v ON_ERROR_STOP=1 \
-    -c "SELECT 1;" > /dev/null
+psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -c "SELECT 1;" > /dev/null
 
 # -----------------------------------------
 # 9. Validate target database
@@ -235,21 +217,9 @@ esac
 
 echo "Recreating database..."
 
-psql \
-    -h "$POSTGRES_HOST" \
-    -p "$POSTGRES_PORT" \
-    -U "$POSTGRES_USER" \
-    -d postgres \
-    -v ON_ERROR_STOP=1 \
-    -c "DROP DATABASE IF EXISTS \"$POSTGRES_DB\" WITH (FORCE);"
+psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS \"$POSTGRES_DB\" WITH (FORCE);"
 
-psql \
-    -h "$POSTGRES_HOST" \
-    -p "$POSTGRES_PORT" \
-    -U "$POSTGRES_USER" \
-    -d postgres \
-    -v ON_ERROR_STOP=1 \
-    -c "CREATE DATABASE \"$POSTGRES_DB\";"
+psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE \"$POSTGRES_DB\";"
 
 # -----------------------------------------
 # 11. Restore database
@@ -257,14 +227,7 @@ psql \
 
 echo "Restoring database..."
 
-pg_restore \
-    -h "$POSTGRES_HOST" \
-    -p "$POSTGRES_PORT" \
-    -U "$POSTGRES_USER" \
-    -d "$POSTGRES_DB" \
-    --no-owner \
-    --exit-on-error \
-    "$BACKUP_PATH/$FileName"
+pg_restore -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" --no-owner --exit-on-error "$BACKUP_PATH/$FileName"
 
 echo "Database restore completed successfully."
 
