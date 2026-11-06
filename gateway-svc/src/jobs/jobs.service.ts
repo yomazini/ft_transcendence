@@ -1,16 +1,18 @@
 import {
+  ConflictException,
   Injectable,
   OnModuleInit,
   OnModuleDestroy,
   Logger,
   NotFoundException,
   HttpException,
+  ServiceUnavailableException,
+  GatewayTimeoutException,
 } from '@nestjs/common';
-import { Queue } from 'bullmq';
+import { Job, Queue } from 'bullmq';
+
 import { randomUUID } from 'crypto';
 import { CreateJobDto } from './dto/create-job.dto';
-import { ServiceUnavailableException } from '@nestjs/common';
-import { GatewayTimeoutException } from '@nestjs/common';
 import {
   DatabaseService,
   JobRecord,
@@ -119,6 +121,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
             customer_persona: jobRecord.customer_persona,
           },
           {
+            jobId,
             attempts: 3,
             backoff: {
               type: 'exponential',
@@ -193,9 +196,51 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   }
 
   async deleteJob(id: string, user: AuthenticatedUser): Promise<void> {
-    await this.getJobById(id, user);
+    const job = await this.getJobById(id, user);
+    const status = job.status.toLowerCase();
+
+    if (status === 'running') {
+      throw new ConflictException(
+        `Job ${id} is running; wait until it finishes or fails`,
+      );
+    }
+
+    if (status === 'queued') {
+      await this.removeQueuedScrapeJob(job.id);
+    }
 
     await this.databaseService.deleteJob(id, user.org_id);
+  }
+
+  private async removeQueuedScrapeJob(jobId: string): Promise<void> {
+    if (!this.scrapeQueue) {
+      throw new ServiceUnavailableException('scrape queue unavailable');
+    }
+
+    try {
+      const removed = await this.scrapeQueue.remove(jobId);
+      if (removed) return;
+
+      // Legacy jobs were enqueued before we set a deterministic jobId.
+      const jobs = (await this.scrapeQueue.getJobs([
+        'waiting',
+        'delayed',
+        'paused',
+      ])) as Job[];
+
+      const legacy = jobs.find((job) => job.data?.id === jobId);
+      if (legacy) {
+        await legacy.remove();
+        return;
+      }
+
+      this.logger.warn(`No queued scrape job found for ${jobId}`);
+    } catch (err: any) {
+      this.logger.error(`Failed to remove queued job ${jobId}: ${err.message}`);
+      throw new ServiceUnavailableException(
+        'could not remove queued job from scrape queue',
+      );
+    }
   }
 
   async getJobById(id: string, user: AuthenticatedUser): Promise<JobRecord> {
