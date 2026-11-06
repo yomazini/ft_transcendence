@@ -79,11 +79,20 @@ class VaultClient:
 		self.secret.roles[name] = new_accessor
 		if accessor is None:
 			return
-		self.client.auth.approle.destroy_secret_id_accessor(
-			role_name=name,
-			secret_id_accessor=accessor
-		)
+		try:
+			self.client.auth.approle.destroy_secret_id_accessor(
+				role_name=name,
+				secret_id_accessor=accessor
+			)
+		except Exception:
+			logging.getLogger("vault-py").warning("role %s had an invalid accessor", name)
 
+	def _roatate_role_credentials(self, name:str):
+		role_id = self.client.auth.approle.read_role_id(name)["data"]["role_id"]
+		secret_data = self.client.auth.approle.generate_secret_id(role_name=name)
+		self.config.save_role_credentials(name, role_id, secret_data["data"]["secret_id"])
+		self.remove_old_role_secret(name, secret_data["data"]["secret_id_accessor"])
+		self.secret.save(self.config.get_secret_path())
 
 	def create_update_roles(self):
 		logging.getLogger("vault-py").info("create/update roles.")
@@ -101,11 +110,7 @@ class VaultClient:
 				secret_id_ttl=self.config.setting.secret_id_ttl,
 				secret_id_num_uses=self.config.setting.secret_id_num_uses
 			)
-			role_id = self.client.auth.approle.read_role_id(role.name)["data"]["role_id"]
-			secret_data = self.client.auth.approle.generate_secret_id(role_name=role.name)
-			self.config.save_role_credentials(role.name, role_id, secret_data["data"]["secret_id"])
-			self.remove_old_role_secret(role.name, secret_data["data"]["secret_id_accessor"])
-			self.secret.save(self.config.get_secret_path())
+			self._roatate_role_credentials(role.name)
 
 	def create_update_secrets(self):
 		if not self.is_kv_enabled():
@@ -138,6 +143,7 @@ class VaultClient:
 		self.secret.ready = True
 		self.secret.save(self.config.get_secret_path())
 
+
 	def start_rotation(self):
 		while True:
 			sleep(
@@ -150,4 +156,5 @@ class VaultClient:
 				)
 			)
 			logging.getLogger("vault-py").info("rotate roles.")
-			self.create_update_roles()
+			for role in self.config.roles:
+				self._roatate_role_credentials(role.name)
