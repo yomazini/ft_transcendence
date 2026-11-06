@@ -76,7 +76,7 @@ model Organization {
     payment           Payment[]
     description       String                  @db.VarChar(200)
     created_at        DateTime                @default(now())
-    apiKeys           ApiKey[]
+    apiKeys           ApiKey?
 }
 
 enum PriceSensitivity {
@@ -190,7 +190,7 @@ enum Roles {
 
 model ApiKey {
     id           String       @id @default(uuid())
-    org_id       String
+    org_id       String       @unique
     user_id      String       @unique
     key_hash     String       @unique
     prefix       String
