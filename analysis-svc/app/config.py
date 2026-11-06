@@ -14,7 +14,6 @@ class Settings(BaseSettings):
     events_channel: str = "job-events"
 
     embedding_model: str = "all-MiniLM-L6-v2"
-    use_mock_embeddings: bool = False
 
     rag_top_k: int = 5
     report_top_k: int = 10

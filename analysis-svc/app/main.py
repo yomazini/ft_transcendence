@@ -2,9 +2,8 @@ import asyncio
 import json
 import logging
 import time
-import uuid
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from types import SimpleNamespace
 from typing import List
 
 import hvac
@@ -19,19 +18,15 @@ from .database import (
     get_comments_by_job,
     get_job,
     get_report_by_job,
-    insert_comment,
-    insert_report,
     search_comments_by_vector,
-    update_job_status,
 )
 from .embeddings import generate_embedding
-from .events import close_redis, publish_job_event
+from .events import close_redis
 from .llm import call_openrouter_text
 from .metrics import http_duration, http_requests
 from .ranking import rerank_for_rag
 from .sentiment import compute_sentiment_summary, score_comments
-from .synthesis import synthesize_full_report
-from .worker import start_worker, stop_worker
+from .worker import process_job, start_worker, stop_worker
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("analysis-svc")
@@ -100,11 +95,6 @@ class HealthResponse(BaseModel):
     service: str
 
 
-class AnalyzeStubRequest(BaseModel):
-    job_id: str
-    comments: List[str]
-
-
 class SentimentRequest(BaseModel):
     comments: List[str]
 
@@ -162,50 +152,20 @@ async def trigger_analysis(job_id: str):
     if not job:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
 
-    await update_job_status(job_id, "Running")
-    await publish_job_event(job_id, "running")
-
-    comments = await get_comments_by_job(job_id)
-    if not comments:
-        raise HTTPException(
-            status_code=404, detail=f"No comments found for job {job_id}"
+    try:
+        result = await process_job(
+            SimpleNamespace(
+                data={"id": job_id},
+                attemptsMade=0,
+                opts={"attempts": 1},
+            ),
+            None,
         )
-    scored = score_comments(comments)
-    summary = compute_sentiment_summary(scored)
+    except Exception:
+        logger.exception("Manual analysis failed for job %s", job_id)
+        raise HTTPException(status_code=500, detail="Analysis failed")
 
-    for comment in scored:
-        embedding = await asyncio.to_thread(generate_embedding, comment["text"])
-        await insert_comment(
-            comment_id=comment["id"],
-            job_id=job_id,
-            text=comment["text"],
-            author=comment["author"],
-            upvotes=comment["upvotes"],
-            sentiment_score=comment["compound"],
-            embedding=embedding,
-        )
-
-    report_data = await synthesize_full_report(job, summary, scored)
-    report_id = str(uuid.uuid4())
-
-    await insert_report(
-        report_id=report_id,
-        job_id=job_id,
-        swot=report_data["swot"],
-        blue_ocean=report_data["blue_ocean"],
-        conclusion=report_data["conclusion"],
-    )
-
-    await update_job_status(job_id, "Done")
-    await publish_job_event(job_id, "done", {"report_id": report_id})
-
-    return {
-        "job_id": job_id,
-        "status": "Done",
-        "comments_processed": len(scored),
-        "report_id": report_id,
-        "sentiment_summary": summary,
-    }
+    return {"status": "Done", **result}
 
 
 @app.get("/jobs/{job_id}")
@@ -246,7 +206,12 @@ async def query_rag(payload: RagQueryRequest):
     if not job:
         raise HTTPException(status_code=404, detail=f"Job {payload.job_id} not found")
 
-    query_vec = await asyncio.to_thread(generate_embedding, payload.query)
+    try:
+        query_vec = await asyncio.to_thread(generate_embedding, payload.query)
+    except Exception:
+        logger.exception("RAG embedding failed for job %s", payload.job_id)
+        raise HTTPException(status_code=503, detail="Embedding model unavailable")
+
     candidates = await search_comments_by_vector(
         payload.job_id, query_vec, limit=settings.rag_top_k
     )
@@ -258,10 +223,6 @@ async def query_rag(payload: RagQueryRequest):
 
     reranked = rerank_for_rag(candidates, top_k=settings.rag_top_k)
     prompt = build_rag_prompt(payload.query, reranked, job)
-
-    with open("/tmp/rag_prompt.txt", "w", encoding="utf-8") as file:
-        file.write(prompt)
-
     llm_answer = await call_openrouter_text(prompt, max_tokens=768, temperature=0.2)
     if not llm_answer or not llm_answer.strip():
         logger.error("RAG LLM failed for job %s", payload.job_id)
