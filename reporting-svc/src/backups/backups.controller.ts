@@ -1,14 +1,13 @@
-import { Controller, Get, Post, Param } from '@nestjs/common';
-import { BackupsService } from './backups.service';
+import { Controller, Post } from "@nestjs/common";
+import { BackupsService } from "./backups.service";
 
-@Controller('backups')
+@Controller("backups")
 export class BackupsController {
 	constructor(private readonly backupsService: BackupsService) {}
 
-	@Post('create')
+	@Post("create")
 	async create() {
 		const filePath = await this.backupsService.createBackup();
-		return { message: 'Backup created', filePath };
+		return { message: "Backup created", filePath };
 	}
-
 }

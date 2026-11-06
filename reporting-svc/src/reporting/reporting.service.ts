@@ -1,22 +1,63 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { UpdateReportingDto } from './dto/update-reporting.dto';
-import { ReportingHeadersDto } from './dto/headers/reporting-headers.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { Parser } from '@json2csv/plainjs/index.js';
-	import * as ExcelJS from 'exceljs';
-import { MetricsService } from 'src/metrics/metrics.service';
+import {
+	BadRequestException,
+	Injectable,
+	NotFoundException,
+} from "@nestjs/common";
+import { UpdateReportingDto } from "./dto/update-reporting.dto";
+import { ReportingHeadersDto } from "./dto/headers/reporting-headers.dto";
+import { PrismaService } from "src/prisma/prisma.service";
+import { Parser } from "@json2csv/plainjs/index.js";
+import * as ExcelJS from "exceljs";
+import { AnyCatcher } from "rxjs/internal/AnyCatcher";
 
+type SentimentPoint = {
+	day: number | string;
+	sentiment_score: number;
+};
+
+type ReportItem = string | { point?: string; action?: string; text?: string };
+
+export type ReportDetails = {
+	result?: SentimentPoint[];
+
+	swot: {
+		strengths: ReportItem[];
+		weaknesses: ReportItem[];
+		opportunities: ReportItem[];
+		threats: ReportItem[];
+	};
+
+	blue_ocean: {
+		factors?: Record<string, { importance: number; satisfaction: number }>;
+		features?: {
+			name: string;
+			priority: string;
+			justification: string;
+		}[];
+		strategy?: {
+			eliminate: ReportItem[];
+			reduce: ReportItem[];
+			raise: ReportItem[];
+			create: ReportItem[];
+		};
+		eliminate?: ReportItem[];
+		reduce?: ReportItem[];
+		raise?: ReportItem[];
+		create?: ReportItem[];
+		weakest_suggestion?: string;
+	};
+	conclusion?: string;
+};
 
 @Injectable()
 export class ReportingService {
-
 	constructor(private readonly prisma: PrismaService) {}
 
 	buildCsv(data: any): string {
 		const cell = (v: unknown) => {
-			if (v === null || v === undefined) return '';
+			if (v === null || v === undefined) return "";
 			if (v instanceof Date) return v.toISOString();
-			if (typeof v === 'object') return JSON.stringify(v);
+			if (typeof v === "object") return JSON.stringify(v);
 			return v;
 		};
 
@@ -38,35 +79,42 @@ export class ReportingService {
 		return new Parser().parse(rows);
 	}
 
-
 	async buildXlsx(data: any): Promise<Buffer> {
 		const wb = new ExcelJS.Workbook();
 
-		const summary = wb.addWorksheet('Summary');
+		const summary = wb.addWorksheet("Summary");
 		summary.columns = [
-			{ header: 'Field', key: 'field', width: 25 },
-			{ header: 'Value', key: 'value', width: 80 },
+			{ header: "Field", key: "field", width: 25 },
+			{ header: "Value", key: "value", width: 80 },
 		];
 
 		const cell = (v: unknown) => {
-			if (v === null || v === undefined) return '';
+			if (v === null || v === undefined) return "";
 			if (v instanceof Date) return v;
-			if (typeof v === 'object') return JSON.stringify(v, null, 2);
+			if (typeof v === "object") return JSON.stringify(v, null, 2);
 			return v as string | number | boolean;
 		};
 
 		for (const [key, value] of Object.entries(data)) {
 			const isTable =
-				Array.isArray(value) && value.length > 0 && typeof value[0] === 'object';
+				Array.isArray(value) &&
+				value.length > 0 &&
+				typeof value[0] === "object";
 
 			if (isTable) {
 				const rows = value as Record<string, unknown>[];
 				const sheet = wb.addWorksheet(key.slice(0, 31));
 
 				const keys = [...new Set(rows.flatMap((r) => Object.keys(r)))];
-				sheet.columns = keys.map((k) => ({ header: k, key: k, width: 25 }));
+				sheet.columns = keys.map((k) => ({
+					header: k,
+					key: k,
+					width: 25,
+				}));
 				sheet.addRows(
-					rows.map((r) => Object.fromEntries(keys.map((k) => [k, cell(r[k])]))),
+					rows.map((r) =>
+						Object.fromEntries(keys.map((k) => [k, cell(r[k])])),
+					),
 				);
 				sheet.getRow(1).font = { bold: true };
 			} else {
@@ -75,59 +123,68 @@ export class ReportingService {
 		}
 
 		summary.getRow(1).font = { bold: true };
-		summary.getColumn('value').alignment = { wrapText: true, vertical: 'top' };
+		summary.getColumn("value").alignment = {
+			wrapText: true,
+			vertical: "top",
+		};
 
 		return Buffer.from(await wb.xlsx.writeBuffer());
 	}
 
 	async findAll(header: ReportingHeadersDto) {
-		if (!header['org-id']) {
-			throw new BadRequestException('org-id header is required');
+		if (!header["org-id"]) {
+			throw new BadRequestException("org-id header is required");
 		}
 		const organization = await this.prisma.organization.findUnique({
-			where : {
-				id: header['org-id'],
-			}
-		})
+			where: {
+				id: header["org-id"],
+			},
+		});
 
 		if (!organization) {
-			throw new NotFoundException('there is no organization with this id');
+			throw new NotFoundException(
+				"there is no organization with this id",
+			);
 		}
 		const jobs = await this.prisma.job.findMany({
 			where: {
-				org_id: header['org-id'],
-		},
-		select: {
-			id: true,
-		},
+				org_id: header["org-id"],
+			},
+			select: {
+				id: true,
+			},
 		});
 		if (jobs.length === 0) {
-			throw new NotFoundException('there is no job');
+			throw new NotFoundException("there is no job");
 		}
 		return jobs;
 	}
 
 	async findOne(id: string, header: ReportingHeadersDto) {
-		if (!header['org-id']) {
-			throw new NotFoundException('there is no organization with this id');
+		if (!header["org-id"]) {
+			throw new NotFoundException(
+				"there is no organization with this id",
+			);
 		}
 
 		const organization = await this.prisma.organization.findUnique({
 			where: {
-				id: header['org-id'],
+				id: header["org-id"],
 			},
 		});
 
 		if (!organization) {
-			throw new NotFoundException('there is no organization with this id');
+			throw new NotFoundException(
+				"there is no organization with this id",
+			);
 		}
 		const oJob = await this.prisma.job.findFirst({
-			where: { id, org_id: header['org-id'] },
+			where: { id, org_id: header["org-id"] },
 			select: { id: true },
 		});
 
 		if (!oJob) {
-			throw new NotFoundException('Job not found');
+			throw new NotFoundException("Job not found");
 		}
 
 		const report = await this.prisma.report.findFirst({
@@ -143,20 +200,21 @@ export class ReportingService {
 								created_at: true,
 							},
 							orderBy: {
-								created_at: 'asc'
-							}
+								created_at: "asc",
+							},
 						},
 					},
 				},
 			},
 		});
 		if (!report) {
-			throw new NotFoundException('There is no report with this ID, or this report has no comments.');
+			throw new NotFoundException(
+				"There is no report with this ID, or this report has no comments.",
+			);
 		}
 
-		const monthly = new Map<string, {total: number, count: number}>();
-		for (const comment of report.job.comments)
-		{
+		const monthly = new Map<string, { total: number; count: number }>();
+		for (const comment of report.job.comments) {
 			const date = new Date(comment.created_at);
 
 			const day = date.toLocaleString("en-US", {
@@ -165,7 +223,7 @@ export class ReportingService {
 				timeZone: "UTC",
 			});
 			const current = monthly.get(day);
-			if (current){
+			if (current) {
 				current.total += Number(comment.sentiment_score ?? 0);
 				current.count++;
 			} else {
@@ -180,11 +238,11 @@ export class ReportingService {
 			day,
 			sentiment_score: data.total / data.count,
 		}));
-		const {job, ...reportdata} = report;
+		const { job, ...reportdata } = report;
 		const response = {
 			...reportdata,
 			result,
-		}
+		};
 		return response;
 	}
 
@@ -193,49 +251,56 @@ export class ReportingService {
 	}
 
 	async remove(id: string, header: ReportingHeadersDto) {
-		if (!header['org-id']) {
-			throw new BadRequestException('org-id header is required');
+		if (!header["org-id"]) {
+			throw new BadRequestException("org-id header is required");
 		}
 
 		const organization = await this.prisma.organization.findUnique({
 			where: {
-				id: header['org-id'],
+				id: header["org-id"],
 			},
 		});
 
 		if (!organization) {
-			throw new NotFoundException('there is no organization with this id');
+			throw new NotFoundException(
+				"there is no organization with this id",
+			);
 		}
 		const oJob = await this.prisma.job.findFirst({
-			where: { id, org_id: header['org-id'] },
+			where: { id, org_id: header["org-id"] },
 			select: { id: true },
 		});
 
 		if (!oJob) {
-			throw new NotFoundException('Job not found');
+			throw new NotFoundException("Job not found");
 		}
 
 		await this.prisma.job.delete({
 			where: {
 				id: id,
-				org_id: header['org-id'],
+				org_id: header["org-id"],
 			},
 		});
 	}
 
-	async exportReport(id: string, header: ReportingHeadersDto) {
-		if (!header['org-id']) {
-			throw new BadRequestException('org-id header is required');
+	async exportReport(
+		id: string,
+		header: ReportingHeadersDto,
+	): Promise<ReportDetails | unknown> {
+		if (!header["org-id"]) {
+			throw new BadRequestException("org-id header is required");
 		}
 
 		const organization = await this.prisma.organization.findUnique({
 			where: {
-				id: header['org-id'],
+				id: header["org-id"],
 			},
 		});
 
 		if (!organization) {
-			throw new NotFoundException('there is no organization with this id');
+			throw new NotFoundException(
+				"there is no organization with this id",
+			);
 		}
 
 		const report = await this.prisma.report.findFirst({
@@ -259,20 +324,21 @@ export class ReportingService {
 								author: true,
 							},
 							orderBy: {
-								created_at: 'asc'
-							}
+								created_at: "asc",
+							},
 						},
 					},
 				},
 			},
 		});
 		if (!report) {
-			throw new NotFoundException('There is no report with this ID, or this report has no comments.');
+			throw new NotFoundException(
+				"There is no report with this ID, or this report has no comments.",
+			);
 		}
 
-		const monthly = new Map<string, {total: number, count: number}>();
-		for (const comment of report.job.comments)
-		{
+		const monthly = new Map<string, { total: number; count: number }>();
+		for (const comment of report.job.comments) {
 			const date = new Date(comment.created_at);
 
 			const day = date.toLocaleString("en-US", {
@@ -281,7 +347,7 @@ export class ReportingService {
 				timeZone: "UTC",
 			});
 			const current = monthly.get(day);
-			if (current){
+			if (current) {
 				current.total += Number(comment.sentiment_score ?? 0);
 				current.count++;
 			} else {
@@ -306,12 +372,13 @@ export class ReportingService {
 
 		const Total = VADER.length ? sum / VADER.length : 0;
 
-		return {
+		const result = {
 			...reportdata,
 			...jobinfo,
 			comments,
 			VADER,
 			Total,
-		};
+		} as ReportDetails | unknown;
+		return result;
 	}
 }

@@ -1,15 +1,14 @@
-import { Module } from '@nestjs/common';
-import { BackupsService } from './backups.service';
-import { BackupsController } from './backups.controller';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { MinioModule } from 'src/minio/minio.module';
-import { MinioService } from 'src/minio/minio.service';
-import { MetricsModule } from 'src/metrics/metrics.module';
+import { Module } from "@nestjs/common";
+import { BackupsService } from "./backups.service";
+import { BackupsController } from "./backups.controller";
+import { PrismaService } from "src/prisma/prisma.service";
+import { MinioModule } from "src/minio/minio.module";
+import { MinioService } from "src/minio/minio.service";
+import { MetricsModule } from "src/metrics/metrics.module";
 
 @Module({
-  imports: [MinioModule, MetricsModule],
-  controllers: [BackupsController],
-  providers: [BackupsService, PrismaService, MinioService],
+	imports: [MinioModule, MetricsModule],
+	controllers: [BackupsController],
+	providers: [BackupsService, PrismaService, MinioService],
 })
-
 export class BackupsModule {}
