@@ -1,8 +1,5 @@
-import hashlib
 import logging
 from typing import Any
-
-import numpy as np
 
 from .config import settings
 
@@ -25,27 +22,13 @@ def warmup() -> None:
     _get_model()
 
 
-def _generate_mock_embedding(text: str) -> list[float]:
-    seed = int(hashlib.sha256(text.encode("utf-8")).hexdigest()[:8], 16)
-    rng = np.random.default_rng(seed)
-    vec = rng.standard_normal(384).astype(np.float32)
-    norm = np.linalg.norm(vec)
-    if norm > 0:
-        vec = vec / norm
-    return vec.tolist()
+def generate_embeddings(texts: list[str]) -> list[list[float]]:
+    if not texts:
+        return []
+    model = _get_model()
+    vectors = model.encode(texts, batch_size=32, normalize_embeddings=True)
+    return [[float(x) for x in v] for v in vectors]
 
 
 def generate_embedding(text: str) -> list[float]:
-    if settings.use_mock_embeddings:
-        return _generate_mock_embedding(text)
-    try:
-        model = _get_model()
-        vec = model.encode(text, normalize_embeddings=True)
-        return [float(x) for x in vec.tolist()]
-    except Exception as e:
-        logger.warning("Falling back to mock embedding: %s", e)
-        return _generate_mock_embedding(text)
-
-
-def generate_embeddings(texts: list[str]) -> list[list[float]]:
-    return [generate_embedding(t) for t in texts]
+    return generate_embeddings([text])[0]

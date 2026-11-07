@@ -429,6 +429,21 @@ def test_rag_query_returns_502_when_llm_fails():
         assert response.status_code == 502
 
 
+def test_rag_query_returns_503_when_embedding_model_fails():
+    with patch(
+        "app.main.get_job", new_callable=AsyncMock, return_value={"id": "job-123"}
+    ), patch(
+        "app.main.generate_embedding",
+        side_effect=RuntimeError("model down"),
+    ):
+        response = client.post(
+            "/rag/query",
+            json={"job_id": "job-123", "query": "how is the pricing?"},
+        )
+        assert response.status_code == 503
+        assert response.json()["detail"] == "Embedding model unavailable"
+
+
 def test_rag_query_endpoint_job_not_found():
     with patch("app.main.get_job", new_callable=AsyncMock, return_value=None):
         response = client.post(

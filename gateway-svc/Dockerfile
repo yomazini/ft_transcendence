@@ -11,9 +11,17 @@ RUN pnpm config set fetch-timeout 300000 && pnpm config set fetch-retries 5 && p
 
 COPY . .
 RUN ./node_modules/.bin/nest build
+RUN pnpm prune --prod --ignore-scripts
 
-EXPOSE 3001
+FROM node:22-alpine AS runtime
+WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3001
 
+COPY --from=build /app/package.json ./
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+
+USER node
+EXPOSE 3001
 CMD ["node", "dist/main.js"]

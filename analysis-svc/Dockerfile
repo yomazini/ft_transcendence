@@ -7,8 +7,8 @@ RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu 
 COPY pyproject.toml ./
 RUN pip install --no-cache-dir --default-timeout=1000 \
     fastapi "uvicorn[standard]" vaderSentiment textblob sentence-transformers \
-    google-generativeai pgvector asyncpg redis pydantic pydantic-settings \
-    httpx pytest pytest-asyncio numpy bullmq prometheus-client hvac
+    asyncpg redis pydantic pydantic-settings \
+    httpx numpy bullmq prometheus-client hvac
 
 COPY . .
 

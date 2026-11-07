@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import time
 import uuid
 from typing import Any, cast
 
@@ -15,9 +14,9 @@ from .database import (
     update_comment_analysis,
     update_job_status,
 )
-from .embeddings import generate_embedding
+from .embeddings import generate_embeddings
 from .events import publish_job_event
-from .metrics import analysis_jobs, analysis_stage_duration
+from .metrics import analysis_jobs
 from .sentiment import compute_sentiment_summary, score_comments
 from .synthesis import synthesize_full_report
 
@@ -30,10 +29,18 @@ _worker: Worker | None = None
 async def process_job(job, token):
     job_id = job.data.get("id") if job.data else None
     if not job_id:
-        logger.error("Job missing 'id' field in payload: %s", job.data)
-        return {"error": "missing job id"}
+        raise ValueError(f"Job missing id: {job.data}")
 
-    logger.info("Processing job %s", job_id)
+    attempts_made = int(job.attemptsMade or 0)
+    total_attempts = int(job.opts.get("attempts", 1))
+    is_final = attempts_made + 1 >= total_attempts
+
+    logger.info(
+        "Processing job %s (attempt %d/%d)",
+        job_id,
+        attempts_made + 1,
+        total_attempts,
+    )
 
     try:
         await update_job_status(job_id, "Running")
@@ -63,15 +70,15 @@ async def process_job(job, token):
         else:
             raise ValueError(f"Job {job_id} has no comments")
 
-        started = time.perf_counter()
-        scored = score_comments(comments)
+        scored = await asyncio.to_thread(score_comments, comments)
         summary = compute_sentiment_summary(scored)
-        analysis_stage_duration.labels("sentiment").observe(
-            time.perf_counter() - started
+
+        vectors = await asyncio.to_thread(
+            generate_embeddings,
+            [c["text"] for c in scored],
         )
 
-        for comment in scored:
-            embedding = await asyncio.to_thread(generate_embedding, comment["text"])
+        for comment, embedding in zip(scored, vectors):
             if from_db:
                 await update_comment_analysis(
                     comment_id=comment["id"],
@@ -89,11 +96,7 @@ async def process_job(job, token):
                     embedding=embedding,
                 )
 
-        started = time.perf_counter()
         report_data = await synthesize_full_report(job_row, summary, scored)
-        analysis_stage_duration.labels("synthesis").observe(
-            time.perf_counter() - started
-        )
         report_id = str(uuid.uuid4())
 
         await insert_report(
@@ -116,14 +119,33 @@ async def process_job(job, token):
             "sentiment_summary": summary,
         }
 
-    except Exception as e:
-        logger.exception("Job %s failed: %s", job_id, e)
-        analysis_jobs.labels("failed").inc()
-        try:
-            await update_job_status(job_id, "Failed")
-            await publish_job_event(job_id, "failed", {"error": str(e)})
-        except Exception:
-            logger.exception("Could not update job status to Failed")
+    except Exception as exc:
+        logger.exception(
+            "Job %s failed on attempt %d/%d",
+            job_id,
+            attempts_made + 1,
+            total_attempts,
+        )
+
+        if is_final:
+            analysis_jobs.labels("failed").inc()
+            try:
+                await update_job_status(job_id, "Failed")
+                await publish_job_event(
+                    job_id,
+                    "failed",
+                    {"error": str(exc)},
+                )
+            except Exception:
+                logger.exception("Could not mark job %s as Failed", job_id)
+        else:
+            logger.warning(
+                "Job %s will retry (%d/%d)",
+                job_id,
+                attempts_made + 1,
+                total_attempts,
+            )
+
         raise
 
 

@@ -835,6 +835,10 @@ paths:
           description: Invalid job parameters
         "401":
           description: Unauthorized
+        "403":
+          description: Job limit reached for the organization plan
+        "503":
+          description: Billing service or database unavailable
 
     get:
       summary: List all jobs for active tenant organization

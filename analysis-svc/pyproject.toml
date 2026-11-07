@@ -8,8 +8,6 @@ dependencies = [
   "vaderSentiment",
   "textblob",
   "sentence-transformers",
-  "google-generativeai",
-  "pgvector",
   "asyncpg",
   "redis",
   "pydantic",

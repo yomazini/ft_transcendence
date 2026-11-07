@@ -1,16 +1,19 @@
 import {
+  ConflictException,
   Injectable,
   OnModuleInit,
   OnModuleDestroy,
   Logger,
   NotFoundException,
   HttpException,
+  ServiceUnavailableException,
+  GatewayTimeoutException,
+  ForbiddenException,
 } from '@nestjs/common';
-import { Queue } from 'bullmq';
+import { Job, Queue } from 'bullmq';
+
 import { randomUUID } from 'crypto';
 import { CreateJobDto } from './dto/create-job.dto';
-import { ServiceUnavailableException } from '@nestjs/common';
-import { GatewayTimeoutException } from '@nestjs/common';
 import {
   DatabaseService,
   JobRecord,
@@ -68,7 +71,11 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async createJob(dto: CreateJobDto, user: AuthenticatedUser) {
+  async createJob(
+    dto: CreateJobDto,
+    user: AuthenticatedUser,
+    authorization?: string,
+  ) {
     const target = dto.target.trim();
     const jobId = randomUUID();
     const now = new Date().toISOString();
@@ -95,8 +102,21 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       created_at: now,
     };
 
-    // 1. Persist to PostgreSQL (or in-memory fallback)
-    await this.databaseService.saveJob(jobRecord);
+    const nowDate = new Date(now);
+    const since = new Date(
+      Date.UTC(nowDate.getUTCFullYear(), nowDate.getUTCMonth(), 1),
+    );
+    const { plan, maxJobs } = await this.getPlanLimit(authorization);
+
+    if (
+      !(await this.databaseService.saveJobWithLimit(jobRecord, maxJobs, since))
+    ) {
+      throw new ForbiddenException(
+        `Job limit reached for the ${plan} plan (${maxJobs} per month)`,
+      );
+    }
+
+    // Persisted atomically with the limit check above.
     jobCreated.inc();
 
     // 2. Push task to Redis BullMQ queue (consumed by Madani's scraper-svc)
@@ -119,6 +139,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
             customer_persona: jobRecord.customer_persona,
           },
           {
+            jobId,
             attempts: 3,
             backoff: {
               type: 'exponential',
@@ -193,9 +214,51 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   }
 
   async deleteJob(id: string, user: AuthenticatedUser): Promise<void> {
-    await this.getJobById(id, user);
+    const job = await this.getJobById(id, user);
+    const status = job.status.toLowerCase();
+
+    if (status === 'running') {
+      throw new ConflictException(
+        `Job ${id} is running; wait until it finishes or fails`,
+      );
+    }
+
+    if (status === 'queued') {
+      await this.removeQueuedScrapeJob(job.id);
+    }
 
     await this.databaseService.deleteJob(id, user.org_id);
+  }
+
+  private async removeQueuedScrapeJob(jobId: string): Promise<void> {
+    if (!this.scrapeQueue) {
+      throw new ServiceUnavailableException('scrape queue unavailable');
+    }
+
+    try {
+      const removed = await this.scrapeQueue.remove(jobId);
+      if (removed) return;
+
+      // Legacy jobs were enqueued before we set a deterministic jobId.
+      const jobs = (await this.scrapeQueue.getJobs([
+        'waiting',
+        'delayed',
+        'paused',
+      ])) as Job[];
+
+      const legacy = jobs.find((job) => job.data?.id === jobId);
+      if (legacy) {
+        await legacy.remove();
+        return;
+      }
+
+      this.logger.warn(`No queued scrape job found for ${jobId}`);
+    } catch (err: any) {
+      this.logger.error(`Failed to remove queued job ${jobId}: ${err.message}`);
+      throw new ServiceUnavailableException(
+        'could not remove queued job from scrape queue',
+      );
+    }
   }
 
   async getJobById(id: string, user: AuthenticatedUser): Promise<JobRecord> {
@@ -205,6 +268,25 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       throw new NotFoundException(`No job found with ID ${id}`);
     }
     return job;
+  }
+
+  private async getPlanLimit(authorization?: string) {
+    const base = process.env.AUTH_SVC_URL || 'http://auth-svc:3002';
+    try {
+      const res = await fetch(`${base}/orgs/billing`, {
+        headers: { authorization: authorization ?? '' },
+        signal: AbortSignal.timeout(2000),
+      });
+      if (!res.ok) throw new Error(`billing ${res.status}`);
+      const data = await res.json();
+      const maxJobs = Number(data.max_jobs);
+      if (!Number.isFinite(maxJobs) || maxJobs <= 0) {
+        throw new Error('billing response has no max_jobs');
+      }
+      return { plan: data.plan as string, maxJobs };
+    } catch {
+      throw new ServiceUnavailableException('auth-svc billing unavailable');
+    }
   }
 
   async getReportByJobId(
