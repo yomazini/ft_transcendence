@@ -114,6 +114,8 @@ model Comments {
     job             Job                    @relation(fields: [job_id], references: [id], onDelete: Cascade)
     job_id          String
     text            String
+    created         String
+    name            String
     author          String?
     upvotes         Int
     sentiment_score Float?
