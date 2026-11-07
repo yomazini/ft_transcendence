@@ -1,3 +1,4 @@
+import { ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { JobsController } from './jobs.controller';
@@ -34,6 +35,11 @@ describe('JobsController', () => {
     controller = module.get<JobsController>(JobsController);
     service = module.get<JobsService>(JobsService);
 
+    // Unit tests do not call auth-svc; use a deterministic plan.
+    jest
+      .spyOn(service as any, 'getPlanLimit')
+      .mockResolvedValue({ plan: 'free', maxJobs: 5 });
+
     // createJob now fails fast when the queue is unavailable.
     (service as any).scrapeQueue = {
       add: jest.fn().mockResolvedValue({ id: 'queue-job-1' }),
@@ -68,6 +74,19 @@ describe('JobsController', () => {
       expect(result.id).toBeDefined();
       expect(result.status).toBe('Queued');
       expect(result.target).toBe('r/freelance');
+    });
+
+    it('rejects the job when the plan limit is reached', async () => {
+      jest
+        .spyOn((service as any).databaseService, 'saveJobWithLimit')
+        .mockResolvedValue(false);
+
+      await expect(
+        controller.createJob(
+          { mode: 'post', target: 'https://www.reddit.com/r/test/comments/x/y/' },
+          { user: mockUser },
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
     it('uses the organization description when no persona is sent', async () => {

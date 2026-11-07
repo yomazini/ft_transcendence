@@ -5,6 +5,8 @@ import {
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import { countReset } from 'node:console';
+import { promises } from 'node:dns';
 import { Pool, QueryResult } from 'pg';
 
 export interface JobRecord {
@@ -178,7 +180,88 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       return [];
     }
   }
+  async countJobsByOrgSince(orgId: string, since: Date): Promise<number> {
+    if (!this.isConnected || !this.pool) {
+      return Array.from(this.inMemoryJobs.values()).filter(
+        (job) =>
+          job.org_id === orgId &&
+          new Date(job.created_at).getTime() >= since.getTime(),
+      ).length;
+    }
 
+    const res = await this.pool.query(
+      `SELECT count(*)::int AS count
+       FROM "Job"
+      WHERE org_id = $1 AND created_at >= $2`,
+      [orgId, since],
+    );
+    return res.rows[0]?.count ?? 0;
+  }
+
+  async saveJobWithLimit(
+    job: JobRecord,
+    maxJobs: number,
+    since: Date,
+  ): Promise<boolean> {
+    if (!this.isConnected || !this.pool) {
+      if (this.isProduction) {
+        throw new ServiceUnavailableException('database unavailable');
+      }
+      // One synchronous block: Node cannot interleave another request here.
+      const count = Array.from(this.inMemoryJobs.values()).filter(
+        (j) =>
+          j.org_id === job.org_id &&
+          new Date(j.created_at).getTime() >= since.getTime(),
+      ).length;
+      if (count >= maxJobs) return false;
+      this.inMemoryJobs.set(job.id, job);
+      return true;
+    }
+
+    // Serialize count + insert per org so parallel creates cannot exceed the plan.
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1::text))', [
+        job.org_id,
+      ]);
+
+      const countRes = await client.query(
+        `SELECT count(*)::int AS count
+         FROM "Job"
+        WHERE org_id = $1 AND created_at >= $2`,
+        [job.org_id, since],
+      );
+      if ((countRes.rows[0]?.count ?? 0) >= maxJobs) {
+        await client.query('ROLLBACK');
+        return false;
+      }
+
+      await client.query(
+        `INSERT INTO "Job"
+        (id, org_id, created_by, target, mode, status, customer_persona, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status`,
+        [
+          job.id,
+          job.org_id,
+          job.created_by,
+          job.target,
+          this.normalizeJobMode(job.mode),
+          this.normalizeJobStatus(job.status),
+          JSON.stringify(job.customer_persona),
+          new Date(job.created_at),
+        ],
+      );
+      await client.query('COMMIT');
+      return true;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
   async updateJob(
     id: string,
     orgId: string,
@@ -307,6 +390,4 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     };
     return map[status.toLowerCase()] || 'Queued';
   }
-
-
 }
