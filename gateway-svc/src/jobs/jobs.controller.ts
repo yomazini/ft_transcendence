@@ -24,10 +24,12 @@ import { CreateJobDto } from './dto/create-job.dto';
 import { RagQueryDto } from './dto/rag-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Public } from '../auth/public.decorator';
+import { RolesGuard } from '../auth/roles.guards';
+import { Roles } from '../auth/roles.decorators';
 
 @ApiTags('Public API Gateway')
 @Controller('api')
-@UseGuards(ThrottlerGuard, JwtAuthGuard)
+@UseGuards(ThrottlerGuard, JwtAuthGuard, RolesGuard)
 export class JobsController {
   constructor(private readonly jobsService: JobsService) {}
 
@@ -39,6 +41,7 @@ export class JobsController {
     return { status: 'ok', service: 'gateway-svc' };
   }
   @Post('jobs')
+  @Roles('Admin', 'Analyst')
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth()
   @Throttle({ default: { limit: 20, ttl: 60000 } })
@@ -57,6 +60,7 @@ export class JobsController {
   }
 
   @Put('jobs/:id')
+  @Roles('Admin', 'Analyst')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a job target/mode/persona' })
   @ApiResponse({ status: 200, description: 'Job updated' })
@@ -70,6 +74,7 @@ export class JobsController {
   }
 
   @Delete('jobs/:id')
+  @Roles('Admin')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a job and its comments/report' })
