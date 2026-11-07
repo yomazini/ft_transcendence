@@ -5,9 +5,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { createHash } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { ServiceUnavailableException } from '@nestjs/common';
 import { IS_PUBLIC_KEY } from './public.decorator';
+import { DatabaseService } from '../database/database.service';
 
 export interface AuthenticatedUser {
   id: string;
@@ -19,7 +21,10 @@ export interface AuthenticatedUser {
 export class JwtAuthGuard implements CanActivate {
   private readonly jwt = new JwtService({ secret: process.env.JWT_SECRET });
 
-  constructor(private readonly reflector: Reflector) {}
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly databaseService: DatabaseService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
@@ -32,6 +37,16 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
+    const raw = request.headers['x-api-key'];
+    if (raw) {
+      const hash = createHash('sha256').update(String(raw)).digest('hex');
+      const key = await this.databaseService.findApiKeyByHash(hash);
+      if (!key) throw new UnauthorizedException('Invalid API key');
+      request.user = { id: key.user_id, org_id: key.org_id, role: 'Admin' };
+      void this.databaseService.touchApiKey(hash).catch(() => undefined);
+      return true;
+    }
+
     const authHeader = request.headers['authorization'];
 
     if (!authHeader) {

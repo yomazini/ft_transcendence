@@ -17,8 +17,10 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiSecurity,
 } from '@nestjs/swagger';
-import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
+import { ApiKeyThrottlerGuard } from '../auth/api-key-throttler.guard';
 import { JobsService } from './jobs.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { RagQueryDto } from './dto/rag-query.dto';
@@ -28,8 +30,9 @@ import { RolesGuard } from '../auth/roles.guards';
 import { Roles } from '../auth/roles.decorators';
 
 @ApiTags('Public API Gateway')
+@ApiSecurity('api-key')
 @Controller('api')
-@UseGuards(ThrottlerGuard, JwtAuthGuard, RolesGuard)
+@UseGuards(ApiKeyThrottlerGuard, JwtAuthGuard, RolesGuard)
 export class JobsController {
   constructor(private readonly jobsService: JobsService) {}
 

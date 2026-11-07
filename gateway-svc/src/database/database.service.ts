@@ -381,6 +381,23 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     return map[mode.toLowerCase()] || 'Subreddit';
   }
 
+  async findApiKeyByHash(hash: string) {
+    if (!this.isConnected || !this.pool) return null;
+    const res = await this.pool.query(
+      `SELECT user_id, org_id FROM "ApiKey" WHERE key_hash = $1  AND active= true LIMIT 1`,
+      [hash],
+    );
+    return res.rows[0] ?? null;
+  }
+
+  async touchApiKey(hash: string) {
+    if (!this.isConnected || !this.pool) return;
+    await this.pool.query(
+      `UPDATE "ApiKey" SET last_used_at = now() WHERE key_hash=$1 `,
+      [hash],
+    );
+  }
+
   private normalizeJobStatus(status: string): string {
     const map: Record<string, string> = {
       queued: 'Queued',
