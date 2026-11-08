@@ -65,9 +65,8 @@ describe('JobsService.requeueJob', () => {
     customer_persona: { description: 'test' },
   } as any;
 
-  it('clears old comments and report before queueing a done job', async () => {
+  it('queues a done job without deleting the old data', async () => {
     const database = {
-      clearJobAnalysis: jest.fn().mockResolvedValue(undefined),
       updateJobStatus: jest.fn().mockResolvedValue(undefined),
     };
     const events = { broadcastJobStatus: jest.fn() };
@@ -79,7 +78,6 @@ describe('JobsService.requeueJob', () => {
 
     await service.requeueJob('j-1', user);
 
-    expect(database.clearJobAnalysis).toHaveBeenCalledWith('j-1');
     expect((service as any).scrapeQueue.add).toHaveBeenCalledWith(
       'scrape',
       expect.objectContaining({ id: 'j-1', target: 'r/test' }),
@@ -94,7 +92,6 @@ describe('JobsService.requeueJob', () => {
 
   it('rejects a running job', async () => {
     const database = {
-      clearJobAnalysis: jest.fn(),
       updateJobStatus: jest.fn(),
     };
     const service = new JobsService(database as any, {} as any);
@@ -106,12 +103,10 @@ describe('JobsService.requeueJob', () => {
     await expect(service.requeueJob('j-1', user)).rejects.toBeInstanceOf(
       ConflictException,
     );
-    expect(database.clearJobAnalysis).not.toHaveBeenCalled();
   });
 
   it('removes the old queue entry for a queued job', async () => {
     const database = {
-      clearJobAnalysis: jest.fn(),
       updateJobStatus: jest.fn().mockResolvedValue(undefined),
     };
     const events = { broadcastJobStatus: jest.fn() };
@@ -129,6 +124,5 @@ describe('JobsService.requeueJob', () => {
     await service.requeueJob('j-1', user);
 
     expect((service as any).scrapeQueue.remove).toHaveBeenCalledWith('j-1');
-    expect(database.clearJobAnalysis).not.toHaveBeenCalled();
   });
 });

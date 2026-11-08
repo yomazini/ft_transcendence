@@ -213,10 +213,6 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       await this.removeQueuedScrapeJob(id);
     }
 
-    if (status === 'done' || status === 'failed') {
-      await this.databaseService.clearJobAnalysis(job.id);
-    }
-
     if (!this.scrapeQueue) {
       await this.databaseService.updateJobStatus(job.id, 'Failed');
       throw new ServiceUnavailableException('scrape queue unavailable');
