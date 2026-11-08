@@ -890,7 +890,7 @@ paths:
         "404":
           description: Job not found or belongs to another organization
         "409":
-          description: Job is running
+          description: Job is running or scraping
         "503":
           description: Scrape queue or database unavailable
 

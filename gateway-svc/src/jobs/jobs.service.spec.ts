@@ -105,6 +105,22 @@ describe('JobsService.requeueJob', () => {
     );
   });
 
+  it('rejects a scraping job', async () => {
+    const database = {
+      updateJobStatus: jest.fn(),
+    };
+    const service = new JobsService(database as any, {} as any);
+    jest.spyOn(service, 'getJobById').mockResolvedValue({
+      ...doneJob,
+      status: 'scraping',
+    });
+
+    await expect(service.requeueJob('j-1', user)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(database.updateJobStatus).not.toHaveBeenCalled();
+  });
+
   it('removes the old queue entry for a queued job', async () => {
     const database = {
       updateJobStatus: jest.fn().mockResolvedValue(undefined),
