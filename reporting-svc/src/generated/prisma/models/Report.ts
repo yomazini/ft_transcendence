@@ -20,13 +20,24 @@ export type ReportModel = runtime.Types.Result.DefaultSelection<Prisma.$ReportPa
 
 export type AggregateReport = {
   _count: ReportCountAggregateOutputType | null
+  _avg: ReportAvgAggregateOutputType | null
+  _sum: ReportSumAggregateOutputType | null
   _min: ReportMinAggregateOutputType | null
   _max: ReportMaxAggregateOutputType | null
+}
+
+export type ReportAvgAggregateOutputType = {
+  sentiment_score: number | null
+}
+
+export type ReportSumAggregateOutputType = {
+  sentiment_score: number | null
 }
 
 export type ReportMinAggregateOutputType = {
   id: string | null
   job_id: string | null
+  sentiment_score: number | null
   conclusion: string | null
   created_at: Date | null
 }
@@ -34,6 +45,7 @@ export type ReportMinAggregateOutputType = {
 export type ReportMaxAggregateOutputType = {
   id: string | null
   job_id: string | null
+  sentiment_score: number | null
   conclusion: string | null
   created_at: Date | null
 }
@@ -43,15 +55,25 @@ export type ReportCountAggregateOutputType = {
   job_id: number
   swot: number
   blue_ocean: number
+  sentiment_score: number
   conclusion: number
   created_at: number
   _all: number
 }
 
 
+export type ReportAvgAggregateInputType = {
+  sentiment_score?: true
+}
+
+export type ReportSumAggregateInputType = {
+  sentiment_score?: true
+}
+
 export type ReportMinAggregateInputType = {
   id?: true
   job_id?: true
+  sentiment_score?: true
   conclusion?: true
   created_at?: true
 }
@@ -59,6 +81,7 @@ export type ReportMinAggregateInputType = {
 export type ReportMaxAggregateInputType = {
   id?: true
   job_id?: true
+  sentiment_score?: true
   conclusion?: true
   created_at?: true
 }
@@ -68,6 +91,7 @@ export type ReportCountAggregateInputType = {
   job_id?: true
   swot?: true
   blue_ocean?: true
+  sentiment_score?: true
   conclusion?: true
   created_at?: true
   _all?: true
@@ -111,6 +135,18 @@ export type ReportAggregateArgs<ExtArgs extends runtime.Types.Extensions.Interna
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: ReportAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: ReportSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: ReportMinAggregateInputType
@@ -141,6 +177,8 @@ export type ReportGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   take?: number
   skip?: number
   _count?: ReportCountAggregateInputType | true
+  _avg?: ReportAvgAggregateInputType
+  _sum?: ReportSumAggregateInputType
   _min?: ReportMinAggregateInputType
   _max?: ReportMaxAggregateInputType
 }
@@ -150,9 +188,12 @@ export type ReportGroupByOutputType = {
   job_id: string
   swot: runtime.JsonValue
   blue_ocean: runtime.JsonValue
+  sentiment_score: number | null
   conclusion: string | null
   created_at: Date
   _count: ReportCountAggregateOutputType | null
+  _avg: ReportAvgAggregateOutputType | null
+  _sum: ReportSumAggregateOutputType | null
   _min: ReportMinAggregateOutputType | null
   _max: ReportMaxAggregateOutputType | null
 }
@@ -180,6 +221,7 @@ export type ReportWhereInput = {
   job_id?: Prisma.StringFilter<"Report"> | string
   swot?: Prisma.JsonFilter<"Report">
   blue_ocean?: Prisma.JsonFilter<"Report">
+  sentiment_score?: Prisma.FloatNullableFilter<"Report"> | number | null
   conclusion?: Prisma.StringNullableFilter<"Report"> | string | null
   created_at?: Prisma.DateTimeFilter<"Report"> | Date | string
   job?: Prisma.XOR<Prisma.JobScalarRelationFilter, Prisma.JobWhereInput>
@@ -190,6 +232,7 @@ export type ReportOrderByWithRelationInput = {
   job_id?: Prisma.SortOrder
   swot?: Prisma.SortOrder
   blue_ocean?: Prisma.SortOrder
+  sentiment_score?: Prisma.SortOrderInput | Prisma.SortOrder
   conclusion?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   job?: Prisma.JobOrderByWithRelationInput
@@ -197,27 +240,31 @@ export type ReportOrderByWithRelationInput = {
 
 export type ReportWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  job_id?: string
   AND?: Prisma.ReportWhereInput | Prisma.ReportWhereInput[]
   OR?: Prisma.ReportWhereInput[]
   NOT?: Prisma.ReportWhereInput | Prisma.ReportWhereInput[]
+  job_id?: Prisma.StringFilter<"Report"> | string
   swot?: Prisma.JsonFilter<"Report">
   blue_ocean?: Prisma.JsonFilter<"Report">
+  sentiment_score?: Prisma.FloatNullableFilter<"Report"> | number | null
   conclusion?: Prisma.StringNullableFilter<"Report"> | string | null
   created_at?: Prisma.DateTimeFilter<"Report"> | Date | string
   job?: Prisma.XOR<Prisma.JobScalarRelationFilter, Prisma.JobWhereInput>
-}, "id" | "job_id">
+}, "id">
 
 export type ReportOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   job_id?: Prisma.SortOrder
   swot?: Prisma.SortOrder
   blue_ocean?: Prisma.SortOrder
+  sentiment_score?: Prisma.SortOrderInput | Prisma.SortOrder
   conclusion?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   _count?: Prisma.ReportCountOrderByAggregateInput
+  _avg?: Prisma.ReportAvgOrderByAggregateInput
   _max?: Prisma.ReportMaxOrderByAggregateInput
   _min?: Prisma.ReportMinOrderByAggregateInput
+  _sum?: Prisma.ReportSumOrderByAggregateInput
 }
 
 export type ReportScalarWhereWithAggregatesInput = {
@@ -228,6 +275,7 @@ export type ReportScalarWhereWithAggregatesInput = {
   job_id?: Prisma.StringWithAggregatesFilter<"Report"> | string
   swot?: Prisma.JsonWithAggregatesFilter<"Report">
   blue_ocean?: Prisma.JsonWithAggregatesFilter<"Report">
+  sentiment_score?: Prisma.FloatNullableWithAggregatesFilter<"Report"> | number | null
   conclusion?: Prisma.StringNullableWithAggregatesFilter<"Report"> | string | null
   created_at?: Prisma.DateTimeWithAggregatesFilter<"Report"> | Date | string
 }
@@ -236,6 +284,7 @@ export type ReportCreateInput = {
   id?: string
   swot: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sentiment_score?: number | null
   conclusion?: string | null
   created_at?: Date | string
   job: Prisma.JobCreateNestedOneWithoutReportInput
@@ -246,6 +295,7 @@ export type ReportUncheckedCreateInput = {
   job_id: string
   swot: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sentiment_score?: number | null
   conclusion?: string | null
   created_at?: Date | string
 }
@@ -254,6 +304,7 @@ export type ReportUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   swot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   conclusion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   job?: Prisma.JobUpdateOneRequiredWithoutReportNestedInput
@@ -264,6 +315,7 @@ export type ReportUncheckedUpdateInput = {
   job_id?: Prisma.StringFieldUpdateOperationsInput | string
   swot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   conclusion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -273,6 +325,7 @@ export type ReportCreateManyInput = {
   job_id: string
   swot: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sentiment_score?: number | null
   conclusion?: string | null
   created_at?: Date | string
 }
@@ -281,6 +334,7 @@ export type ReportUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   swot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   conclusion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -290,13 +344,19 @@ export type ReportUncheckedUpdateManyInput = {
   job_id?: Prisma.StringFieldUpdateOperationsInput | string
   swot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   conclusion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type ReportNullableScalarRelationFilter = {
-  is?: Prisma.ReportWhereInput | null
-  isNot?: Prisma.ReportWhereInput | null
+export type ReportListRelationFilter = {
+  every?: Prisma.ReportWhereInput
+  some?: Prisma.ReportWhereInput
+  none?: Prisma.ReportWhereInput
+}
+
+export type ReportOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder
 }
 
 export type ReportCountOrderByAggregateInput = {
@@ -304,13 +364,19 @@ export type ReportCountOrderByAggregateInput = {
   job_id?: Prisma.SortOrder
   swot?: Prisma.SortOrder
   blue_ocean?: Prisma.SortOrder
+  sentiment_score?: Prisma.SortOrder
   conclusion?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
+}
+
+export type ReportAvgOrderByAggregateInput = {
+  sentiment_score?: Prisma.SortOrder
 }
 
 export type ReportMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   job_id?: Prisma.SortOrder
+  sentiment_score?: Prisma.SortOrder
   conclusion?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
 }
@@ -318,46 +384,62 @@ export type ReportMaxOrderByAggregateInput = {
 export type ReportMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   job_id?: Prisma.SortOrder
+  sentiment_score?: Prisma.SortOrder
   conclusion?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
 }
 
-export type ReportCreateNestedOneWithoutJobInput = {
-  create?: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput>
-  connectOrCreate?: Prisma.ReportCreateOrConnectWithoutJobInput
-  connect?: Prisma.ReportWhereUniqueInput
+export type ReportSumOrderByAggregateInput = {
+  sentiment_score?: Prisma.SortOrder
 }
 
-export type ReportUncheckedCreateNestedOneWithoutJobInput = {
-  create?: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput>
-  connectOrCreate?: Prisma.ReportCreateOrConnectWithoutJobInput
-  connect?: Prisma.ReportWhereUniqueInput
+export type ReportCreateNestedManyWithoutJobInput = {
+  create?: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput> | Prisma.ReportCreateWithoutJobInput[] | Prisma.ReportUncheckedCreateWithoutJobInput[]
+  connectOrCreate?: Prisma.ReportCreateOrConnectWithoutJobInput | Prisma.ReportCreateOrConnectWithoutJobInput[]
+  createMany?: Prisma.ReportCreateManyJobInputEnvelope
+  connect?: Prisma.ReportWhereUniqueInput | Prisma.ReportWhereUniqueInput[]
 }
 
-export type ReportUpdateOneWithoutJobNestedInput = {
-  create?: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput>
-  connectOrCreate?: Prisma.ReportCreateOrConnectWithoutJobInput
-  upsert?: Prisma.ReportUpsertWithoutJobInput
-  disconnect?: Prisma.ReportWhereInput | boolean
-  delete?: Prisma.ReportWhereInput | boolean
-  connect?: Prisma.ReportWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.ReportUpdateToOneWithWhereWithoutJobInput, Prisma.ReportUpdateWithoutJobInput>, Prisma.ReportUncheckedUpdateWithoutJobInput>
+export type ReportUncheckedCreateNestedManyWithoutJobInput = {
+  create?: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput> | Prisma.ReportCreateWithoutJobInput[] | Prisma.ReportUncheckedCreateWithoutJobInput[]
+  connectOrCreate?: Prisma.ReportCreateOrConnectWithoutJobInput | Prisma.ReportCreateOrConnectWithoutJobInput[]
+  createMany?: Prisma.ReportCreateManyJobInputEnvelope
+  connect?: Prisma.ReportWhereUniqueInput | Prisma.ReportWhereUniqueInput[]
 }
 
-export type ReportUncheckedUpdateOneWithoutJobNestedInput = {
-  create?: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput>
-  connectOrCreate?: Prisma.ReportCreateOrConnectWithoutJobInput
-  upsert?: Prisma.ReportUpsertWithoutJobInput
-  disconnect?: Prisma.ReportWhereInput | boolean
-  delete?: Prisma.ReportWhereInput | boolean
-  connect?: Prisma.ReportWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.ReportUpdateToOneWithWhereWithoutJobInput, Prisma.ReportUpdateWithoutJobInput>, Prisma.ReportUncheckedUpdateWithoutJobInput>
+export type ReportUpdateManyWithoutJobNestedInput = {
+  create?: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput> | Prisma.ReportCreateWithoutJobInput[] | Prisma.ReportUncheckedCreateWithoutJobInput[]
+  connectOrCreate?: Prisma.ReportCreateOrConnectWithoutJobInput | Prisma.ReportCreateOrConnectWithoutJobInput[]
+  upsert?: Prisma.ReportUpsertWithWhereUniqueWithoutJobInput | Prisma.ReportUpsertWithWhereUniqueWithoutJobInput[]
+  createMany?: Prisma.ReportCreateManyJobInputEnvelope
+  set?: Prisma.ReportWhereUniqueInput | Prisma.ReportWhereUniqueInput[]
+  disconnect?: Prisma.ReportWhereUniqueInput | Prisma.ReportWhereUniqueInput[]
+  delete?: Prisma.ReportWhereUniqueInput | Prisma.ReportWhereUniqueInput[]
+  connect?: Prisma.ReportWhereUniqueInput | Prisma.ReportWhereUniqueInput[]
+  update?: Prisma.ReportUpdateWithWhereUniqueWithoutJobInput | Prisma.ReportUpdateWithWhereUniqueWithoutJobInput[]
+  updateMany?: Prisma.ReportUpdateManyWithWhereWithoutJobInput | Prisma.ReportUpdateManyWithWhereWithoutJobInput[]
+  deleteMany?: Prisma.ReportScalarWhereInput | Prisma.ReportScalarWhereInput[]
+}
+
+export type ReportUncheckedUpdateManyWithoutJobNestedInput = {
+  create?: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput> | Prisma.ReportCreateWithoutJobInput[] | Prisma.ReportUncheckedCreateWithoutJobInput[]
+  connectOrCreate?: Prisma.ReportCreateOrConnectWithoutJobInput | Prisma.ReportCreateOrConnectWithoutJobInput[]
+  upsert?: Prisma.ReportUpsertWithWhereUniqueWithoutJobInput | Prisma.ReportUpsertWithWhereUniqueWithoutJobInput[]
+  createMany?: Prisma.ReportCreateManyJobInputEnvelope
+  set?: Prisma.ReportWhereUniqueInput | Prisma.ReportWhereUniqueInput[]
+  disconnect?: Prisma.ReportWhereUniqueInput | Prisma.ReportWhereUniqueInput[]
+  delete?: Prisma.ReportWhereUniqueInput | Prisma.ReportWhereUniqueInput[]
+  connect?: Prisma.ReportWhereUniqueInput | Prisma.ReportWhereUniqueInput[]
+  update?: Prisma.ReportUpdateWithWhereUniqueWithoutJobInput | Prisma.ReportUpdateWithWhereUniqueWithoutJobInput[]
+  updateMany?: Prisma.ReportUpdateManyWithWhereWithoutJobInput | Prisma.ReportUpdateManyWithWhereWithoutJobInput[]
+  deleteMany?: Prisma.ReportScalarWhereInput | Prisma.ReportScalarWhereInput[]
 }
 
 export type ReportCreateWithoutJobInput = {
   id?: string
   swot: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sentiment_score?: number | null
   conclusion?: string | null
   created_at?: Date | string
 }
@@ -366,6 +448,7 @@ export type ReportUncheckedCreateWithoutJobInput = {
   id?: string
   swot: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sentiment_score?: number | null
   conclusion?: string | null
   created_at?: Date | string
 }
@@ -375,21 +458,54 @@ export type ReportCreateOrConnectWithoutJobInput = {
   create: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput>
 }
 
-export type ReportUpsertWithoutJobInput = {
-  update: Prisma.XOR<Prisma.ReportUpdateWithoutJobInput, Prisma.ReportUncheckedUpdateWithoutJobInput>
-  create: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput>
-  where?: Prisma.ReportWhereInput
+export type ReportCreateManyJobInputEnvelope = {
+  data: Prisma.ReportCreateManyJobInput | Prisma.ReportCreateManyJobInput[]
+  skipDuplicates?: boolean
 }
 
-export type ReportUpdateToOneWithWhereWithoutJobInput = {
-  where?: Prisma.ReportWhereInput
+export type ReportUpsertWithWhereUniqueWithoutJobInput = {
+  where: Prisma.ReportWhereUniqueInput
+  update: Prisma.XOR<Prisma.ReportUpdateWithoutJobInput, Prisma.ReportUncheckedUpdateWithoutJobInput>
+  create: Prisma.XOR<Prisma.ReportCreateWithoutJobInput, Prisma.ReportUncheckedCreateWithoutJobInput>
+}
+
+export type ReportUpdateWithWhereUniqueWithoutJobInput = {
+  where: Prisma.ReportWhereUniqueInput
   data: Prisma.XOR<Prisma.ReportUpdateWithoutJobInput, Prisma.ReportUncheckedUpdateWithoutJobInput>
+}
+
+export type ReportUpdateManyWithWhereWithoutJobInput = {
+  where: Prisma.ReportScalarWhereInput
+  data: Prisma.XOR<Prisma.ReportUpdateManyMutationInput, Prisma.ReportUncheckedUpdateManyWithoutJobInput>
+}
+
+export type ReportScalarWhereInput = {
+  AND?: Prisma.ReportScalarWhereInput | Prisma.ReportScalarWhereInput[]
+  OR?: Prisma.ReportScalarWhereInput[]
+  NOT?: Prisma.ReportScalarWhereInput | Prisma.ReportScalarWhereInput[]
+  id?: Prisma.StringFilter<"Report"> | string
+  job_id?: Prisma.StringFilter<"Report"> | string
+  swot?: Prisma.JsonFilter<"Report">
+  blue_ocean?: Prisma.JsonFilter<"Report">
+  sentiment_score?: Prisma.FloatNullableFilter<"Report"> | number | null
+  conclusion?: Prisma.StringNullableFilter<"Report"> | string | null
+  created_at?: Prisma.DateTimeFilter<"Report"> | Date | string
+}
+
+export type ReportCreateManyJobInput = {
+  id?: string
+  swot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  blue_ocean: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sentiment_score?: number | null
+  conclusion?: string | null
+  created_at?: Date | string
 }
 
 export type ReportUpdateWithoutJobInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   swot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   conclusion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -398,6 +514,16 @@ export type ReportUncheckedUpdateWithoutJobInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   swot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   blue_ocean?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  conclusion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type ReportUncheckedUpdateManyWithoutJobInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  swot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  blue_ocean?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   conclusion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -409,6 +535,7 @@ export type ReportSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   job_id?: boolean
   swot?: boolean
   blue_ocean?: boolean
+  sentiment_score?: boolean
   conclusion?: boolean
   created_at?: boolean
   job?: boolean | Prisma.JobDefaultArgs<ExtArgs>
@@ -419,6 +546,7 @@ export type ReportSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   job_id?: boolean
   swot?: boolean
   blue_ocean?: boolean
+  sentiment_score?: boolean
   conclusion?: boolean
   created_at?: boolean
   job?: boolean | Prisma.JobDefaultArgs<ExtArgs>
@@ -429,6 +557,7 @@ export type ReportSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   job_id?: boolean
   swot?: boolean
   blue_ocean?: boolean
+  sentiment_score?: boolean
   conclusion?: boolean
   created_at?: boolean
   job?: boolean | Prisma.JobDefaultArgs<ExtArgs>
@@ -439,11 +568,12 @@ export type ReportSelectScalar = {
   job_id?: boolean
   swot?: boolean
   blue_ocean?: boolean
+  sentiment_score?: boolean
   conclusion?: boolean
   created_at?: boolean
 }
 
-export type ReportOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "job_id" | "swot" | "blue_ocean" | "conclusion" | "created_at", ExtArgs["result"]["report"]>
+export type ReportOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "job_id" | "swot" | "blue_ocean" | "sentiment_score" | "conclusion" | "created_at", ExtArgs["result"]["report"]>
 export type ReportInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   job?: boolean | Prisma.JobDefaultArgs<ExtArgs>
 }
@@ -464,6 +594,7 @@ export type $ReportPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     job_id: string
     swot: runtime.JsonValue
     blue_ocean: runtime.JsonValue
+    sentiment_score: number | null
     conclusion: string | null
     created_at: Date
   }, ExtArgs["result"]["report"]>
@@ -894,6 +1025,7 @@ export interface ReportFieldRefs {
   readonly job_id: Prisma.FieldRef<"Report", 'String'>
   readonly swot: Prisma.FieldRef<"Report", 'Json'>
   readonly blue_ocean: Prisma.FieldRef<"Report", 'Json'>
+  readonly sentiment_score: Prisma.FieldRef<"Report", 'Float'>
   readonly conclusion: Prisma.FieldRef<"Report", 'String'>
   readonly created_at: Prisma.FieldRef<"Report", 'DateTime'>
 }
