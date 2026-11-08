@@ -2,7 +2,6 @@ import math
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
 from fastapi.testclient import TestClient
 
 with patch("app.database.get_pool", new_callable=AsyncMock), patch(
@@ -205,9 +204,9 @@ def test_publish_job_event():
 
 
 def test_rank_top_comments():
-    from tests.fixtures import get_fixture_comments
     from app.ranking import rank_top_comments
     from app.sentiment import score_comments
+    from tests.fixtures import get_fixture_comments
 
     scored = score_comments(get_fixture_comments())
     ranked = rank_top_comments(scored, top_k=5)
@@ -220,8 +219,8 @@ def test_rank_top_comments():
 
 def test_build_synthesis_prompt():
     from app.canvas import build_synthesis_prompt
-    from tests.fixtures import get_fixture_comments
     from app.sentiment import score_comments
+    from tests.fixtures import get_fixture_comments
 
     scored = score_comments(get_fixture_comments())
     job = {
@@ -274,9 +273,9 @@ def test_extract_json_object():
 def test_synthesize_full_report_with_mocked_llm():
     import asyncio
 
-    from tests.fixtures import get_fixture_comments
     from app.sentiment import compute_sentiment_summary, score_comments
     from app.synthesis import synthesize_full_report
+    from tests.fixtures import get_fixture_comments
 
     scored = score_comments(get_fixture_comments())
     summary = compute_sentiment_summary(scored)
@@ -333,9 +332,9 @@ def test_synthesize_full_report_with_mocked_llm():
 def test_synthesize_full_report_fails_when_llm_returns_nothing():
     import asyncio
 
-    from tests.fixtures import get_fixture_comments
     from app.sentiment import compute_sentiment_summary, score_comments
     from app.synthesis import synthesize_full_report
+    from tests.fixtures import get_fixture_comments
 
     scored = score_comments(get_fixture_comments())
     summary = compute_sentiment_summary(scored)
@@ -344,9 +343,8 @@ def test_synthesize_full_report_fails_when_llm_returns_nothing():
         "app.synthesis.call_openrouter_json",
         new_callable=AsyncMock,
         return_value=None,
-    ):
-        with pytest.raises(RuntimeError, match="LLM synthesis failed"):
-            asyncio.run(synthesize_full_report(None, summary, scored))
+    ), pytest.raises(RuntimeError, match="LLM synthesis failed"):
+        asyncio.run(synthesize_full_report(None, summary, scored))
 
 
 def test_rerank_for_rag():

@@ -165,8 +165,7 @@ describe('ProxyService', () => {
 
         expect(parsed.receivedUrl).toBe('/orgs/billing');
 
-        expect(parsed.receivedHeaders.authorization)
-          .toBe('Bearer test-token');
+        expect(parsed.receivedHeaders.authorization).toBe('Bearer test-token');
 
         done();
       } catch (error) {

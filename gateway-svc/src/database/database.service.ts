@@ -5,8 +5,6 @@ import {
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { countReset } from 'node:console';
-import { promises } from 'node:dns';
 import { Pool, QueryResult } from 'pg';
 
 export interface JobRecord {
@@ -262,6 +260,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       client.release();
     }
   }
+
   async updateJob(
     id: string,
     orgId: string,
@@ -346,22 +345,11 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     if (this.isConnected && this.pool) {
       try {
         const res: QueryResult = await this.pool.query(
-          `SELECT id, job_id, swot, blue_ocean, conclusion, created_at FROM "Report" WHERE job_id = $1 OR id = $1;`,
+          `SELECT id, job_id, swot, blue_ocean, conclusion, created_at FROM "Report" WHERE job_id = $1 OR id = $1 ORDER BY created_at DESC LIMIT 1;`,
           [jobId],
         );
         if (res.rows.length > 0) {
-          const row = res.rows[0];
-          return {
-            id: row.id,
-            job_id: row.job_id,
-            swot: row.swot,
-            blue_ocean: row.blue_ocean,
-            conclusion: row.conclusion,
-            created_at:
-              row.created_at instanceof Date
-                ? row.created_at.toISOString()
-                : String(row.created_at),
-          };
+          return this.mapReport(res.rows[0]);
         }
       } catch (err: any) {
         this.logger.warn(`Postgres report lookup failed: ${err.message}`);
@@ -369,6 +357,20 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     }
 
     return this.inMemoryReports.get(jobId) || null;
+  }
+
+  private mapReport(row: any): ReportRecord {
+    return {
+      id: row.id,
+      job_id: row.job_id,
+      swot: row.swot,
+      blue_ocean: row.blue_ocean,
+      conclusion: row.conclusion,
+      created_at:
+        row.created_at instanceof Date
+          ? row.created_at.toISOString()
+          : String(row.created_at),
+    };
   }
 
   private normalizeJobMode(mode: string): string {
@@ -379,6 +381,23 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       user: 'User',
     };
     return map[mode.toLowerCase()] || 'Subreddit';
+  }
+
+  async findApiKeyByHash(hash: string) {
+    if (!this.isConnected || !this.pool) return null;
+    const res = await this.pool.query(
+      `SELECT user_id, org_id FROM "ApiKey" WHERE key_hash = $1  AND active= true LIMIT 1`,
+      [hash],
+    );
+    return res.rows[0] ?? null;
+  }
+
+  async touchApiKey(hash: string) {
+    if (!this.isConnected || !this.pool) return;
+    await this.pool.query(
+      `UPDATE "ApiKey" SET last_used_at = now() WHERE key_hash=$1 `,
+      [hash],
+    );
   }
 
   private normalizeJobStatus(status: string): string {

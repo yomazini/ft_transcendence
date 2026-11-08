@@ -10,7 +10,7 @@ import {
   GatewayTimeoutException,
   ForbiddenException,
 } from '@nestjs/common';
-import { Job, Queue } from 'bullmq';
+import { Queue } from 'bullmq';
 
 import { randomUUID } from 'crypto';
 import { CreateJobDto } from './dto/create-job.dto';
@@ -42,7 +42,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private readonly eventsGateway: EventsGateway,
   ) {}
 
-  async onModuleInit() {
+  onModuleInit() {
     const host = process.env.REDIS_HOST || 'redis';
     const port = parseInt(process.env.REDIS_PORT || '6379', 10);
 
@@ -199,6 +199,53 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     return data;
   }
 
+  async requeueJob(id: string, user: AuthenticatedUser) {
+    const job = await this.getJobById(id, user);
+    const status = job.status.toLowerCase();
+
+    if (status === 'running' || status === 'scraping') {
+      throw new ConflictException(
+        `Job ${id} is ${status}; wait until it finishes or fails`,
+      );
+    }
+
+    if (status === 'queued') {
+      await this.removeQueuedScrapeJob(id);
+    }
+
+    if (!this.scrapeQueue) {
+      await this.databaseService.updateJobStatus(job.id, 'Failed');
+      throw new ServiceUnavailableException('scrape queue unavailable');
+    }
+
+    try {
+      await this.scrapeQueue.add(
+        'scrape',
+        {
+          id: job.id,
+          target: job.target,
+          mode: String(job.mode).toLowerCase(),
+          org_id: job.org_id,
+          created_by: job.created_by,
+          customer_persona: job.customer_persona,
+        },
+        {
+          jobId: `${job.id}-${Date.now()}`,
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 2000 },
+        },
+      );
+    } catch (err: any) {
+      this.logger.error(`Failed to requeue job ${job.id}: ${err.message}`);
+      await this.databaseService.updateJobStatus(job.id, 'Failed');
+      throw new ServiceUnavailableException('could not queue job');
+    }
+
+    await this.databaseService.updateJobStatus(job.id, 'Queued');
+    void this.eventsGateway.broadcastJobStatus(job.id, 'queued');
+    return this.getJobById(job.id, user);
+  }
+
   async listJobs(user: AuthenticatedUser): Promise<JobRecord[]> {
     return this.databaseService.findJobsByOrg(user.org_id);
   }
@@ -240,11 +287,11 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       if (removed) return;
 
       // Legacy jobs were enqueued before we set a deterministic jobId.
-      const jobs = (await this.scrapeQueue.getJobs([
+      const jobs = await this.scrapeQueue.getJobs([
         'waiting',
         'delayed',
         'paused',
-      ])) as Job[];
+      ]);
 
       const legacy = jobs.find((job) => job.data?.id === jobId);
       if (legacy) {

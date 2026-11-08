@@ -86,12 +86,10 @@ def synthesize_blue_ocean(sentiment_summary: dict, scored_comments: list[dict]) 
                 factors[factor]["importance"] += 1
                 factors[factor]["satisfaction"] += comment["compound"]
 
-    for factor in factors:
-        count = factors[factor]["importance"]
+    for data in factors.values():
+        count = data["importance"]
         if count > 0:
-            factors[factor]["satisfaction"] = round(
-                factors[factor]["satisfaction"] / count, 2
-            )
+            data["satisfaction"] = round(data["satisfaction"] / count, 2)
 
     eliminate = []
     reduce = []

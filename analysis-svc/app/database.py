@@ -96,9 +96,6 @@ async def insert_report(
         """
         INSERT INTO "Report" (id, job_id, swot, blue_ocean, conclusion)
         VALUES ($1, $2, $3::jsonb, $4::jsonb, $5)
-        ON CONFLICT (job_id) DO UPDATE
-        SET swot = EXCLUDED.swot, blue_ocean = EXCLUDED.blue_ocean,
-            conclusion = EXCLUDED.conclusion
         """,
         report_id,
         job_id,
@@ -125,7 +122,10 @@ async def get_comments_by_job(job_id: str) -> list[dict]:
 
 async def get_report_by_job(job_id: str) -> dict | None:
     pool = await get_pool()
-    row = await pool.fetchrow('SELECT * FROM "Report" WHERE job_id = $1', job_id)
+    row = await pool.fetchrow(
+        'SELECT * FROM "Report" WHERE job_id = $1 ORDER BY created_at DESC LIMIT 1',
+        job_id,
+    )
     return dict(row) if row else None
 
 

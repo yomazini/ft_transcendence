@@ -16,9 +16,10 @@ export class ProxyService {
     delete headers['content-length'];
     headers['host'] = targetUrl.host;
     const prior = req.headers['x-forwarded-for'];
+    const priorText = Array.isArray(prior) ? prior.join(', ') : (prior ?? '');
     const remote = req.socket.remoteAddress || '';
     headers['x-forwarded-proto'] = req.protocol || 'http';
-    headers['x-forwarded-for'] = prior ? `${prior}, ${remote}` : remote;
+    headers['x-forwarded-for'] = priorText ? `${priorText}, ${remote}` : remote;
     const clientReq = http.request(
       {
         hostname: targetUrl.hostname,

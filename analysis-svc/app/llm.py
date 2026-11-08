@@ -48,7 +48,7 @@ def extract_json_object(raw_text: str) -> dict[str, Any]:
 
     parsed: Any = json.loads(cleaned[start : end + 1])
     if not isinstance(parsed, dict):
-        raise ValueError("LLM output is not a JSON object")
+        raise TypeError("LLM output is not a JSON object")
     return parsed
 
 
@@ -173,7 +173,7 @@ async def call_openrouter_text(
                 )
                 _record_llm(model, "success", started)
                 return strip_thinking(raw)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - try the next model
                 _record_llm(model, "error", started)
                 logger.warning("OpenRouter text call failed on %s: %s", model, e)
     return None

@@ -34,7 +34,7 @@ export class EventsGateway
 
   constructor(private readonly databaseService: DatabaseService) {}
 
-  async onModuleInit() {
+  onModuleInit() {
     if (process.env.NODE_ENV === 'test') {
       return;
     }

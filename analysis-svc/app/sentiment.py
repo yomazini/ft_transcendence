@@ -1,4 +1,5 @@
 from typing import Any
+
 from textblob import TextBlob
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
