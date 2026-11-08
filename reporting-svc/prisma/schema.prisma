@@ -114,7 +114,7 @@ model Comments {
     job             Job                    @relation(fields: [job_id], references: [id], onDelete: Cascade)
     job_id          String
     text            String
-    reddit_id       String                 @unique
+    reddit_id       String
     hash            String                 @db.VarChar(64)
     updated_at      DateTime               @default(now())
     author          String?
@@ -134,10 +134,11 @@ model Job {
     user             User?        @relation(fields: [created_by], references: [id], onDelete: SetNull)
     created_by       String?
     target           String
+    updated_at       DateTime     @default(now())
     mode             JobModes     @default(Keyword)
     status           JobStatuses  @default(Running)
     customer_persona Json?
-    report           Report?
+    report           Report[]
     comments         Comments[]
     created_at       DateTime     @default(now())
 }
@@ -158,13 +159,14 @@ enum JobStatuses {
 }
 
 model Report {
-    id         String   @id @default(uuid())
-    job        Job      @relation(fields: [job_id], references: [id], onDelete: Cascade)
-    job_id     String   @unique
-    swot       Json
-    blue_ocean Json
-    conclusion String?
-    created_at DateTime @default(now())
+    id              String   @id @default(uuid())
+    job             Job      @relation(fields: [job_id], references: [id], onDelete: Cascade)
+    job_id          String
+    swot            Json
+    blue_ocean      Json
+    sentiment_score Float?
+    conclusion      String?
+    created_at      DateTime @default(now())
 }
 
 model Backups {

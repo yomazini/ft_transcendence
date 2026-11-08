@@ -149,8 +149,9 @@ export const CommentsScalarFieldEnum = {
   id: 'id',
   job_id: 'job_id',
   text: 'text',
-  created: 'created',
-  name: 'name',
+  reddit_id: 'reddit_id',
+  hash: 'hash',
+  updated_at: 'updated_at',
   author: 'author',
   upvotes: 'upvotes',
   sentiment_score: 'sentiment_score',
@@ -166,6 +167,7 @@ export const JobScalarFieldEnum = {
   org_id: 'org_id',
   created_by: 'created_by',
   target: 'target',
+  updated_at: 'updated_at',
   mode: 'mode',
   status: 'status',
   customer_persona: 'customer_persona',
@@ -180,6 +182,7 @@ export const ReportScalarFieldEnum = {
   job_id: 'job_id',
   swot: 'swot',
   blue_ocean: 'blue_ocean',
+  sentiment_score: 'sentiment_score',
   conclusion: 'conclusion',
   created_at: 'created_at'
 } as const

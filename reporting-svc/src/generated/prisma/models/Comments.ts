@@ -40,8 +40,9 @@ export type CommentsMinAggregateOutputType = {
   id: string | null
   job_id: string | null
   text: string | null
-  created: string | null
-  name: string | null
+  reddit_id: string | null
+  hash: string | null
+  updated_at: Date | null
   author: string | null
   upvotes: number | null
   sentiment_score: number | null
@@ -53,8 +54,9 @@ export type CommentsMaxAggregateOutputType = {
   id: string | null
   job_id: string | null
   text: string | null
-  created: string | null
-  name: string | null
+  reddit_id: string | null
+  hash: string | null
+  updated_at: Date | null
   author: string | null
   upvotes: number | null
   sentiment_score: number | null
@@ -66,8 +68,9 @@ export type CommentsCountAggregateOutputType = {
   id: number
   job_id: number
   text: number
-  created: number
-  name: number
+  reddit_id: number
+  hash: number
+  updated_at: number
   author: number
   upvotes: number
   sentiment_score: number
@@ -91,8 +94,9 @@ export type CommentsMinAggregateInputType = {
   id?: true
   job_id?: true
   text?: true
-  created?: true
-  name?: true
+  reddit_id?: true
+  hash?: true
+  updated_at?: true
   author?: true
   upvotes?: true
   sentiment_score?: true
@@ -104,8 +108,9 @@ export type CommentsMaxAggregateInputType = {
   id?: true
   job_id?: true
   text?: true
-  created?: true
-  name?: true
+  reddit_id?: true
+  hash?: true
+  updated_at?: true
   author?: true
   upvotes?: true
   sentiment_score?: true
@@ -117,8 +122,9 @@ export type CommentsCountAggregateInputType = {
   id?: true
   job_id?: true
   text?: true
-  created?: true
-  name?: true
+  reddit_id?: true
+  hash?: true
+  updated_at?: true
   author?: true
   upvotes?: true
   sentiment_score?: true
@@ -217,8 +223,9 @@ export type CommentsGroupByOutputType = {
   id: string
   job_id: string
   text: string
-  created: string
-  name: string
+  reddit_id: string
+  hash: string
+  updated_at: Date
   author: string | null
   upvotes: number
   sentiment_score: number | null
@@ -253,8 +260,9 @@ export type CommentsWhereInput = {
   id?: Prisma.StringFilter<"Comments"> | string
   job_id?: Prisma.StringFilter<"Comments"> | string
   text?: Prisma.StringFilter<"Comments"> | string
-  created?: Prisma.StringFilter<"Comments"> | string
-  name?: Prisma.StringFilter<"Comments"> | string
+  reddit_id?: Prisma.StringFilter<"Comments"> | string
+  hash?: Prisma.StringFilter<"Comments"> | string
+  updated_at?: Prisma.DateTimeFilter<"Comments"> | Date | string
   author?: Prisma.StringNullableFilter<"Comments"> | string | null
   upvotes?: Prisma.IntFilter<"Comments"> | number
   sentiment_score?: Prisma.FloatNullableFilter<"Comments"> | number | null
@@ -269,8 +277,9 @@ export type CommentsOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   job_id?: Prisma.SortOrder
   text?: Prisma.SortOrder
-  created?: Prisma.SortOrder
-  name?: Prisma.SortOrder
+  reddit_id?: Prisma.SortOrder
+  hash?: Prisma.SortOrder
+  updated_at?: Prisma.SortOrder
   author?: Prisma.SortOrderInput | Prisma.SortOrder
   upvotes?: Prisma.SortOrder
   sentiment_score?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -288,8 +297,9 @@ export type CommentsWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.CommentsWhereInput | Prisma.CommentsWhereInput[]
   job_id?: Prisma.StringFilter<"Comments"> | string
   text?: Prisma.StringFilter<"Comments"> | string
-  created?: Prisma.StringFilter<"Comments"> | string
-  name?: Prisma.StringFilter<"Comments"> | string
+  reddit_id?: Prisma.StringFilter<"Comments"> | string
+  hash?: Prisma.StringFilter<"Comments"> | string
+  updated_at?: Prisma.DateTimeFilter<"Comments"> | Date | string
   author?: Prisma.StringNullableFilter<"Comments"> | string | null
   upvotes?: Prisma.IntFilter<"Comments"> | number
   sentiment_score?: Prisma.FloatNullableFilter<"Comments"> | number | null
@@ -304,8 +314,9 @@ export type CommentsOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   job_id?: Prisma.SortOrder
   text?: Prisma.SortOrder
-  created?: Prisma.SortOrder
-  name?: Prisma.SortOrder
+  reddit_id?: Prisma.SortOrder
+  hash?: Prisma.SortOrder
+  updated_at?: Prisma.SortOrder
   author?: Prisma.SortOrderInput | Prisma.SortOrder
   upvotes?: Prisma.SortOrder
   sentiment_score?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -325,8 +336,9 @@ export type CommentsScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Comments"> | string
   job_id?: Prisma.StringWithAggregatesFilter<"Comments"> | string
   text?: Prisma.StringWithAggregatesFilter<"Comments"> | string
-  created?: Prisma.StringWithAggregatesFilter<"Comments"> | string
-  name?: Prisma.StringWithAggregatesFilter<"Comments"> | string
+  reddit_id?: Prisma.StringWithAggregatesFilter<"Comments"> | string
+  hash?: Prisma.StringWithAggregatesFilter<"Comments"> | string
+  updated_at?: Prisma.DateTimeWithAggregatesFilter<"Comments"> | Date | string
   author?: Prisma.StringNullableWithAggregatesFilter<"Comments"> | string | null
   upvotes?: Prisma.IntWithAggregatesFilter<"Comments"> | number
   sentiment_score?: Prisma.FloatNullableWithAggregatesFilter<"Comments"> | number | null
@@ -337,8 +349,9 @@ export type CommentsScalarWhereWithAggregatesInput = {
 export type CommentsCreateInput = {
   id?: string
   text: string
-  created: string
-  name: string
+  reddit_id: string
+  hash: string
+  updated_at?: Date | string
   author?: string | null
   upvotes: number
   sentiment_score?: number | null
@@ -352,8 +365,9 @@ export type CommentsUncheckedCreateInput = {
   id?: string
   job_id: string
   text: string
-  created: string
-  name: string
+  reddit_id: string
+  hash: string
+  updated_at?: Date | string
   author?: string | null
   upvotes: number
   sentiment_score?: number | null
@@ -365,8 +379,9 @@ export type CommentsUncheckedCreateInput = {
 export type CommentsUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  created?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
+  reddit_id?: Prisma.StringFieldUpdateOperationsInput | string
+  hash?: Prisma.StringFieldUpdateOperationsInput | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   upvotes?: Prisma.IntFieldUpdateOperationsInput | number
   sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -380,8 +395,9 @@ export type CommentsUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   job_id?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  created?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
+  reddit_id?: Prisma.StringFieldUpdateOperationsInput | string
+  hash?: Prisma.StringFieldUpdateOperationsInput | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   upvotes?: Prisma.IntFieldUpdateOperationsInput | number
   sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -394,8 +410,9 @@ export type CommentsCreateManyInput = {
   id?: string
   job_id: string
   text: string
-  created: string
-  name: string
+  reddit_id: string
+  hash: string
+  updated_at?: Date | string
   author?: string | null
   upvotes: number
   sentiment_score?: number | null
@@ -406,8 +423,9 @@ export type CommentsCreateManyInput = {
 export type CommentsUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  created?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
+  reddit_id?: Prisma.StringFieldUpdateOperationsInput | string
+  hash?: Prisma.StringFieldUpdateOperationsInput | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   upvotes?: Prisma.IntFieldUpdateOperationsInput | number
   sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -418,8 +436,9 @@ export type CommentsUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   job_id?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  created?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
+  reddit_id?: Prisma.StringFieldUpdateOperationsInput | string
+  hash?: Prisma.StringFieldUpdateOperationsInput | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   upvotes?: Prisma.IntFieldUpdateOperationsInput | number
   sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -446,8 +465,9 @@ export type CommentsCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   job_id?: Prisma.SortOrder
   text?: Prisma.SortOrder
-  created?: Prisma.SortOrder
-  name?: Prisma.SortOrder
+  reddit_id?: Prisma.SortOrder
+  hash?: Prisma.SortOrder
+  updated_at?: Prisma.SortOrder
   author?: Prisma.SortOrder
   upvotes?: Prisma.SortOrder
   sentiment_score?: Prisma.SortOrder
@@ -464,8 +484,9 @@ export type CommentsMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   job_id?: Prisma.SortOrder
   text?: Prisma.SortOrder
-  created?: Prisma.SortOrder
-  name?: Prisma.SortOrder
+  reddit_id?: Prisma.SortOrder
+  hash?: Prisma.SortOrder
+  updated_at?: Prisma.SortOrder
   author?: Prisma.SortOrder
   upvotes?: Prisma.SortOrder
   sentiment_score?: Prisma.SortOrder
@@ -477,8 +498,9 @@ export type CommentsMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   job_id?: Prisma.SortOrder
   text?: Prisma.SortOrder
-  created?: Prisma.SortOrder
-  name?: Prisma.SortOrder
+  reddit_id?: Prisma.SortOrder
+  hash?: Prisma.SortOrder
+  updated_at?: Prisma.SortOrder
   author?: Prisma.SortOrder
   upvotes?: Prisma.SortOrder
   sentiment_score?: Prisma.SortOrder
@@ -602,8 +624,9 @@ export type CommentsUncheckedUpdateManyWithoutJobNestedInput = {
 export type CommentsCreateWithoutRepliesInput = {
   id?: string
   text: string
-  created: string
-  name: string
+  reddit_id: string
+  hash: string
+  updated_at?: Date | string
   author?: string | null
   upvotes: number
   sentiment_score?: number | null
@@ -616,8 +639,9 @@ export type CommentsUncheckedCreateWithoutRepliesInput = {
   id?: string
   job_id: string
   text: string
-  created: string
-  name: string
+  reddit_id: string
+  hash: string
+  updated_at?: Date | string
   author?: string | null
   upvotes: number
   sentiment_score?: number | null
@@ -633,8 +657,9 @@ export type CommentsCreateOrConnectWithoutRepliesInput = {
 export type CommentsCreateWithoutParentInput = {
   id?: string
   text: string
-  created: string
-  name: string
+  reddit_id: string
+  hash: string
+  updated_at?: Date | string
   author?: string | null
   upvotes: number
   sentiment_score?: number | null
@@ -647,8 +672,9 @@ export type CommentsUncheckedCreateWithoutParentInput = {
   id?: string
   job_id: string
   text: string
-  created: string
-  name: string
+  reddit_id: string
+  hash: string
+  updated_at?: Date | string
   author?: string | null
   upvotes: number
   sentiment_score?: number | null
@@ -680,8 +706,9 @@ export type CommentsUpdateToOneWithWhereWithoutRepliesInput = {
 export type CommentsUpdateWithoutRepliesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  created?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
+  reddit_id?: Prisma.StringFieldUpdateOperationsInput | string
+  hash?: Prisma.StringFieldUpdateOperationsInput | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   upvotes?: Prisma.IntFieldUpdateOperationsInput | number
   sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -694,8 +721,9 @@ export type CommentsUncheckedUpdateWithoutRepliesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   job_id?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  created?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
+  reddit_id?: Prisma.StringFieldUpdateOperationsInput | string
+  hash?: Prisma.StringFieldUpdateOperationsInput | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   upvotes?: Prisma.IntFieldUpdateOperationsInput | number
   sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -726,8 +754,9 @@ export type CommentsScalarWhereInput = {
   id?: Prisma.StringFilter<"Comments"> | string
   job_id?: Prisma.StringFilter<"Comments"> | string
   text?: Prisma.StringFilter<"Comments"> | string
-  created?: Prisma.StringFilter<"Comments"> | string
-  name?: Prisma.StringFilter<"Comments"> | string
+  reddit_id?: Prisma.StringFilter<"Comments"> | string
+  hash?: Prisma.StringFilter<"Comments"> | string
+  updated_at?: Prisma.DateTimeFilter<"Comments"> | Date | string
   author?: Prisma.StringNullableFilter<"Comments"> | string | null
   upvotes?: Prisma.IntFilter<"Comments"> | number
   sentiment_score?: Prisma.FloatNullableFilter<"Comments"> | number | null
@@ -738,8 +767,9 @@ export type CommentsScalarWhereInput = {
 export type CommentsCreateWithoutJobInput = {
   id?: string
   text: string
-  created: string
-  name: string
+  reddit_id: string
+  hash: string
+  updated_at?: Date | string
   author?: string | null
   upvotes: number
   sentiment_score?: number | null
@@ -751,8 +781,9 @@ export type CommentsCreateWithoutJobInput = {
 export type CommentsUncheckedCreateWithoutJobInput = {
   id?: string
   text: string
-  created: string
-  name: string
+  reddit_id: string
+  hash: string
+  updated_at?: Date | string
   author?: string | null
   upvotes: number
   sentiment_score?: number | null
@@ -791,8 +822,9 @@ export type CommentsCreateManyParentInput = {
   id?: string
   job_id: string
   text: string
-  created: string
-  name: string
+  reddit_id: string
+  hash: string
+  updated_at?: Date | string
   author?: string | null
   upvotes: number
   sentiment_score?: number | null
@@ -802,8 +834,9 @@ export type CommentsCreateManyParentInput = {
 export type CommentsUpdateWithoutParentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  created?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
+  reddit_id?: Prisma.StringFieldUpdateOperationsInput | string
+  hash?: Prisma.StringFieldUpdateOperationsInput | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   upvotes?: Prisma.IntFieldUpdateOperationsInput | number
   sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -816,8 +849,9 @@ export type CommentsUncheckedUpdateWithoutParentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   job_id?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  created?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
+  reddit_id?: Prisma.StringFieldUpdateOperationsInput | string
+  hash?: Prisma.StringFieldUpdateOperationsInput | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   upvotes?: Prisma.IntFieldUpdateOperationsInput | number
   sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -829,8 +863,9 @@ export type CommentsUncheckedUpdateManyWithoutParentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   job_id?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  created?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
+  reddit_id?: Prisma.StringFieldUpdateOperationsInput | string
+  hash?: Prisma.StringFieldUpdateOperationsInput | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   upvotes?: Prisma.IntFieldUpdateOperationsInput | number
   sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -840,8 +875,9 @@ export type CommentsUncheckedUpdateManyWithoutParentInput = {
 export type CommentsCreateManyJobInput = {
   id?: string
   text: string
-  created: string
-  name: string
+  reddit_id: string
+  hash: string
+  updated_at?: Date | string
   author?: string | null
   upvotes: number
   sentiment_score?: number | null
@@ -852,8 +888,9 @@ export type CommentsCreateManyJobInput = {
 export type CommentsUpdateWithoutJobInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  created?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
+  reddit_id?: Prisma.StringFieldUpdateOperationsInput | string
+  hash?: Prisma.StringFieldUpdateOperationsInput | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   upvotes?: Prisma.IntFieldUpdateOperationsInput | number
   sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -865,8 +902,9 @@ export type CommentsUpdateWithoutJobInput = {
 export type CommentsUncheckedUpdateWithoutJobInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  created?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
+  reddit_id?: Prisma.StringFieldUpdateOperationsInput | string
+  hash?: Prisma.StringFieldUpdateOperationsInput | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   upvotes?: Prisma.IntFieldUpdateOperationsInput | number
   sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -878,8 +916,9 @@ export type CommentsUncheckedUpdateWithoutJobInput = {
 export type CommentsUncheckedUpdateManyWithoutJobInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   text?: Prisma.StringFieldUpdateOperationsInput | string
-  created?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
+  reddit_id?: Prisma.StringFieldUpdateOperationsInput | string
+  hash?: Prisma.StringFieldUpdateOperationsInput | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   upvotes?: Prisma.IntFieldUpdateOperationsInput | number
   sentiment_score?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -922,8 +961,9 @@ export type CommentsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   id?: boolean
   job_id?: boolean
   text?: boolean
-  created?: boolean
-  name?: boolean
+  reddit_id?: boolean
+  hash?: boolean
+  updated_at?: boolean
   author?: boolean
   upvotes?: boolean
   sentiment_score?: boolean
@@ -939,8 +979,9 @@ export type CommentsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   id?: boolean
   job_id?: boolean
   text?: boolean
-  created?: boolean
-  name?: boolean
+  reddit_id?: boolean
+  hash?: boolean
+  updated_at?: boolean
   author?: boolean
   upvotes?: boolean
   sentiment_score?: boolean
@@ -954,8 +995,9 @@ export type CommentsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   id?: boolean
   job_id?: boolean
   text?: boolean
-  created?: boolean
-  name?: boolean
+  reddit_id?: boolean
+  hash?: boolean
+  updated_at?: boolean
   author?: boolean
   upvotes?: boolean
   sentiment_score?: boolean
@@ -969,8 +1011,9 @@ export type CommentsSelectScalar = {
   id?: boolean
   job_id?: boolean
   text?: boolean
-  created?: boolean
-  name?: boolean
+  reddit_id?: boolean
+  hash?: boolean
+  updated_at?: boolean
   author?: boolean
   upvotes?: boolean
   sentiment_score?: boolean
@@ -978,7 +1021,7 @@ export type CommentsSelectScalar = {
   created_at?: boolean
 }
 
-export type CommentsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "job_id" | "text" | "created" | "name" | "author" | "upvotes" | "sentiment_score" | "parent_id" | "created_at", ExtArgs["result"]["comments"]>
+export type CommentsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "job_id" | "text" | "reddit_id" | "hash" | "updated_at" | "author" | "upvotes" | "sentiment_score" | "parent_id" | "created_at", ExtArgs["result"]["comments"]>
 export type CommentsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   job?: boolean | Prisma.JobDefaultArgs<ExtArgs>
   parent?: boolean | Prisma.Comments$parentArgs<ExtArgs>
@@ -1005,8 +1048,9 @@ export type $CommentsPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     id: string
     job_id: string
     text: string
-    created: string
-    name: string
+    reddit_id: string
+    hash: string
+    updated_at: Date
     author: string | null
     upvotes: number
     sentiment_score: number | null
@@ -1441,8 +1485,9 @@ export interface CommentsFieldRefs {
   readonly id: Prisma.FieldRef<"Comments", 'String'>
   readonly job_id: Prisma.FieldRef<"Comments", 'String'>
   readonly text: Prisma.FieldRef<"Comments", 'String'>
-  readonly created: Prisma.FieldRef<"Comments", 'String'>
-  readonly name: Prisma.FieldRef<"Comments", 'String'>
+  readonly reddit_id: Prisma.FieldRef<"Comments", 'String'>
+  readonly hash: Prisma.FieldRef<"Comments", 'String'>
+  readonly updated_at: Prisma.FieldRef<"Comments", 'DateTime'>
   readonly author: Prisma.FieldRef<"Comments", 'String'>
   readonly upvotes: Prisma.FieldRef<"Comments", 'Int'>
   readonly sentiment_score: Prisma.FieldRef<"Comments", 'Float'>
