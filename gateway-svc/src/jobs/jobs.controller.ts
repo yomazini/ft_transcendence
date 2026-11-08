@@ -140,11 +140,20 @@ export class JobsController {
   @Get('reports/:id')
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Fetch synthesized SWOT & Blue Ocean Strategy Report',
+    summary: 'Fetch the latest SWOT & Blue Ocean Strategy Report for a job',
   })
   @ApiResponse({ status: 200, description: 'Report retrieved' })
   @ApiResponse({ status: 404, description: 'Report not found' })
   getReport(@Param('id') id: string, @Req() req: any) {
     return this.jobsService.getReportByJobId(id, req.user);
+  }
+
+  @Get('jobs/:id/reports')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List all reports for a job, newest first' })
+  @ApiResponse({ status: 200, description: 'Reports, newest first' })
+  @ApiResponse({ status: 404, description: 'Job not found' })
+  listReports(@Param('id') id: string, @Req() req: any) {
+    return this.jobsService.listReportsByJobId(id, req.user);
   }
 }

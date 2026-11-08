@@ -913,9 +913,30 @@ paths:
         "404":
           description: Job not found or belongs to another organization
 
+  /jobs/{id}/reports:
+    get:
+      summary: List all SWOT & Blue Ocean reports for a job, newest first
+      operationId: listReports
+      security: [{ bearerAuth: [] }, { apiKeyAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Reports for the job, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Report" }
+        "404":
+          description: Job not found or belongs to another organization
+
   /reports/{id}:
     get:
-      summary: Retrieve completed SWOT & Blue Ocean strategic report
+      summary: Retrieve the latest SWOT & Blue Ocean strategic report for a job
       operationId: getReport
       security: [{ bearerAuth: [] }, { apiKeyAuth: [] }]
       parameters:

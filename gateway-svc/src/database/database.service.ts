@@ -347,22 +347,11 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     if (this.isConnected && this.pool) {
       try {
         const res: QueryResult = await this.pool.query(
-          `SELECT id, job_id, swot, blue_ocean, conclusion, created_at FROM "Report" WHERE job_id = $1 OR id = $1;`,
+          `SELECT id, job_id, swot, blue_ocean, conclusion, created_at FROM "Report" WHERE job_id = $1 OR id = $1 ORDER BY created_at DESC LIMIT 1;`,
           [jobId],
         );
         if (res.rows.length > 0) {
-          const row = res.rows[0];
-          return {
-            id: row.id,
-            job_id: row.job_id,
-            swot: row.swot,
-            blue_ocean: row.blue_ocean,
-            conclusion: row.conclusion,
-            created_at:
-              row.created_at instanceof Date
-                ? row.created_at.toISOString()
-                : String(row.created_at),
-          };
+          return this.mapReport(res.rows[0]);
         }
       } catch (err: any) {
         this.logger.warn(`Postgres report lookup failed: ${err.message}`);
@@ -370,6 +359,38 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     }
 
     return this.inMemoryReports.get(jobId) || null;
+  }
+
+  async findReportsByJobId(jobId: string): Promise<ReportRecord[]> {
+    if (this.isConnected && this.pool) {
+      try {
+        const res: QueryResult = await this.pool.query(
+          `SELECT id, job_id, swot, blue_ocean, conclusion, created_at FROM "Report" WHERE job_id = $1 ORDER BY created_at DESC;`,
+          [jobId],
+        );
+        return res.rows.map((row) => this.mapReport(row));
+      } catch (err: any) {
+        this.logger.warn(`Postgres report lookup failed: ${err.message}`);
+      }
+    }
+
+    // Dev fallback stores only the latest report per job.
+    const latest = this.inMemoryReports.get(jobId);
+    return latest ? [latest] : [];
+  }
+
+  private mapReport(row: any): ReportRecord {
+    return {
+      id: row.id,
+      job_id: row.job_id,
+      swot: row.swot,
+      blue_ocean: row.blue_ocean,
+      conclusion: row.conclusion,
+      created_at:
+        row.created_at instanceof Date
+          ? row.created_at.toISOString()
+          : String(row.created_at),
+    };
   }
 
   private normalizeJobMode(mode: string): string {
