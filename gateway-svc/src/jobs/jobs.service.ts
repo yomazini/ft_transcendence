@@ -199,6 +199,57 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     return data;
   }
 
+  async requeueJob(id: string, user: AuthenticatedUser) {
+    const job = await this.getJobById(id, user);
+    const status = job.status.toLowerCase();
+
+    if (status === 'running') {
+      throw new ConflictException(
+        `Job ${id} is running; wait until it finishes or fails`,
+      );
+    }
+
+    if (status === 'queued') {
+      await this.removeQueuedScrapeJob(id);
+    }
+
+    if (status === 'done' || status === 'failed') {
+      await this.databaseService.clearJobAnalysis(job.id);
+    }
+
+    if (!this.scrapeQueue) {
+      await this.databaseService.updateJobStatus(job.id, 'Failed');
+      throw new ServiceUnavailableException('scrape queue unavailable');
+    }
+
+    try {
+      await this.scrapeQueue.add(
+        'scrape',
+        {
+          id: job.id,
+          target: job.target,
+          mode: String(job.mode).toLowerCase(),
+          org_id: job.org_id,
+          created_by: job.created_by,
+          customer_persona: job.customer_persona,
+        },
+        {
+          jobId: `${job.id}-${Date.now()}`,
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 2000 },
+        },
+      );
+    } catch (err: any) {
+      this.logger.error(`Failed to requeue job ${job.id}: ${err.message}`);
+      await this.databaseService.updateJobStatus(job.id, 'Failed');
+      throw new ServiceUnavailableException('could not queue job');
+    }
+
+    await this.databaseService.updateJobStatus(job.id, 'Queued');
+    void this.eventsGateway.broadcastJobStatus(job.id, 'queued');
+    return this.getJobById(job.id, user);
+  }
+
   async listJobs(user: AuthenticatedUser): Promise<JobRecord[]> {
     return this.databaseService.findJobsByOrg(user.org_id);
   }

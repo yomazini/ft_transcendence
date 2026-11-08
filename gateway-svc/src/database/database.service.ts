@@ -262,6 +262,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       client.release();
     }
   }
+
   async updateJob(
     id: string,
     orgId: string,
@@ -307,6 +308,30 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       id,
       orgId,
     ]);
+  }
+
+  async clearJobAnalysis(jobId: string): Promise<void> {
+    this.inMemoryReports.delete(jobId);
+
+    if (!this.isConnected || !this.pool) {
+      if (this.isProduction) {
+        throw new ServiceUnavailableException('database unavailable');
+      }
+      return;
+    }
+
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('DELETE FROM "Comments" WHERE job_id = $1', [jobId]);
+      await client.query('DELETE FROM "Report" WHERE job_id = $1', [jobId]);
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
   }
 
   async findJobById(id: string): Promise<JobRecord | null> {

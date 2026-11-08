@@ -28,6 +28,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Public } from '../auth/public.decorator';
 import { RolesGuard } from '../auth/roles.guards';
 import { Roles } from '../auth/roles.decorators';
+import { RequeueJobDto } from './dto/requeueJob.dto';
 
 @ApiTags('Public API Gateway')
 @ApiSecurity('api-key')
@@ -64,6 +65,17 @@ export class JobsController {
       req.user,
       req.headers?.authorization,
     );
+  }
+
+  @Post('jobs/requeue')
+  @HttpCode(HttpStatus.OK)
+  @Roles('Admin', 'Analyst')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Queue an existing job again' })
+  @ApiResponse({ status: 200, description: 'Job queued' })
+  @ApiResponse({ status: 409, description: 'Job is running' })
+  requeueJob(@Body() dto: RequeueJobDto, @Req() req: any) {
+    return this.jobsService.requeueJob(dto.id, req.user);
   }
 
   @Put('jobs/:id')
