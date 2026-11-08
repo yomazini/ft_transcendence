@@ -58,11 +58,7 @@ describe('JwtAuthGuard API key branch', () => {
 });
 
 describe('ApiKeyThrottlerGuard', () => {
-  const guard = new ApiKeyThrottlerGuard(
-    {} as any,
-    {} as any,
-    {} as any,
-  );
+  const guard = new ApiKeyThrottlerGuard({} as any, {} as any, {} as any);
 
   it('tracks by the key hash, not the IP', async () => {
     const tracker = await (guard as any).getTracker({
@@ -70,9 +66,7 @@ describe('ApiKeyThrottlerGuard', () => {
       ip: '10.0.0.1',
     });
 
-    expect(tracker).toBe(
-      createHash('sha256').update('if_abc').digest('hex'),
-    );
+    expect(tracker).toBe(createHash('sha256').update('if_abc').digest('hex'));
   });
 
   it('falls back to the IP for JWT requests', async () => {

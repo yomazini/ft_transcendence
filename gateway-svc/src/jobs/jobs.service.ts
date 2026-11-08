@@ -10,7 +10,7 @@ import {
   GatewayTimeoutException,
   ForbiddenException,
 } from '@nestjs/common';
-import { Job, Queue } from 'bullmq';
+import { Queue } from 'bullmq';
 
 import { randomUUID } from 'crypto';
 import { CreateJobDto } from './dto/create-job.dto';
@@ -42,7 +42,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private readonly eventsGateway: EventsGateway,
   ) {}
 
-  async onModuleInit() {
+  onModuleInit() {
     const host = process.env.REDIS_HOST || 'redis';
     const port = parseInt(process.env.REDIS_PORT || '6379', 10);
 
@@ -287,11 +287,11 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       if (removed) return;
 
       // Legacy jobs were enqueued before we set a deterministic jobId.
-      const jobs = (await this.scrapeQueue.getJobs([
+      const jobs = await this.scrapeQueue.getJobs([
         'waiting',
         'delayed',
         'paused',
-      ])) as Job[];
+      ]);
 
       const legacy = jobs.find((job) => job.data?.id === jobId);
       if (legacy) {

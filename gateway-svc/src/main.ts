@@ -35,10 +35,7 @@ async function bootstrap() {
     )
     .setVersion('0.1.0')
     .addBearerAuth()
-    .addApiKey(
-      { type: 'apiKey', name: 'X-API-Key', in: 'header' },
-      'api-key',
-    )
+    .addApiKey({ type: 'apiKey', name: 'X-API-Key', in: 'header' }, 'api-key')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -52,4 +49,4 @@ async function bootstrap() {
   console.log(`Swagger UI available at http://localhost:${port}/api/docs`);
   console.log(`OpenAPI JSON available at http://localhost:${port}/api-json`);
 }
-bootstrap();
+void bootstrap();

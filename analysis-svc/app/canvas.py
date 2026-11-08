@@ -23,7 +23,7 @@ def format_persona_xml(job: dict | None) -> str:
     if isinstance(persona, str):
         try:
             persona = json.loads(persona)
-        except Exception:
+        except json.JSONDecodeError:
             persona = {"description": persona}
 
     desc = persona.get("description", "not provided")

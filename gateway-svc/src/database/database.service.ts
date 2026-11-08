@@ -5,8 +5,6 @@ import {
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { countReset } from 'node:console';
-import { promises } from 'node:dns';
 import { Pool, QueryResult } from 'pg';
 
 export interface JobRecord {

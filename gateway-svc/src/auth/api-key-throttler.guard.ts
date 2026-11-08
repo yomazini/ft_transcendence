@@ -21,11 +21,12 @@ export class ApiKeyThrottlerGuard extends ThrottlerGuard {
     super(options, storageService, reflector);
   }
 
-  protected async getTracker(req: Record<string, any>): Promise<string> {
+  protected getTracker(req: Record<string, any>): Promise<string> {
     const raw = req.headers['x-api-key'];
     if (raw) {
-      return createHash('sha256').update(String(raw)).digest('hex');
+      const hash = createHash('sha256').update(String(raw)).digest('hex');
+      return Promise.resolve(hash);
     }
-    return req.ip;
+    return Promise.resolve(String(req.ip));
   }
 }

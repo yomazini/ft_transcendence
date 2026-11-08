@@ -4,7 +4,6 @@ import logging
 import time
 from contextlib import asynccontextmanager
 from types import SimpleNamespace
-from typing import List
 
 import hvac
 from fastapi import FastAPI, HTTPException, Response
@@ -32,11 +31,15 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("analysis-svc")
 
 
+def _read_vault_login() -> dict:
+    with open("/run/vault/login.json") as f:
+        return json.load(f)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
-        with open("/run/vault/login.json") as f:
-            creds = json.load(f)
+        creds = await asyncio.to_thread(_read_vault_login)
         client = hvac.Client(url="http://vault:8200")
         client.auth.approle.login(
             role_id=creds["role_id"], secret_id=creds["secret_id"]
@@ -50,12 +53,12 @@ async def lifespan(app: FastAPI):
         settings.postgres_password = db["password"]
         settings.openrouter_api_key = ai["openrouter_api_key"]
         logger.info("Loaded secrets from Vault")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - Vault is optional at startup
         logger.warning("Vault unavailable; using .env: %s", e)
 
     try:
         await start_worker()
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - worker start is best-effort
         logger.warning("BullMQ worker failed to start: %s", e)
     from .embeddings import warmup
 
@@ -96,7 +99,7 @@ class HealthResponse(BaseModel):
 
 
 class SentimentRequest(BaseModel):
-    comments: List[str]
+    comments: list[str]
 
 
 class RagQueryRequest(BaseModel):
@@ -116,7 +119,7 @@ class CommentCitation(BaseModel):
 
 class RagQueryResponse(BaseModel):
     answer: str
-    citations: List[CommentCitation]
+    citations: list[CommentCitation]
 
 
 @app.get("/health", response_model=HealthResponse)
