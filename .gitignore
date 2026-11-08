@@ -46,3 +46,6 @@ DAY3_TASKS.md
 vault/secret/
 vault/creds/
 vault/audit/
+
+nginx/certs
+nginx/keys

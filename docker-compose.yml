@@ -41,7 +41,7 @@ services:
     depends_on: [gateway-svc, frontend, auth-svc, reporting-svc]
     healthcheck:
       # The image's own check calls https on 8443; this project serves plain http on 8080.
-      test: ["CMD-SHELL", "curl -fs http://localhost:8080/healthz || exit 1"]
+      test: ["CMD-SHELL", "curl -kfs https://localhost:8080/healthz || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -195,7 +195,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./vault/creds/database:/run/vault:ro
       - ./reporting-svc/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
-
+    ports:
+      - "5432:5432"
     depends_on:
       vault:
         condition: service_healthy
