@@ -347,12 +347,4 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     }
     return report;
   }
-
-  async listReportsByJobId(
-    id: string,
-    user: AuthenticatedUser,
-  ): Promise<ReportRecord[]> {
-    await this.getJobById(id, user); // 404 unless the job belongs to the caller's org
-    return this.databaseService.findReportsByJobId(id);
-  }
 }

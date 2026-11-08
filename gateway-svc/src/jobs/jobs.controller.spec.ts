@@ -148,45 +148,6 @@ describe('JobsController', () => {
     });
   });
 
-  describe('listReports', () => {
-    it('returns all reports for a job, newest first', async () => {
-      const database = (service as any).databaseService;
-      const created = await controller.createJob(
-        { mode: 'post', target: 'https://www.reddit.com/r/test/comments/x/y/' },
-        { user: mockUser },
-      );
-      const reports = [
-        {
-          id: 'report-2',
-          job_id: created.id,
-          swot: { strengths: [] },
-          blue_ocean: { factors: {} },
-          conclusion: 'Nov 2',
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: 'report-1',
-          job_id: created.id,
-          swot: { strengths: [] },
-          blue_ocean: { factors: {} },
-          conclusion: 'Nov 1',
-          created_at: new Date(0).toISOString(),
-        },
-      ];
-      const spy = jest
-        .spyOn(database, 'findReportsByJobId')
-        .mockResolvedValue(reports);
-
-      const result = await controller.listReports(created.id, {
-        user: mockUser,
-      });
-
-      expect(result).toHaveLength(2);
-      expect(result[0].conclusion).toBe('Nov 2');
-      spy.mockRestore();
-    });
-  });
-
   describe('EventsGateway', () => {
     it('should emit job:done and job:update events to the org room', async () => {
       const database = {

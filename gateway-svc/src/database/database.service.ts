@@ -359,24 +359,6 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     return this.inMemoryReports.get(jobId) || null;
   }
 
-  async findReportsByJobId(jobId: string): Promise<ReportRecord[]> {
-    if (this.isConnected && this.pool) {
-      try {
-        const res: QueryResult = await this.pool.query(
-          `SELECT id, job_id, swot, blue_ocean, conclusion, created_at FROM "Report" WHERE job_id = $1 ORDER BY created_at DESC;`,
-          [jobId],
-        );
-        return res.rows.map((row) => this.mapReport(row));
-      } catch (err: any) {
-        this.logger.warn(`Postgres report lookup failed: ${err.message}`);
-      }
-    }
-
-    // Dev fallback stores only the latest report per job.
-    const latest = this.inMemoryReports.get(jobId);
-    return latest ? [latest] : [];
-  }
-
   private mapReport(row: any): ReportRecord {
     return {
       id: row.id,
