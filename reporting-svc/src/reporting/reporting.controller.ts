@@ -1,9 +1,7 @@
 import {
 	Controller,
 	Get,
-	Patch,
 	Param,
-	Delete,
 	Headers,
 	Query,
 	Res,
@@ -80,15 +78,5 @@ export class ReportingController {
 	@Get(":id")
 	findOne(@Param("id") id: string, @Headers() header: ReportingHeadersDto) {
 		return this.reportingService.findOne(id, header);
-	}
-
-	@Patch(":id")
-	update(@Param("id") id: string, @Headers() header: ReportingHeadersDto) {
-		return this.reportingService.update(id, header);
-	}
-
-	@Delete(":id")
-	remove(@Param("id") id: string, @Headers() header: ReportingHeadersDto) {
-		return this.reportingService.remove(id, header);
 	}
 }
