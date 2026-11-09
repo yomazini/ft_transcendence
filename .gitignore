@@ -47,5 +47,4 @@ vault/secret/
 vault/creds/
 vault/audit/
 
-nginx/certs
-nginx/keys
+nginx/cert
