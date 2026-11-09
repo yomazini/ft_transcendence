@@ -122,4 +122,4 @@ async function bootstrap() {
 		`Swagger documentation: http://localhost:${port}/api/reporting/docs`,
 	);
 }
-bootstrap();
+void bootstrap();

@@ -3,19 +3,26 @@ import {
 	Injectable,
 	NotFoundException,
 } from "@nestjs/common";
-import { UpdateReportingDto } from "./dto/update-reporting.dto";
 import { ReportingHeadersDto } from "./dto/headers/reporting-headers.dto";
 import { PrismaService } from "src/prisma/prisma.service";
-import { Parser } from "@json2csv/plainjs/index.js";
 import * as ExcelJS from "exceljs";
-import { AnyCatcher } from "rxjs/internal/AnyCatcher";
+
+type CSVRow = {
+	section: string;
+	category: string;
+	name: string;
+	value: string | number | null;
+	description: string;
+};
 
 type SentimentPoint = {
 	day: number | string;
-	sentiment_score: number;
+	sentiment_score: number | null;
 };
 
-type ReportItem = string | { point?: string; action?: string; text?: string };
+type ReportItem =
+	| string
+	| { point?: string; action?: string; text?: string; description?: string };
 
 export type ReportDetails = {
 	result?: SentimentPoint[];
@@ -49,86 +56,305 @@ export type ReportDetails = {
 	conclusion?: string;
 };
 
+function getSow(data: ReportDetails): CSVRow[] {
+	const rouws = Object.entries(data.swot).flatMap(([title, items]) =>
+		items.map((item) => {
+			const description = (item: ReportItem) => {
+				if (typeof item === "string") return item;
+				return String(
+					item.point ??
+						item.text ??
+						item.action ??
+						item.description ??
+						JSON.stringify(item),
+				);
+			};
+			return {
+				section: "SWOT",
+				category: title,
+				name: "",
+				value: "",
+				description: description(item),
+			};
+		}),
+	);
+	return rouws;
+}
+
+function getFeatures(data: ReportDetails): CSVRow[] {
+	if (!data.blue_ocean.features) return [];
+
+	return data.blue_ocean.features.map((item) => ({
+		section: "BlueOcean",
+		category: "features",
+		name: item.name,
+		value: item.priority,
+		description: item.justification,
+	}));
+}
+
+function getResult(data: ReportDetails): CSVRow[] {
+	if (!data.result) return [];
+
+	return data.result.map((item) => ({
+		section: "Result",
+		category: "Result",
+		name: "",
+		value: item.sentiment_score,
+		description: `Date: ${item.day}`,
+	}));
+}
+
+function getFactors(data: ReportDetails): CSVRow[] {
+	if (!data.blue_ocean.factors) return [];
+
+	return Object.entries(data.blue_ocean.factors).map(([name, item]) => ({
+		section: "Blue Ocean",
+		category: "Factors",
+		name,
+		value: item.importance,
+		description: `Satisfaction: ${item.satisfaction}`,
+	}));
+}
+
+function getBlueOcean(data: ReportDetails): CSVRow[] {
+	const blueOcean = data.blue_ocean;
+
+	const strategy = blueOcean.strategy ?? {
+		eliminate: blueOcean.eliminate ?? [],
+		reduce: blueOcean.reduce ?? [],
+		raise: blueOcean.raise ?? [],
+		create: blueOcean.create ?? [],
+	};
+
+	return Object.entries(strategy).flatMap(([title, items]) => {
+		const description = (item: ReportItem) => {
+			if (typeof item === "string") return item;
+			return String(
+				item.point ??
+					item.text ??
+					item.action ??
+					item.description ??
+					JSON.stringify(item),
+			);
+		};
+		return items.map((item) => ({
+			section: "BlueOcean",
+			category: title,
+			name: title,
+			value: "",
+			description: description(item),
+		}));
+	});
+}
+
+function getWeakestSuggestion(data: ReportDetails): CSVRow[] {
+	if (!data.blue_ocean.weakest_suggestion) return [];
+
+	return [
+		{
+			section: "Blue Ocean",
+			category: "WeakestSuggestion",
+			name: "",
+			value: "",
+			description: data.blue_ocean.weakest_suggestion,
+		},
+	];
+}
+
+function getConclusion(data: ReportDetails): CSVRow[] {
+	if (!data.conclusion) return [];
+
+	return [
+		{
+			section: "Conclusion",
+			category: "Conclusion",
+			name: "",
+			value: "",
+			description: data.conclusion,
+		},
+	];
+}
+
+function getRows(data: ReportDetails): CSVRow[] {
+	return [
+		...getResult(data),
+		...getSow(data),
+		...getFactors(data),
+		...getFeatures(data),
+		...getBlueOcean(data),
+		...getWeakestSuggestion(data),
+		...getConclusion(data),
+	];
+}
+
+function addEscape(value: string | number): string {
+	const text = String(value ?? "");
+	return `"${text.replace(/"/g, '""')}"`;
+}
+
 @Injectable()
 export class ReportingService {
 	constructor(private readonly prisma: PrismaService) {}
 
-	buildCsv(data: any): string {
-		const cell = (v: unknown) => {
-			if (v === null || v === undefined) return "";
-			if (v instanceof Date) return v.toISOString();
-			if (typeof v === "object") return JSON.stringify(v);
-			return v;
-		};
-
-		const summary: Record<string, unknown> = {};
-		for (const [key, value] of Object.entries(data)) {
-			if (!Array.isArray(value)) summary[key] = cell(value);
+	async ReportsSentimentsEx(id: string): Promise<SentimentPoint[] | null> {
+		const allReports = await this.prisma.report.findMany({
+			where: {
+				job_id: id,
+			},
+			select: {
+				sentiment_score: true,
+				created_at: true,
+			},
+			orderBy: [{ created_at: "desc" }, { id: "desc" }],
+		});
+		if (allReports.length === 0) {
+			throw new NotFoundException(
+				"There is no report with this ID, or this report has no comments.",
+			);
 		}
-
-		const comments: Record<string, unknown>[] = data.comments ?? [];
-		if (comments.length === 0) return new Parser().parse([summary]);
-
-		const rows = comments.map((c) => ({
-			...summary,
-			...Object.fromEntries(
-				Object.entries(c).map(([k, v]) => [`comment_${k}`, cell(v)]),
-			),
-		}));
-
-		return new Parser().parse(rows);
+		const result = allReports.map((item) => {
+			const reportSentiment: SentimentPoint = {
+				day: item.created_at.toISOString(),
+				sentiment_score: item.sentiment_score ?? 0,
+			};
+			return reportSentiment;
+		});
+		return result;
 	}
 
-	async buildXlsx(data: any): Promise<Buffer> {
-		const wb = new ExcelJS.Workbook();
+	async ReportsSentiments(id: string): Promise<SentimentPoint[] | null> {
+		const allReports = await this.prisma.report.findMany({
+			where: {
+				job_id: id,
+			},
+			select: {
+				sentiment_score: true,
+				created_at: true,
+			},
+			orderBy: [{ created_at: "desc" }, { id: "desc" }],
+		});
+		if (allReports.length === 0) {
+			throw new NotFoundException(
+				"There is no report with this ID, or this report has no comments.",
+			);
+		}
+		const daily = new Map<string, SentimentPoint>();
+		for (const report of allReports) {
+			const day = report.created_at.toISOString().slice(0, 10);
 
-		const summary = wb.addWorksheet("Summary");
-		summary.columns = [
-			{ header: "Field", key: "field", width: 25 },
-			{ header: "Value", key: "value", width: 80 },
-		];
-
-		const cell = (v: unknown) => {
-			if (v === null || v === undefined) return "";
-			if (v instanceof Date) return v;
-			if (typeof v === "object") return JSON.stringify(v, null, 2);
-			return v as string | number | boolean;
-		};
-
-		for (const [key, value] of Object.entries(data)) {
-			const isTable =
-				Array.isArray(value) &&
-				value.length > 0 &&
-				typeof value[0] === "object";
-
-			if (isTable) {
-				const rows = value as Record<string, unknown>[];
-				const sheet = wb.addWorksheet(key.slice(0, 31));
-
-				const keys = [...new Set(rows.flatMap((r) => Object.keys(r)))];
-				sheet.columns = keys.map((k) => ({
-					header: k,
-					key: k,
-					width: 25,
-				}));
-				sheet.addRows(
-					rows.map((r) =>
-						Object.fromEntries(keys.map((k) => [k, cell(r[k])])),
-					),
-				);
-				sheet.getRow(1).font = { bold: true };
-			} else {
-				summary.addRow({ field: key, value: cell(value) });
+			if (!daily.has(day)) {
+				daily.set(day, {
+					day,
+					sentiment_score: report.sentiment_score ?? 0,
+				});
 			}
 		}
+		return Array.from(daily.values());
+	}
 
-		summary.getRow(1).font = { bold: true };
-		summary.getColumn("value").alignment = {
-			wrapText: true,
-			vertical: "top",
+	async getLastReport(id: string, ex: boolean): Promise<ReportDetails> {
+		const lastReport = await this.prisma.report.findFirst({
+			where: {
+				job_id: id,
+			},
+			select: {
+				id: true,
+				swot: true,
+				blue_ocean: true,
+				conclusion: true,
+				sentiment_score: true,
+				created_at: true,
+				job: {
+					select: {
+						comments: {
+							select: {
+								sentiment_score: true,
+							},
+						},
+					},
+				},
+			},
+			orderBy: [{ created_at: "desc" }, { id: "desc" }],
+		});
+		if (!lastReport) {
+			throw new NotFoundException(
+				"There is no report with this ID, or this report has no comments.",
+			);
+		}
+		if (lastReport.sentiment_score === null) {
+			const counter = {
+				total: 0,
+				count: 0,
+			};
+			for (const comment of lastReport.job.comments) {
+				counter.total += comment.sentiment_score ?? 0;
+				counter.count++;
+			}
+			const date = new Date(lastReport.created_at);
+			const day = date.toLocaleDateString("en-US", {
+				month: "short",
+				day: "numeric",
+				timeZone: "UTC",
+			});
+			await this.prisma.report.update({
+				where: {
+					id: lastReport.id,
+				},
+				data: {
+					sentiment_score:
+						counter.total / (counter.count > 0 ? counter.count : 1),
+				},
+			});
+		}
+		const result = {
+			result: (ex === true
+				? await this.ReportsSentimentsEx(id)
+				: await this.ReportsSentiments(id)) as ReportDetails["result"],
+			swot: lastReport.swot as ReportDetails["swot"],
+			blue_ocean: lastReport.blue_ocean as ReportDetails["blue_ocean"],
+			conclusion: lastReport?.conclusion ?? undefined,
 		};
+		console.log(result);
+		return result;
+	}
 
-		return Buffer.from(await wb.xlsx.writeBuffer());
+	buildCsv(data: ReportDetails): string {
+		const rows = getRows(data);
+		const headers: (keyof CSVRow)[] = [
+			"section",
+			"category",
+			"name",
+			"value",
+			"description",
+		];
+		const result = rows.map((items) => {
+			return headers
+				.map((key) => {
+					return addEscape(items[key] ?? "");
+				})
+				.join(",");
+		});
+		return [headers.join(","), ...result].join("\r\n");
+	}
+
+	async buildXlsx(data: ReportDetails): Promise<Buffer> {
+		const rows = getRows(data);
+
+		const Workbook = new ExcelJS.Workbook();
+		const worksheet = Workbook.addWorksheet("Report");
+
+		worksheet.columns = [
+			{ header: "Section", key: "section", width: 20 },
+			{ header: "category", key: "category", width: 20 },
+			{ header: "Name", key: "name", width: 30 },
+			{ header: "Value", key: "value", width: 20 },
+			{ header: "Description", key: "description", width: 50 },
+		];
+		worksheet.addRows(rows);
+		const buffer = await Workbook.xlsx.writeBuffer();
+
+		return Buffer.from(buffer);
 	}
 
 	async findAll(header: ReportingHeadersDto) {
@@ -151,7 +377,7 @@ export class ReportingService {
 				org_id: header["org-id"],
 			},
 			select: {
-				id: true,
+				target: true,
 			},
 		});
 		if (jobs.length === 0) {
@@ -180,113 +406,19 @@ export class ReportingService {
 		}
 		const oJob = await this.prisma.job.findFirst({
 			where: { id, org_id: header["org-id"] },
-			select: { id: true },
 		});
 
 		if (!oJob) {
 			throw new NotFoundException("Job not found");
 		}
 
-		const report = await this.prisma.report.findFirst({
-			where: {
-				job_id: id,
-			},
-			include: {
-				job: {
-					include: {
-						comments: {
-							select: {
-								sentiment_score: true,
-								created_at: true,
-							},
-							orderBy: {
-								created_at: "asc",
-							},
-						},
-					},
-				},
-			},
-		});
-		if (!report) {
-			throw new NotFoundException(
-				"There is no report with this ID, or this report has no comments.",
-			);
-		}
-
-		const monthly = new Map<string, { total: number; count: number }>();
-		for (const comment of report.job.comments) {
-			const date = new Date(comment.created_at);
-
-			const day = date.toLocaleString("en-US", {
-				month: "short",
-				day: "numeric",
-				timeZone: "UTC",
-			});
-			const current = monthly.get(day);
-			if (current) {
-				current.total += Number(comment.sentiment_score ?? 0);
-				current.count++;
-			} else {
-				monthly.set(day, {
-					total: Number(comment.sentiment_score ?? 0),
-					count: 1,
-				});
-			}
-		}
-		const year = new Date().getFullYear().toString();
-		const result = Array.from(monthly.entries()).map(([day, data]) => ({
-			day,
-			sentiment_score: data.total / data.count,
-		}));
-		const { job, ...reportdata } = report;
-		const response = {
-			...reportdata,
-			result,
-		};
-		return response;
-	}
-
-	update(id: string, updateReportingDto: UpdateReportingDto) {
-		return `This action updates a #${id} reporting`;
-	}
-
-	async remove(id: string, header: ReportingHeadersDto) {
-		if (!header["org-id"]) {
-			throw new BadRequestException("org-id header is required");
-		}
-
-		const organization = await this.prisma.organization.findUnique({
-			where: {
-				id: header["org-id"],
-			},
-		});
-
-		if (!organization) {
-			throw new NotFoundException(
-				"there is no organization with this id",
-			);
-		}
-		const oJob = await this.prisma.job.findFirst({
-			where: { id, org_id: header["org-id"] },
-			select: { id: true },
-		});
-
-		if (!oJob) {
-			throw new NotFoundException("Job not found");
-		}
-
-		await this.prisma.job.delete({
-			where: {
-				id: id,
-				org_id: header["org-id"],
-			},
-		});
+		return await this.getLastReport(id, false);
 	}
 
 	async exportReport(
 		id: string,
 		header: ReportingHeadersDto,
-	): Promise<ReportDetails | unknown> {
+	): Promise<ReportDetails> {
 		if (!header["org-id"]) {
 			throw new BadRequestException("org-id header is required");
 		}
@@ -303,82 +435,14 @@ export class ReportingService {
 			);
 		}
 
-		const report = await this.prisma.report.findFirst({
-			where: {
-				job_id: id,
-			},
-			select: {
-				swot: true,
-				blue_ocean: true,
-				job: {
-					select: {
-						target: true,
-						mode: true,
-						org_id: true,
-						comments: {
-							select: {
-								sentiment_score: true,
-								created_at: true,
-								text: true,
-								upvotes: true,
-								author: true,
-							},
-							orderBy: {
-								created_at: "asc",
-							},
-						},
-					},
-				},
-			},
+		const oJob = await this.prisma.job.findFirst({
+			where: { id, org_id: header["org-id"] },
 		});
-		if (!report) {
-			throw new NotFoundException(
-				"There is no report with this ID, or this report has no comments.",
-			);
+
+		if (!oJob) {
+			throw new NotFoundException("Job not found");
 		}
 
-		const monthly = new Map<string, { total: number; count: number }>();
-		for (const comment of report.job.comments) {
-			const date = new Date(comment.created_at);
-
-			const day = date.toLocaleString("en-US", {
-				month: "short",
-				day: "numeric",
-				timeZone: "UTC",
-			});
-			const current = monthly.get(day);
-			if (current) {
-				current.total += Number(comment.sentiment_score ?? 0);
-				current.count++;
-			} else {
-				monthly.set(day, {
-					total: Number(comment.sentiment_score ?? 0),
-					count: 1,
-				});
-			}
-		}
-		const VADER = Array.from(monthly.entries()).map(([day, data]) => ({
-			day,
-			sentiment_score: data.total / data.count,
-		}));
-
-		let sum = 0;
-		for (const vader of VADER) {
-			sum += vader.sentiment_score;
-		}
-
-		const { job, ...reportdata } = report;
-		const { comments, ...jobinfo } = job;
-
-		const Total = VADER.length ? sum / VADER.length : 0;
-
-		const result = {
-			...reportdata,
-			...jobinfo,
-			comments,
-			VADER,
-			Total,
-		} as ReportDetails | unknown;
-		return result;
+		return await this.getLastReport(id, true);
 	}
 }
