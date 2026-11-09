@@ -7,7 +7,7 @@ FROM owasp/modsecurity-crs:4.25.2-nginx-202610180210-lts
 COPY conf/nginx.conf /etc/nginx/templates/conf.d/default.conf.template
 COPY conf/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf /etc/modsecurity.d/owasp-crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
 
-COPY --chown=nginx:nginx --chmod=444 cert/server.pem /etc/nginx/ssl/server.pem
-COPY --chown=nginx:nginx --chmod=400 cert/server.key /etc/nginx/ssl/server.key
+# COPY --chown=nginx:nginx --chmod=444 cert/server.pem /etc/nginx/ssl/server.pem
+# COPY --chown=nginx:nginx --chmod=400 cert/server.key /etc/nginx/ssl/server.key
 
 USER nginx

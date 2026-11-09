@@ -46,6 +46,7 @@ CERT := $(CERT_DIR)/server.pem
 $(KEY):
 	mkdir -p $(CERT_DIR)
 	openssl genrsa -out $@ 2048
+	chmod 644 $@
 
 $(CERT): $(KEY)
 	openssl req -x509 -new -nodes -key $< \
@@ -53,3 +54,4 @@ $(CERT): $(KEY)
 		-out $@ \
 		-subj "/CN=localhost" \
 		-addext "subjectAltName=DNS:localhost,DNS:*.localhost"
+	chmod 644 $@

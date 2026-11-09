@@ -37,6 +37,8 @@ services:
       PORT_GF: ${PORT_GF:-3030}
       ALLOWED_METHODS: "GET POST DELETE PUT"
     depends_on: [gateway-svc, frontend, auth-svc, reporting-svc, grafana]
+    volumes:
+      - "./nginx/cert:/etc/nginx/ssl:ro"
     healthcheck:
       # The image's own check calls https on 8443; this project serves plain http on 8080.
       test: ["CMD-SHELL", "curl -kfs https://localhost:8080/healthz || exit 1"]
