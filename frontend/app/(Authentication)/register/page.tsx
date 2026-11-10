@@ -24,6 +24,8 @@ import {
 	saveToken,
 } from "@/lib/auth";
 
+import { RedirectIfLoggedIn } from "@/components/auth/redirect-if-logged-in";
+
 const MIN_ORG_DESCRIPTION_CHARS = 100;
 const MAX_ORG_DESCRIPTION_CHARS = 200;
 
@@ -82,6 +84,8 @@ export default function RegisterPage() {
 
 	return (
 		<AuthLayout>
+			{/* each time someone lands on /login or /register, it checks for a valid token, and if there is one, sends them to their dashboard. */}
+			<RedirectIfLoggedIn />
 			<AuthCard>
 				<AuthHeader
 					title="Create Your Account"
