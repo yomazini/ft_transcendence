@@ -315,7 +315,6 @@ export class ReportingService {
 			blue_ocean: lastReport.blue_ocean as ReportDetails["blue_ocean"],
 			conclusion: lastReport?.conclusion ?? undefined,
 		};
-		console.log(result);
 		return result;
 	}
 
