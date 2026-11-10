@@ -74,7 +74,7 @@ export default function RegisterPage() {
 				orgDescription.trim()
 			);
 			saveToken(access_token, false);
-			router.push(`/${user.id}/dashboard`);
+			router.replace(`/${user.id}/dashboard`);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Something went wrong.");
 		} finally {

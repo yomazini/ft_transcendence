@@ -51,7 +51,7 @@ export default function LoginPage() {
 			/** moves to the dashboard page without reloading the app
 			 * + adds the new URL to the browser history and shows the page.
 			 */
-			router.push(`/${user.id}/dashboard`);
+			router.replace(`/${user.id}/dashboard`);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Something went wrong.");
 		} finally {
