@@ -6,12 +6,13 @@ import { MailModule } from 'src/mail/mail.module';
 import { JwtModule } from '@nestjs/jwt';
 import { BillingController } from './billing.controller';
 import { BillingService } from './billing.service';
+import { DenylistModule } from '../auth/denylist.module';
 
 @Module({
   controllers: [BillingController, OrgController],
   providers: [OrgService, BillingService],
   exports: [BillingService],
-  imports: [PrismaModule, MailModule,
+  imports: [PrismaModule, MailModule, DenylistModule,
 	JwtModule.register({ secret: process.env.JWT_SECRET!})],
 })
 export class OrgModule {}
