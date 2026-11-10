@@ -53,5 +53,5 @@ $(CERT): $(KEY)
 		-sha256 -days 365 \
 		-out $@ \
 		-subj "/CN=localhost" \
-		-addext "subjectAltName=DNS:localhost,DNS:*.localhost"
+		-addext "subjectAltName=DNS:localhost,DNS:*.localhost,DNS:nginx"
 	chmod 644 $@
