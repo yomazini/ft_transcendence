@@ -7,12 +7,15 @@ import {
 	Res,
 	StreamableFile,
 	BadRequestException,
+	UseInterceptors,
 } from "@nestjs/common";
 import { ReportingService } from "./reporting.service";
 import { ReportingHeadersDto } from "./dto/headers/reporting-headers.dto";
 import type { Response } from "express";
 import { MetricsService } from "src/metrics/metrics.service";
+import { HttpMetricsInterceptor } from "src/metrics/http-metrics/http-metrics.interceptor";
 
+@UseInterceptors(HttpMetricsInterceptor)
 @Controller("reporting")
 export class ReportingController {
 	constructor(
