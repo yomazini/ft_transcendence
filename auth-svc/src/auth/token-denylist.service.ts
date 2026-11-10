@@ -1,22 +1,34 @@
 import { Injectable } from '@nestjs/common';
+import Redis from 'ioredis'
+import { createHash } from 'crypto';
 
-/** 
- * ⚠️ A JWT can't be cancelled, so logout writes it on a "blocked" list, and every protected request checks that list until the token would have expired anyway. 
- * @Bug read file ?/bugs.md
- */
+/*
+	* @notes:
+	1.  how many seconds the token still has to live ?
+	time to live (ttl) = ceiling(exp(sec) - now_date / 1000)
+*/
 @Injectable()
 export class TokenDenylist {
-	private readonly tokens = new Map<string, number>();
+	private readonly redis = new Redis({
+		host: process.env.REDIS_HOST ?? "redis",
+		port: Number(process.env.REDIS_PORT ?? 6379),
+	});
+	private keyOf(token: string): string {
+		return `denylist:${createHash("sha256").update(token).digest("hex")}`;
+	}
+	
 
-	add(token: string, expSeconds: number) {
-		this.tokens.set(token, expSeconds * 1000);
+	async add(token: string, exp: number) {
+		const ttl = Math.ceil(exp - Date.now() / 1000);
+		if (ttl <= 0) { return ; } 
+		const key = this.keyOf(token);
+		await this.redis.set(key, "1", "EX", ttl);
 	}
 
-	has(token: string): boolean {
-		const now = Date.now();
-		for (const [t, exp] of this.tokens) {
-			if (exp < now) this.tokens.delete(t);
-		}
-		return this.tokens.has(token);
+
+	async has(token: string): Promise<boolean> {
+		const key = this.keyOf(token);
+		const found =  await this.redis.exists(key);
+		return found === 1;
 	}
 }
