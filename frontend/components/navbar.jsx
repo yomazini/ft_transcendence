@@ -67,19 +67,17 @@ export function Navbar() {
           <ThemeToggle />
           <Button
             variant="ghost"
-            // 
+            nativeButton={false}
+            render={<Link href="/login" />}
           >
-            <Link href="/login">
-              Login
-            </Link>
+            Login
           </Button>
 
           <Button
-            // 
+            nativeButton={false}
+            render={<Link href="/register" />}
           >
-            <Link href="/register">
-              Get Started
-            </Link>
+            Get Started
           </Button>
         </div>
 
