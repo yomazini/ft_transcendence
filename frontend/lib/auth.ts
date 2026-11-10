@@ -150,8 +150,7 @@ export async function logout(): Promise<void> {
 	try {
 		await fetch("/api/auth/logout", { method: "POST", headers: authHeaders() });
 	} finally {
-		localStorage.removeItem(TOKEN_KEY);
-		sessionStorage.removeItem(TOKEN_KEY);
+		clearToken();
 	}
 }
 
@@ -225,3 +224,12 @@ export async function deleteMyData(password: string): Promise<void> {
 export function getToken(): string | null {
 	return localStorage.getItem(TOKEN_KEY) ?? sessionStorage.getItem(TOKEN_KEY);
 }
+
+export function clearToken(): void {
+	localStorage.removeItem(TOKEN_KEY);
+	sessionStorage.removeItem(TOKEN_KEY);
+}
+
+
+
+
