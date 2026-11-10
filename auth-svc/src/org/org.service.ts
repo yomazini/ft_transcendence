@@ -5,6 +5,7 @@ import { MailService } from 'src/mail/mail.service';
 import { JwtService } from '@nestjs/jwt';
 import { UpdateMemberDto } from './dto/update-member.dto';
 import { BillingService } from './billing.service';
+import { TokenDenylist } from '../auth/token-denylist.service';
 
 @Injectable()
 export class OrgService {
@@ -13,6 +14,7 @@ export class OrgService {
 		private readonly mail: MailService,
 		private readonly jwt: JwtService,
 		private readonly billing: BillingService,
+		private readonly denylist: TokenDenylist,
 	) {}
 
 	async get(id: string, userOrgId: string) {
@@ -130,6 +132,8 @@ export class OrgService {
 			data: { role: dto.role }
 		});
 
+		await this.denylist.revokeUser(userId);
+		
 		return {
 			id: userId,
 			role: dto.role,
@@ -158,5 +162,7 @@ export class OrgService {
 		}
 
 		await this.prisma.user.delete({ where: { id: userId } });
+
+		await this.denylist.revokeUser(userId);
 	}
 }
