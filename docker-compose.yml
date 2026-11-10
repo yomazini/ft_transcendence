@@ -85,6 +85,7 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       vault: { condition: service_healthy }
+      redis: { condition: service_healthy }
     volumes:
       - "./vault/creds/auth-svc:/run/vault:ro" # [HOST_PATH]:[CONTAIENRT_PATH]:ro(readonly)
     networks: [ft_network]
