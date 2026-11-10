@@ -196,8 +196,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./vault/creds/database:/run/vault:ro
       - ./reporting-svc/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
-    ports:
-      - "5432:5432"
+    expose: ["5432"]
     depends_on:
       vault:
         condition: service_healthy
@@ -377,7 +376,13 @@ services:
     image: twinproduction/gatus:stable
     container_name: gatus
     restart: unless-stopped
+    environment:
+      GATUS_CONFIG_PATH: /config/config.yaml
+      SSL_CERT_FILE: /certs/server.pem
+    ports:
+      - "4443:8080"
     volumes:
       - ./gatus/config.yaml:/config/config.yaml:ro
+      - ./nginx/cert:/certs:ro
     networks:
       - ft_network
