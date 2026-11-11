@@ -23,6 +23,7 @@ model Organization {
   created_at        DateTime                @default(now())
   subscriptions     Subscription[]
   payments          Payment[]
+  apiKeys           ApiKey? //  means an org can have zero or one key.
 }
 
 model User {
@@ -31,6 +32,7 @@ model User {
   password                String
   user_roles_organization role_and_organization[]
   created_at              DateTime                @default(now())
+  apiKeys                 ApiKey?
 }
 
 model role_and_organization {
@@ -96,3 +98,21 @@ model Payment {
   created_at         DateTime      @default(now())
   updated_at         DateTime      @updatedAt
 }
+
+model ApiKey {
+  id           String       @id @default(uuid())
+  org_id       String       @unique // org_id @unique means no two ApiKey rows can have the same org_id, so one org can't have 2 keys.
+  user_id      String       @unique
+  key_hash     String       @unique
+  prefix       String
+  label        String?
+  active       Boolean      @default(true)
+  created_at   DateTime     @default(now())
+  last_used_at DateTime?
+  revoked_at   DateTime?
+  organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade) // when the org is deleted, the key is deleted.
+  user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade) // when the user who created it is deleted the key is deleted too.
+
+  @@index([org_id, active])
+}
+
