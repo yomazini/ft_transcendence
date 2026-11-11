@@ -12,6 +12,7 @@ Return the insufficient-data result when either condition is true:
 
 - Fewer than 3 independent comments discuss the product.
 - The comments do not discuss the product or the customer persona.
+- focus on the user orgs persona as well ; for example his organization
 
 The insufficient-data result uses the normal JSON shape:
 
