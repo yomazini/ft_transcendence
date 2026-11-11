@@ -264,9 +264,9 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     const job = await this.getJobById(id, user);
     const status = job.status.toLowerCase();
 
-    if (status === 'running') {
+    if (status === 'running' || status === 'scraping') {
       throw new ConflictException(
-        `Job ${id} is running; wait until it finishes or fails`,
+        `Job ${id} is ${status}; wait until it finishes or fails`,
       );
     }
 

@@ -20,6 +20,20 @@ describe('JobsService.deleteJob', () => {
     expect(database.deleteJob).not.toHaveBeenCalled();
   });
 
+  it('rejects deleting a scraping job without touching the DB', async () => {
+    const database = { deleteJob: jest.fn() };
+    const service = new JobsService(database as any, {} as any);
+    jest.spyOn(service, 'getJobById').mockResolvedValue({
+      ...runningJob,
+      status: 'Scraping',
+    });
+
+    await expect(service.deleteJob('j-1', user)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(database.deleteJob).not.toHaveBeenCalled();
+  });
+
   it('removes a queued scrape job before deleting the row', async () => {
     const database = { deleteJob: jest.fn() };
     const service = new JobsService(database as any, {} as any);
