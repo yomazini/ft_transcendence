@@ -6,6 +6,9 @@ from .llm import call_openrouter_json
 
 logger = logging.getLogger("analysis-synthesis")
 
+# Below this, a report is mostly noise; say so instead of inventing insights.
+MIN_COMMENTS_FOR_REPORT = 3
+
 
 def synthesize_swot(sentiment_summary: dict, scored_comments: list[dict]) -> dict:
     sorted_by_score = sorted(scored_comments, key=lambda c: c["compound"])
@@ -151,11 +154,46 @@ def generate_conclusion(sentiment_summary: dict, swot: dict) -> str:
     )
 
 
+def _insufficient_report(comment_count: int) -> dict[str, Any]:
+    message = (
+        f"Not enough information: only {comment_count} comment(s) were available. "
+        "A reliable SWOT and Blue Ocean report needs at least "
+        f"{MIN_COMMENTS_FOR_REPORT} independent comments."
+    )
+    return {
+        "swot": {
+            "strengths": [],
+            "weaknesses": [],
+            "opportunities": [],
+            "threats": [],
+            "notes": message,
+        },
+        "blue_ocean": {
+            "factors": {},
+            "features": [],
+            "weakest_suggestion": "",
+            "strategy": {
+                "eliminate": [],
+                "reduce": [],
+                "raise": [],
+                "create": [],
+            },
+        },
+        "conclusion": message,
+    }
+
+
 async def synthesize_full_report(
-    job: dict | None,   
+    job: dict | None,
     sentiment_summary: dict,
     scored_comments: list[dict],
 ) -> dict[str, Any]:
+    if len(scored_comments) < MIN_COMMENTS_FOR_REPORT:
+        logger.warning(
+            "Not enough comments for a report: %d", len(scored_comments)
+        )
+        return _insufficient_report(len(scored_comments))
+
     fallback_swot = synthesize_swot(sentiment_summary, scored_comments)
     fallback_bo = synthesize_blue_ocean(sentiment_summary, scored_comments)
 
@@ -168,8 +206,9 @@ async def synthesize_full_report(
         and "blue_ocean" in llm_result
     ):
         swot_data = llm_result["swot"]
+        notes = ""
         if isinstance(swot_data, dict):
-            notes = swot_data.get("notes")
+            notes = swot_data.get("notes") or ""
             if notes:
                 logger.warning("Flagged synthesis note for job: %s", notes)
             swot_data["subjectivity_breakdown"] = fallback_swot[
@@ -189,16 +228,23 @@ async def synthesize_full_report(
             "weakest_suggestion": weakest,
         }
 
-        conclusion = generate_conclusion(
-            sentiment_summary,
-            swot_data if isinstance(swot_data, dict) else fallback_swot,
+        has_swot = isinstance(swot_data, dict) and any(
+            swot_data.get(key)
+            for key in ("strengths", "weaknesses", "opportunities", "threats")
         )
-        if features and isinstance(features[0], dict):
-            top_feat = features[0].get("name", "")
-            if top_feat:
-                conclusion = (
-                    f"{conclusion} Recommended top feature to build: {top_feat}."
-                )
+        if notes and not has_swot:
+            conclusion = notes
+        else:
+            conclusion = generate_conclusion(
+                sentiment_summary,
+                swot_data if isinstance(swot_data, dict) else fallback_swot,
+            )
+            if features and isinstance(features[0], dict):
+                top_feat = features[0].get("name", "")
+                if top_feat:
+                    conclusion = (
+                        f"{conclusion} Recommended top feature to build: {top_feat}."
+                    )
 
         return {
             "swot": swot_data if isinstance(swot_data, dict) else fallback_swot,

@@ -1,3 +1,4 @@
+import hashlib
 import json
 
 import asyncpg
@@ -49,15 +50,20 @@ async def insert_comment(
 ):
     pool = await get_pool()
     embedding_str = "[" + ",".join(str(v) for v in embedding) + "]"
+    # Legacy payload path has no Reddit id, so reuse the row id.
+    reddit_id = comment_id
+    text_hash = hashlib.sha256(text.encode()).hexdigest()
     await pool.execute(
         """
-        INSERT INTO "Comments" (id, job_id, text, author, upvotes, sentiment_score, embedding)
-        VALUES ($1, $2, $3, $4, $5, $6, $7::vector)
+        INSERT INTO "Comments" (id, job_id, text, reddit_id, hash, author, upvotes, sentiment_score, embedding)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::vector)
         ON CONFLICT (id) DO NOTHING
         """,
         comment_id,
         job_id,
         text,
+        reddit_id,
+        text_hash,
         author,
         upvotes,
         sentiment_score,

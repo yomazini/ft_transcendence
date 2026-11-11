@@ -347,6 +347,23 @@ def test_synthesize_full_report_fails_when_llm_returns_nothing():
         asyncio.run(synthesize_full_report(None, summary, scored))
 
 
+def test_synthesize_full_report_refuses_one_comment():
+    import asyncio
+
+    from app.sentiment import compute_sentiment_summary, score_comments
+    from app.synthesis import synthesize_full_report
+    from tests.fixtures import get_fixture_comments
+
+    scored = score_comments(get_fixture_comments()[:1])
+    summary = compute_sentiment_summary(scored)
+
+    report = asyncio.run(synthesize_full_report(None, summary, scored))
+
+    assert "Not enough information" in report["conclusion"]
+    assert report["swot"]["strengths"] == []
+    assert report["blue_ocean"]["features"] == []
+
+
 def test_rerank_for_rag():
     from app.ranking import rerank_for_rag
 

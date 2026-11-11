@@ -46,6 +46,9 @@ def build_synthesis_prompt(job: dict | None, scored_comments: list[dict]) -> str
     persona_xml = format_persona_xml(job)
     comments_xml = format_comments_xml(top_10)
 
+    sufficiency_skill = (SKILLS_DIR / "skills-data-sufficiency.md").read_text(
+        encoding="utf-8"
+    )
     swot_skill = (SKILLS_DIR / "skills-swot.md").read_text(encoding="utf-8")
     blue_ocean_skill = (SKILLS_DIR / "skills-blue-ocean.md").read_text(encoding="utf-8")
     features_skill = (SKILLS_DIR / "skills-feature-suggestions.md").read_text(
@@ -55,6 +58,7 @@ def build_synthesis_prompt(job: dict | None, scored_comments: list[dict]) -> str
     return (
         f"{persona_xml}\n\n"
         f"{comments_xml}\n\n"
+        f"{sufficiency_skill}\n\n"
         f"{swot_skill}\n\n"
         f"{blue_ocean_skill}\n\n"
         f"{features_skill}"
