@@ -87,7 +87,14 @@ async def _post_completion(
     choices = data.get("choices") or []
     if not choices:
         raise EmptyCompletionError("Empty choices from OpenRouter")
-    content = choices[0].get("message", {}).get("content") or ""
+    message = choices[0].get("message", {})
+    # Some free reasoning models put the answer in `reasoning`, not `content`.
+    content = (
+        message.get("content")
+        or message.get("reasoning")
+        or message.get("reasoning_content")
+        or ""
+    )
     if not content:
         raise EmptyCompletionError("Empty message content from OpenRouter")
     return str(content)
