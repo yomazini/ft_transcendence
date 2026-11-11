@@ -291,12 +291,6 @@ export class ReportingService {
 				counter.total += comment.sentiment_score ?? 0;
 				counter.count++;
 			}
-			const date = new Date(lastReport.created_at);
-			const day = date.toLocaleDateString("en-US", {
-				month: "short",
-				day: "numeric",
-				timeZone: "UTC",
-			});
 			await this.prisma.report.update({
 				where: {
 					id: lastReport.id,
