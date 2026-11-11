@@ -74,6 +74,33 @@ components:
         role: { $ref: "#/components/schemas/Role" }
         created_at: { type: string, format: date-time }
 
+    ApiKey:
+      type: object
+      description: Metadata of the organization's API key. Never contains the key or its hash.
+      required: [id, prefix, label, created_at, last_used_at]
+      properties:
+        id: { type: string, format: uuid }
+        prefix: { type: string, description: "First 7 characters of the key", example: "if_9Kd2" }
+        label: { type: string, nullable: true, maxLength: 40, example: "Nightly export" }
+        created_at: { type: string, format: date-time }
+        last_used_at: { type: string, format: date-time, nullable: true }
+
+    ApiKeyCreated:
+      type: object
+      description: Returned once, by POST /orgs/{id}/api-key only.
+      required: [id, key, prefix, label, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        key:
+          type: string
+          description: >
+            Full key, "if_" + 43 base64url characters. Shown once, never stored or
+            returned again; the server keeps only its SHA-256 hash (hex, lowercase).
+          example: "if_9Kd2rEufuP4XVZZAcLq3uQgkD8QwVrFdVVYvWJSjPGy"
+        prefix: { type: string, example: "if_9Kd2" }
+        label: { type: string, nullable: true, example: "Nightly export" }
+        created_at: { type: string, format: date-time }
+
     Message:
       type: object
       required: [message]
@@ -685,6 +712,84 @@ paths:
           description: Caller is not an Admin
         "404":
           description: Not the caller's organization, or the user is not a member of it
+
+  /orgs/{id}/api-key:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: Get the organization's API key metadata (Admin only)
+      operationId: getApiKey
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: The key's metadata, or null when the organization has no key
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [key]
+                properties:
+                  key:
+                    type: object
+                    allOf: [{ $ref: "#/components/schemas/ApiKey" }]
+                    nullable: true
+        "401":
+          description: Unauthorized
+        "403":
+          description: Caller is not an Admin
+        "404":
+          description: Not the caller's organization
+    post:
+      summary: Generate the organization's API key (Admin only) — the full key is returned once
+      operationId: createApiKey
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                label: { type: string, maxLength: 40, example: "Nightly export" }
+      responses:
+        "201":
+          description: Key created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiKeyCreated" }
+        "400":
+          description: Invalid label (not a string, or longer than 40 characters)
+        "401":
+          description: Unauthorized
+        "403":
+          description: Caller is not an Admin
+        "404":
+          description: Not the caller's organization
+        "409":
+          description: >
+            A key already exists for this organization (revoke it first), or the
+            caller already owns a key
+    delete:
+      summary: Revoke the organization's API key (Admin only) — the row is deleted
+      operationId: revokeApiKey
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Key revoked; any request using it now gets 401 on the gateway
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [revoked, revoked_at]
+                properties:
+                  revoked: { type: boolean, example: true }
+                  revoked_at: { type: string, format: date-time }
+        "401":
+          description: Unauthorized
+        "403":
+          description: Caller is not an Admin
+        "404":
+          description: Not the caller's organization, or the organization has no key
 
   /orgs/billing:
     get:
