@@ -7,12 +7,12 @@ import {
 } from "@nestjs/common";
 
 import type { Response } from "express";
+import { Prisma } from "src/generated/prisma/client";
 
-@Catch()
+@Catch(Prisma.PrismaClientKnownRequestError)
 export class PrismaClientExceptionFilte implements ExceptionFilter {
-	catch(exception: unknown, host: ArgumentsHost) {
+	catch(exception: PrismaClientExceptionFilte, host: ArgumentsHost) {
 		const response: Response = host.switchToHttp().getResponse<Response>();
-
 		if (
 			typeof exception === "object" &&
 			exception !== null &&

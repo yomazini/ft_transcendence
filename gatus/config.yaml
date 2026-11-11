@@ -4,6 +4,13 @@ storage:
 ui:
   title: "FT Transcendence Status"
 
+web:
+  address: 0.0.0.0
+  port: 4443
+  tls:
+    certificate-file: /certs/server.pem
+    private-key-file: /certs/server.key
+
 endpoints:
   - name: MinIO
     group: Infrastructure
@@ -29,7 +36,7 @@ endpoints:
     conditions:
       - "[STATUS] == 200"
   - name: Auth SVC
-    url: "http://auth-svc:3002/auth/verify"
+    url: "http://auth-svc:3002/health"
     interval: 30s
     conditions:
       - "[STATUS] == 200"
@@ -45,7 +52,7 @@ endpoints:
       - "[STATUS] == 200"
   - name: Nginx
     group: Infrastructure
-    url: "http://nginx:8080/healthz"
+    url: "https://nginx:8080/healthz"
     interval: 30s
     conditions:
       - "[STATUS] == 200"
