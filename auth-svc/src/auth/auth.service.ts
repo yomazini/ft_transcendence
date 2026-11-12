@@ -130,6 +130,7 @@ export class AuthService {
 			id: user.id,
 			org_id: role.org_id,
 			email: user.email,
+			is_2fa_enabled: user.is_2fa_enabled,
 			role: role.role,
 			created_at: user.created_at,
 		};
