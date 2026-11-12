@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Icon, Laptop2Icon, TrendingUp } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import {
 	Area,
 	AreaChart,
@@ -65,7 +65,7 @@ function formatDate(date: Date): string {
 	return `${y}-${m}-${d}`;
 }
 
-function getItemDate(day: string | number, now: Date): string | null {
+function getItemDate(day: string | number): string | null {
 	const value = String(day).trim();
 
 	const isoMatch = value.match(/^(\d{4}-\d{2}-\d{2})/);
@@ -101,7 +101,7 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 		const grouped = new Map<string, { total: number }>();
 
 		report?.result?.forEach((item) => {
-			const date = getItemDate(item.day, now);
+			const date = getItemDate(item.day);
 
 			if (item.sentiment_score == null) {
 				return;
