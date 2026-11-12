@@ -8,8 +8,7 @@ import { FormEvent, useState } from "react";
 import { notifyUser, submitJob } from "./submitJob";
 import { useCreateJob } from "./useCreateJob";
 import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/router";
-import { useParams } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
 const MODES: { value: JobMode; label: string; placeholder: string }[] = [
 	{ value: "post", label: "Post URL", placeholder: "https://www.reddit.com/r/.../comments/..." },
