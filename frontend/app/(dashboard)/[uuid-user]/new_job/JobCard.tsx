@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card"
-import type { JobStatus } from "@/lib/api/jobs";
+import type { JobItem, JobStatus } from "@/lib/api/jobs";
 import { JobMode } from "@/lib/api/createJob"
 import { RefreshCw, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -7,13 +7,30 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link";
 import { Job, STATUS_STYLE } from "./getJobs";
 import { deleteJob } from "./deleteJob";
+import { useDeleteRepById } from "@/hooks/useDeleteRepById";
+import { useRouter, useParams } from "next/navigation";
+import { toast } from "sonner";
 
+interface JobCardProps {
+	jobs: JobItem
+}
 
-
-export function JobCard({status, mode, created_at, id, org_id, target}:Job){
-
-	async function deleteButton(){
-		await deleteJob(id)
+export function JobCard({ jobs } : JobCardProps) {
+	const deleteReport = useDeleteRepById()
+	const router = useRouter();
+	const userId = useParams<{ "uuid-user": string }>()["uuid-user"];
+	const { status, mode, created_at, id, org_id, target } = jobs;
+	async function deleteButton() {
+		// await deleteJob(id)
+		try {
+			await deleteReport.mutateAsync(id);
+			router.push(`/${userId}/new_job`)
+		} catch (err) {
+			toast.error("Failed to Delet report", {
+				description: "Failed to Delet report",
+				duration: 4000,
+			});
+		}
 	}
 
 	return (

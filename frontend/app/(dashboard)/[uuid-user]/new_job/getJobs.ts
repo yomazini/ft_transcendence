@@ -2,8 +2,9 @@ import { JobMode } from "@/lib/api/createJob"
 import { JobStatus } from "@/lib/api/jobs"
 import { authHeaders } from "@/lib/auth"
 
+//im not still using this type im using interface in useJobsLive !!!
 export type Job = {
-	id: string
+	job_id: string
 	org_id: string
 	target: string
 	mode: JobMode
