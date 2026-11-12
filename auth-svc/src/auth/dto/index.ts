@@ -8,3 +8,4 @@ export * from './forgot-password.dto'
 export * from './delete-account.dto'
 export * from './change-email.dto'
 export * from './two-factor-code.dto';
+export * from './two-factor-verify.dto'
