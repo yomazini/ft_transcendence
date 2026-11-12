@@ -23,11 +23,6 @@ export class ReportingController {
 		private readonly metrics: MetricsService,
 	) {}
 
-	@Get()
-	findAll(@Headers() header: ReportingHeadersDto) {
-		return this.reportingService.findAll(header);
-	}
-
 	@Get(":id/export")
 	async exportReport(
 		@Param("id") id: string,
