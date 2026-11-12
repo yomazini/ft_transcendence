@@ -141,9 +141,9 @@ export class AuthController {
 	@HttpCode(204)
 	@ApiResponse({ status: 204, description: 'Token revoked' })
 	@ApiResponse({ status: 401, description: 'Missing or invalid token' })
-	logout(@Req() req) {
+	async logout(@Req() req) {
 		const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
-		if (token) { this.denylist.add(token, req.user.exp); }
+		if (token) { await this.denylist.add(token, req.user.exp); }
 		this.metrics.logouts.inc();
 	}
 

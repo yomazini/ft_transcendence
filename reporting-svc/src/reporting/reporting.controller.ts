@@ -1,31 +1,27 @@
 import {
 	Controller,
 	Get,
-	Patch,
 	Param,
-	Delete,
 	Headers,
 	Query,
 	Res,
 	StreamableFile,
 	BadRequestException,
+	UseInterceptors,
 } from "@nestjs/common";
 import { ReportingService } from "./reporting.service";
 import { ReportingHeadersDto } from "./dto/headers/reporting-headers.dto";
 import type { Response } from "express";
 import { MetricsService } from "src/metrics/metrics.service";
+import { HttpMetricsInterceptor } from "src/metrics/http-metrics/http-metrics.interceptor";
 
+@UseInterceptors(HttpMetricsInterceptor)
 @Controller("reporting")
 export class ReportingController {
 	constructor(
 		private readonly reportingService: ReportingService,
 		private readonly metrics: MetricsService,
 	) {}
-
-	@Get()
-	findAll(@Headers() header: ReportingHeadersDto) {
-		return this.reportingService.findAll(header);
-	}
 
 	@Get(":id/export")
 	async exportReport(
@@ -80,15 +76,5 @@ export class ReportingController {
 	@Get(":id")
 	findOne(@Param("id") id: string, @Headers() header: ReportingHeadersDto) {
 		return this.reportingService.findOne(id, header);
-	}
-
-	@Patch(":id")
-	update(@Param("id") id: string, @Headers() header: ReportingHeadersDto) {
-		return this.reportingService.update(id, header);
-	}
-
-	@Delete(":id")
-	remove(@Param("id") id: string, @Headers() header: ReportingHeadersDto) {
-		return this.reportingService.remove(id, header);
 	}
 }

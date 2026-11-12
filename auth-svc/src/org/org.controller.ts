@@ -32,25 +32,25 @@ export class OrgController {
 
 	/** ✅️ Org/workspace CRUD */
 
-	@Get(':id/members') /** GET /orgs/:id/members */
+	@Get(':id/members') /** list: GET /orgs/:id/members */
 	@UseGuards(JwtGuard)
 	listMembers(@Param('id') id: string, @Req() req) {
 		return this.orgService.list(id, req.user.org_id);
 	}
 
-	@Post(':id/members') /** POST /orgs/:id/members */
+	@Post(':id/members') /** invite: POST /orgs/:id/members */
 	@UseGuards(JwtGuard)
 	inviteMember(@Param('id') id:string, @Body() dto: InviteMemberDto, @Req() req) {
 		return this.orgService.invite(id, dto, req.user.org_id, req.user.role);
 	}
 
-	@Patch(':id/members/:userId') /** Patch /orgs/:id/members */
+	@Patch(':id/members/:userId') /** update: Patch /orgs/:id/members */
 	@UseGuards(JwtGuard)
 	updateMember(@Param('id') id:string, @Param('userId') userId: string, @Body() dto: UpdateMemberDto, @Req() req) {
 		return this.orgService.updateMember(id, userId, dto, req.user.org_id, req.user.role);
 	}
 
-	@Delete(':id/members/:userId') /** DELETE /orgs/:id/members/:userId */
+	@Delete(':id/members/:userId') /** remove: DELETE /orgs/:id/members/:userId */
 	@HttpCode(204)
 	@UseGuards(JwtGuard)
 	removeMember(@Param('id') id: string, @Param('userId') userId: string, @Req() req) {

@@ -1,16 +1,34 @@
-
-
 "use client";
 
 import { useMemo, useState } from "react";
 import { TrendingUp } from "lucide-react";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import {
+	Area,
+	AreaChart,
+	Bar,
+	BarChart,
+	CartesianGrid,
+	Line,
+	LineChart,
+	XAxis,
+	YAxis,
+} from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import {
+	ChartContainer,
+	ChartTooltip,
+	ChartTooltipContent,
+} from "@/components/ui/chart";
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 
 import {
 	Popover,
@@ -47,69 +65,15 @@ function formatDate(date: Date): string {
 	return `${y}-${m}-${d}`;
 }
 
-
-function getItemDate(
-	day: string | number,
-	now: Date
-): string | null {
-	if (typeof day === "number") {
-		const date = new Date(
-			now.getFullYear(),
-			now.getMonth(),
-			day
-		);
-
-		if (date.getMonth() !== now.getMonth()) {
-			return null;
-		}
-
-		return formatDate(date);
-	}
-
+function getItemDate(day: string | number): string | null {
 	const value = String(day).trim();
-
-	const monthDay = value.match(/^([A-Za-z]{3,9})\s+(\d{1,2})$/);
-
-	if (monthDay) {
-		const monthNames = [
-			"jan", "feb", "mar", "apr",
-			"may", "jun", "jul", "aug",
-			"sep", "oct", "nov", "dec",
-		];
-
-		const month = monthNames.indexOf(
-			monthDay[1].slice(0, 3).toLowerCase()
-		);
-
-		if (month === -1) return null;
-
-		const dayNumber = Number(monthDay[2]);
-
-		const date = new Date(
-			now.getFullYear(),
-			month,
-			dayNumber
-		);
-
-		if (
-			date.getMonth() !== month ||
-			date.getDate() !== dayNumber
-		) {
-			return null;
-		}
-
-		return formatDate(date);
-	}
 
 	const isoMatch = value.match(/^(\d{4}-\d{2}-\d{2})/);
 
 	if (isoMatch) {
 		const date = new Date(`${isoMatch[1]}T12:00:00`);
 
-		if (
-			Number.isNaN(date.getTime()) ||
-			formatDate(date) !== isoMatch[1]
-		) {
+		if (Number.isNaN(date.getTime()) || formatDate(date) !== isoMatch[1]) {
 			return null;
 		}
 
@@ -124,7 +88,6 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 
 	const [dateRange, setDateRange] = useState<DateRange>("all");
 
-	const [pop, setPop] = useState(false);
 	const [sentimentFilter, setSentimentFilter] = useState<SentimentFilter>("all");
 
 	const [from, setFrom] = useState("");
@@ -135,13 +98,10 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 
 	const chartData = useMemo(() => {
 		const now = new Date(`${today}T12:00:00`);
-		const grouped = new Map<
-			string,
-			{ total: number; count: number }
-		>();
+		const grouped = new Map<string, { total: number }>();
 
 		report?.result?.forEach((item) => {
-			const date = getItemDate(item.day, now);
+			const date = getItemDate(item.day);
 
 			if (item.sentiment_score == null) {
 				return;
@@ -149,44 +109,24 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 
 			const score = Number(item.sentiment_score);
 
-			if (
-				!date ||
-				!Number.isFinite(score) ||
-				score < -1 ||
-				score > 1
-			) {
+			if (!date || !Number.isFinite(score) || score < -1 || score > 1) {
 				return;
 			}
 
-			if (
-				sentimentFilter === "positive" &&
-				score <= 0.05
-			) {
+			if (sentimentFilter === "positive" && score <= 0.05) {
 				return;
 			}
 
-			if (
-				sentimentFilter === "negative" &&
-				score >= -0.05
-			) {
+			if (sentimentFilter === "negative" && score >= -0.05) {
 				return;
 			}
 
-			if (
-				sentimentFilter === "neutral" &&
-				Math.abs(score) > 0.05
-			) {
+			if (sentimentFilter === "neutral" && Math.abs(score) > 0.05) {
 				return;
 			}
-
-			const previous = grouped.get(date) ?? {
-				total: 0,
-				count: 0,
-			};
 
 			grouped.set(date, {
-				total: previous.total + score,
-				count: previous.count + 1,
+				total: score,
 			});
 		});
 
@@ -194,34 +134,32 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 			grouped.entries(),
 			([date, value]) => ({
 				date,
-				sentiment: value.total / value.count,
-			})
+				sentiment: value.total,
+			}),
 		).sort((a, b) => a.date.localeCompare(b.date));
 
 		if (dateRange === "all") {
 			const start = new Date(
 				now.getFullYear(),
 				now.getMonth(),
-				now.getDate()
+				now.getDate(),
 			);
 
-			start.setDate(start.getDate() - 28);
+			start.setDate(start.getDate() - 27);
 
 			const startDate = formatDate(start);
 
 			const last30 = points.filter(
-				(point) =>
-					point.date >= startDate &&
-					point.date <= today
+				(point) => point.date >= startDate && point.date <= today,
 			);
 
 			const days = new Map(
-				last30.map((point) => [point.date, point.sentiment])
+				last30.map((point) => [point.date, point.sentiment]),
 			);
 
 			const result: ChartPoint[] = [];
 
-			for (let i = 0; i < 29; i++) {
+			for (let i = 0; i < 28; i++) {
 				const date = new Date(start);
 				date.setDate(start.getDate() + i);
 
@@ -239,15 +177,14 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 			if (invalidRange) return [];
 			return points.filter(
 				(point) =>
-					(!from || point.date >= from) &&
-					(!to || point.date <= to)
+					(!from || point.date >= from) && (!to || point.date <= to),
 			);
 		}
 
 		const start = new Date(
 			now.getFullYear(),
 			now.getMonth(),
-			now.getDate()
+			now.getDate(),
 		);
 
 		start.setDate(start.getDate() - 6);
@@ -255,13 +192,11 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 		const startDate = formatDate(start);
 
 		const last7 = points.filter(
-			(point) =>
-				point.date >= startDate &&
-				point.date <= today
+			(point) => point.date >= startDate && point.date <= today,
 		);
 
 		const days = new Map(
-			last7.map((point) => [point.date, point.sentiment])
+			last7.map((point) => [point.date, point.sentiment]),
 		);
 
 		const result: ChartPoint[] = [];
@@ -281,20 +216,13 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 		return result;
 	}, [report, dateRange, sentimentFilter, today, from, to, invalidRange]);
 
-	const validPoints = chartData.filter(
-		(point) => point.sentiment !== null
-	);
+	const validPoints = chartData.filter((point) => point.sentiment !== null);
 
-	const currentSentiment =
-		validPoints.at(-1)?.sentiment ?? null;
+	const currentSentiment = validPoints.at(-1)?.sentiment ?? null;
 
-	const isPositive =
-		currentSentiment !== null &&
-		currentSentiment > 0.05;
+	const isPositive = currentSentiment !== null && currentSentiment > 0.05;
 
-	const isNegative =
-		currentSentiment !== null &&
-		currentSentiment < -0.05;
+	const isNegative = currentSentiment !== null && currentSentiment < -0.05;
 
 	const color =
 		currentSentiment === null
@@ -305,11 +233,7 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 					? "text-red-500"
 					: "text-orange-400";
 
-	const arrow = isPositive
-		? "↗"
-		: isNegative
-			? "↘"
-			: "→";
+	const arrow = isPositive ? "↗" : isNegative ? "↘" : "→";
 
 	const sentimentLabel =
 		currentSentiment === null
@@ -338,10 +262,10 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 				minTickGap={20}
 				tick={{ fontSize: 10, fill: "#6b7280" }}
 				tickFormatter={(date: string) =>
-					new Date(`${date}T12:00:00`).toLocaleDateString(
-						"en-US",
-						{ month: "short", day: "numeric" }
-					)
+					new Date(`${date}T12:00:00`).toLocaleDateString("en-US", {
+						month: "short",
+						day: "numeric",
+					})
 				}
 			/>
 
@@ -373,7 +297,6 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 		setTo("");
 		setSentimentFilter("all");
 		setChartType("area");
-		setPop(false);
 	}
 
 	return (
@@ -407,15 +330,14 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 					</div>
 				</div>
 
-				<div className="mt-4 flex h-9 min-w-0 max-w-full items-center gap-2 overflow-x-auto overflow-y-hidden whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+				<div className="mt-4 flex w-full flex-wrap gap-2">
 					<Select
 						value={dateRange}
 						onValueChange={(value) => {
 							setDateRange(value as DateRange);
-							setPop(false);
 						}}
 					>
-						<SelectTrigger className="h-9 w-[140px] shrink-0">
+						<SelectTrigger className="h-9 w-[calc(50%-0.25rem)] lg:w-auto">
 							<SelectValue placeholder="Date range" />
 						</SelectTrigger>
 						<SelectContent>
@@ -425,8 +347,13 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 						</SelectContent>
 					</Select>
 
-					<Select value={sentimentFilter} onValueChange={(value) => setSentimentFilter(value as SentimentFilter)}>
-						<SelectTrigger className="h-9 w-[155px] shrink-0">
+					<Select
+						value={sentimentFilter}
+						onValueChange={(value) =>
+							setSentimentFilter(value as SentimentFilter)
+						}
+					>
+						<SelectTrigger className="h-9 w-[calc(50%-0.25rem)] lg:w-auto">
 							<SelectValue placeholder="Sentiment" />
 						</SelectTrigger>
 						<SelectContent>
@@ -437,8 +364,13 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 						</SelectContent>
 					</Select>
 
-					<Select value={chartType} onValueChange={(value) => setChartType(value as ChartType)}>
-						<SelectTrigger className="h-9 w-[125px] shrink-0">
+					<Select
+						value={chartType}
+						onValueChange={(value) =>
+							setChartType(value as ChartType)
+						}
+					>
+						<SelectTrigger className="h-9 w-[calc(50%-0.25rem)] lg:w-auto">
 							<SelectValue placeholder="Chart type" />
 						</SelectTrigger>
 						<SelectContent>
@@ -448,14 +380,25 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 						</SelectContent>
 					</Select>
 
-					<Button variant="ghost" size="sm" className="h-9 shrink-0" onClick={resetFilters}>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-9 shrink-0"
+						onClick={resetFilters}
+					>
 						Reset
 					</Button>
 
 					{dateRange === "custom" && (
-						<Popover open={pop} onOpenChange={setPop}>
+						<Popover>
 							<PopoverTrigger
-								render={<Button variant="outline" size="sm" className="h-9 shrink-0 gap-2" />}
+								render={
+									<Button
+										variant="outline"
+										size="sm"
+										className="h-9 w-[calc(50%-0.25rem)] lg:w-auto"
+									/>
+								}
 							>
 								<CalendarDays className="size-4" />
 								Select dates
@@ -463,29 +406,48 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 							<PopoverContent
 								align="end"
 								side="bottom"
-								className="z-50 w-[min(320px,calc(100vw-32px))] bg-white p-4"
+								className="z-50 w-[min(320px,calc(100vw-32px))] bg-popover text-popover-foreground"
 							>
 								<div className="flex flex-col gap-4 whitespace-normal">
-									<p className="text-sm font-medium">Custom date range</p>
-									<label className="flex flex-col gap-2 text-xs text-gray-500">
+									<p className="text-sm font-medium">
+										Custom date range
+									</p>
+									<label className="flex flex-col gap-2 text-xs">
 										From
-										<input type="date" value={from} max={to || undefined}
-											onChange={(e) => setFrom(e.target.value)}
-											className="h-9 w-full min-w-0 rounded-md border px-3 text-sm" />
+										<input
+											type="date"
+											value={from}
+											max={to || undefined}
+											onChange={(e) =>
+												setFrom(e.target.value)
+											}
+											className="h-9 w-full min-w-0 rounded-md border border-input bg-background text-foreground dark:[color-scheme:dark] px-3 text-sm"
+										/>
 									</label>
-									<label className="flex flex-col gap-2 text-xs text-gray-500">
+									<label className="flex flex-col gap-2 text-xs">
 										To
-											<input type="date" value={to} min={from || undefined}
-											onChange={(e) => setTo(e.target.value)}
-											className="h-9 w-full min-w-0 rounded-md border px-3 text-sm" />
+										<input
+											type="date"
+											value={to}
+											min={from || undefined}
+											onChange={(e) =>
+												setTo(e.target.value)
+											}
+											className="h-9 w-full min-w-0 rounded-md border border-input bg-background text-foreground dark:[color-scheme:dark] px-3 text-sm"
+										/>
 									</label>
-									<Button size="sm" disabled={invalidRange || !from || !to} onClick={() => setPop(false)}>Apply</Button>
+									<Button
+										className="w-full"
+										size="sm"
+										disabled={invalidRange || !from || !to}
+									>
+										Apply
+									</Button>
 								</div>
 							</PopoverContent>
 						</Popover>
 					)}
 				</div>
-
 			</CardHeader>
 
 			<CardContent className="min-w-0 overflow-hidden pt-6">

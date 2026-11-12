@@ -134,19 +134,13 @@ export class BackupsService {
 		} catch (err) {
 			const message = err instanceof Error ? err.message : String(err);
 			this.logger.error(`Backup failed: ${message}`);
-			await this.prisma.backups
-				.update({
-					where: { id: backupRecord.id },
-					data: {
-						status: BackupStatus.FAILED,
-						errorMessage: message,
-					},
-				})
-				.catch((e) =>
-					this.logger.error(
-						`Failed to record failure: ${e instanceof Error ? e.message : String(e)}`,
-					),
-				);
+			await this.prisma.backups.update({
+				where: { id: backupRecord.id },
+				data: {
+					status: BackupStatus.FAILED,
+					errorMessage: message,
+				},
+			});
 			throw err;
 		} finally {
 			await fs.promises.unlink(filePath).catch(() => {});

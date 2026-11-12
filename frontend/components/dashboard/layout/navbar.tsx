@@ -85,7 +85,7 @@ export function DashboardNavbar() {
             }
           >
             <Avatar className="size-9">
-              <AvatarImage src="/avatar.jpg" />
+              {/* <AvatarImage src="/avatar.jpg" /> */}
 
               <AvatarFallback>
                 {initials}

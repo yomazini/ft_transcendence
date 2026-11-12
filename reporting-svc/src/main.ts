@@ -3,6 +3,7 @@ import { AppModule } from "./app.module";
 import { ValidationPipe } from "@nestjs/common";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { readFile } from "node:fs/promises";
+import { PrismaClientExceptionFilte } from "./prisma-client-exception/prisma-client-exception.filter";
 
 async function getSecrets(token: string) {
 	const result = await fetch("http://vault:8200/v1/secret/data/database", {
@@ -115,6 +116,7 @@ async function bootstrap() {
 	SwaggerModule.setup("api/reporting/docs", app, document);
 	app.useGlobalPipes(new ValidationPipe());
 	app.enableShutdownHooks();
+	app.useGlobalFilters(new PrismaClientExceptionFilte());
 	const port = process.env.PORT ?? 3003;
 	await app.listen(port);
 	console.log(`Reporting service is running on port ${port}`);
@@ -122,4 +124,4 @@ async function bootstrap() {
 		`Swagger documentation: http://localhost:${port}/api/reporting/docs`,
 	);
 }
-bootstrap();
+void bootstrap();

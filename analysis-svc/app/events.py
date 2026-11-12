@@ -41,5 +41,5 @@ async def publish_job_event(
         client = await get_redis()
         await client.publish(settings.events_channel, json.dumps(payload))
         logger.info("Published %s for job %s", status, job_id)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - publishing must not fail the job
         logger.warning("Failed to publish job event %s: %s", status, e)

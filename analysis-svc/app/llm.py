@@ -18,6 +18,7 @@ class EmptyCompletionError(Exception):
 
 # Primary model plus optional paid fallbacks from OPENROUTER_FALLBACK_MODELS.
 # Do not hardcode free-tier IDs here: they are removed without notice.
+FREE_MODEL = "openrouter/free"
 
 
 def _record_llm(model: str, status: str, started: float) -> None:
@@ -26,6 +27,11 @@ def _record_llm(model: str, status: str, started: float) -> None:
 
 
 def _get_model_chain() -> list[str]:
+    if not settings.paid_api:
+        # The free router falls back only to free models. Do not add paid
+        # fallbacks here: OpenRouter would bill them.
+        return [FREE_MODEL]
+
     chain = [settings.openrouter_model]
     for m in settings.openrouter_fallback_models.split(","):
         m = m.strip()
@@ -48,7 +54,7 @@ def extract_json_object(raw_text: str) -> dict[str, Any]:
 
     parsed: Any = json.loads(cleaned[start : end + 1])
     if not isinstance(parsed, dict):
-        raise ValueError("LLM output is not a JSON object")
+        raise TypeError("LLM output is not a JSON object")
     return parsed
 
 
@@ -71,8 +77,8 @@ async def _post_completion(
         "temperature": temperature,
         "max_tokens": max_tokens,
     }
-    # The free fallback does not advertise response_format.
-    if json_mode and not model.endswith(":free"):
+    # Free models do not advertise response_format.
+    if json_mode and not (model.endswith(":free") or model == FREE_MODEL):
         body["response_format"] = {"type": "json_object"}
 
     response = await client.post(url, headers=headers, json=body)
@@ -81,7 +87,14 @@ async def _post_completion(
     choices = data.get("choices") or []
     if not choices:
         raise EmptyCompletionError("Empty choices from OpenRouter")
-    content = choices[0].get("message", {}).get("content") or ""
+    message = choices[0].get("message", {})
+    # Some free reasoning models put the answer in `reasoning`, not `content`.
+    content = (
+        message.get("content")
+        or message.get("reasoning")
+        or message.get("reasoning_content")
+        or ""
+    )
     if not content:
         raise EmptyCompletionError("Empty message content from OpenRouter")
     return str(content)
@@ -173,7 +186,7 @@ async def call_openrouter_text(
                 )
                 _record_llm(model, "success", started)
                 return strip_thinking(raw)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - try the next model
                 _record_llm(model, "error", started)
                 logger.warning("OpenRouter text call failed on %s: %s", model, e)
     return None

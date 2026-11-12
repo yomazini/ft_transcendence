@@ -18,6 +18,8 @@ import { Label } from "@/components/ui/label";
 
 import { login, saveToken } from "@/lib/auth";
 
+import { RedirectIfLoggedIn } from "@/components/auth/redirect-if-logged-in";
+
 export default function LoginPage() {
 	/** @line asks Next.js for the router object and keeps it in router var */
 	const router = useRouter();
@@ -49,7 +51,7 @@ export default function LoginPage() {
 			/** moves to the dashboard page without reloading the app
 			 * + adds the new URL to the browser history and shows the page.
 			 */
-			router.push(`/${user.id}/dashboard`);
+			router.replace(`/${user.id}/dashboard`);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Something went wrong.");
 		} finally {
@@ -59,6 +61,8 @@ export default function LoginPage() {
 
 	return (
 		<AuthLayout>
+			{/* each time someone lands on /login or /register, it checks for a valid token, and if there is one, sends them to their dashboard. */}
+			<RedirectIfLoggedIn />
 			<AuthCard>
 				<AuthHeader
 					title="Welcome Back"

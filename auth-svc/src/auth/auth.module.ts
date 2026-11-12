@@ -6,15 +6,16 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { JwtStrategy } from './strategy/jwt.strategy';
 import { FortyTwoStrategy } from './strategy/42.strategy';
 import { MailModule } from '../mail/mail.module';
-import { TokenDenylist } from './token-denylist.service';
+import { DenylistModule } from './denylist.module';
 import { MetricsModule } from '../metrics/metrics.module';
 import { OrgModule } from '../org/org.module';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, FortyTwoStrategy, TokenDenylist],
+  providers: [AuthService, JwtStrategy, FortyTwoStrategy],
   imports: [
     PrismaModule,
+    DenylistModule,
     MailModule,
 	MetricsModule,
     OrgModule,

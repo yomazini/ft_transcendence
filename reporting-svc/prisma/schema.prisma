@@ -85,6 +85,17 @@ enum PriceSensitivity {
     premium
 }
 
+model SubJob {
+    id         String      @id @default(uuid())
+    job_id     String
+    job        Job         @relation(fields: [job_id], references: [id], onDelete: Cascade)
+    nex_id     String?     @unique
+    status     JobStatuses @default(Running)
+    url        String
+    data       Json?
+    created_at DateTime    @default(now())
+}
+
 model User {
     id                      String                  @id @default(uuid())
     email                   String                  @unique
@@ -114,7 +125,7 @@ model Comments {
     job             Job                    @relation(fields: [job_id], references: [id], onDelete: Cascade)
     job_id          String
     text            String
-    reddit_id       String                 @unique
+    reddit_id       String
     hash            String                 @db.VarChar(64)
     updated_at      DateTime               @default(now())
     author          String?
@@ -132,13 +143,16 @@ model Job {
     organization     Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
     org_id           String
     user             User?        @relation(fields: [created_by], references: [id], onDelete: SetNull)
+    updatable        Boolean      @default(true)
     created_by       String?
     target           String
+    updated_at       DateTime     @default(now())
     mode             JobModes     @default(Keyword)
-    status           JobStatuses  @default(Running)
+    status           JobStatuses  @default(Queued)
     customer_persona Json?
-    report           Report?
+    report           Report[]
     comments         Comments[]
+    subjob           SubJob[]
     created_at       DateTime     @default(now())
 }
 
@@ -158,13 +172,14 @@ enum JobStatuses {
 }
 
 model Report {
-    id         String   @id @default(uuid())
-    job        Job      @relation(fields: [job_id], references: [id], onDelete: Cascade)
-    job_id     String   @unique
-    swot       Json
-    blue_ocean Json
-    conclusion String?
-    created_at DateTime @default(now())
+    id              String   @id @default(uuid())
+    job             Job      @relation(fields: [job_id], references: [id], onDelete: Cascade)
+    job_id          String
+    swot            Json
+    blue_ocean      Json
+    sentiment_score Float?
+    conclusion      String?
+    created_at      DateTime @default(now())
 }
 
 model Backups {

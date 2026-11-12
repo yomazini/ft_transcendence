@@ -1,11 +1,11 @@
-import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import * as Minio from "minio";
 import { ConfigService } from "@nestjs/config";
 import { basename, join } from "path";
 import { createReadStream, existsSync, statSync } from "fs";
 
 @Injectable()
-export class MinioService implements OnModuleInit {
+export class MinioService {
 	private minioClient: Minio.Client;
 	private bucketName: string;
 	constructor(private readonly configService: ConfigService) {
@@ -17,19 +17,6 @@ export class MinioService implements OnModuleInit {
 			secretKey: this.configService.get("MINIO_SECRET_KEY"),
 		});
 		this.bucketName = this.configService.get("MINIO_BUCKET_NAME") as string;
-	}
-
-	async createBucketIfNotExists() {
-		const bucketExists = await this.minioClient.bucketExists(
-			this.bucketName,
-		);
-		if (!bucketExists) {
-			await this.minioClient.makeBucket(this.bucketName, "eu-west-1");
-		}
-	}
-
-	async onModuleInit() {
-		await this.createBucketIfNotExists();
 	}
 
 	async uploadFromDisk(fileName: string): Promise<string> {

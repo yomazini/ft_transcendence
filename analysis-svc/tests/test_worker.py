@@ -34,9 +34,8 @@ async def test_intermediate_attempt_does_not_mark_failed():
     ), patch(
         "app.worker.generate_embeddings",
         side_effect=RuntimeError("model down"),
-    ):
-        with pytest.raises(RuntimeError, match="model down"):
-            await process_job(make_job(attempts_made=0), None)
+    ), pytest.raises(RuntimeError, match="model down"):
+        await process_job(make_job(attempts_made=0), None)
 
     update_status.assert_awaited_once_with("job-1", "Running")
     publish.assert_awaited_once_with("job-1", "running")
@@ -61,9 +60,8 @@ async def test_final_attempt_marks_failed_once():
     ), patch(
         "app.worker.generate_embeddings",
         side_effect=RuntimeError("model down"),
-    ):
-        with pytest.raises(RuntimeError, match="model down"):
-            await process_job(make_job(attempts_made=2), None)
+    ), pytest.raises(RuntimeError, match="model down"):
+        await process_job(make_job(attempts_made=2), None)
 
     assert update_status.await_args_list == [
         (("job-1", "Running"),),

@@ -1,29 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-	Check,
-	Copy,
-	Eye,
-	EyeOff,
-	KeyRound,
-	Loader2,
-	Mail,
-	Lock,
-	User,
-	Settings as SettingsIcon,
-} from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Download, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { changeEmail, changePassword, isValidEmail, MIN_PASSWORD_LENGTH } from "@/lib/auth";
+import { changeEmail, changePassword, deleteMyData, exportMyData, isValidEmail, MIN_PASSWORD_LENGTH } from "@/lib/auth";
 import ApiKey from "@/components/srtting/apiKey";
 
 
 export default function SettingsProfile() {
+	const router = useRouter();
+	const [exporting, setExporting] = useState(false);
+	const [exportNotice, setExportNotice] = useState("");
+	const [exportError, setExportError] = useState("");
+	const [deletePassword, setDeletePassword] = useState("");
+	const [showDeletePassword, setShowDeletePassword] = useState(false);
+	const [confirmDelete, setConfirmDelete] = useState(false);
+	const [deleting, setDeleting] = useState(false);
+	const [deleteError, setDeleteError] = useState("");
 	const queryClient = useQueryClient();
 	const { user } = useCurrentUser();
 	const currentEmail = user?.email ?? "";
@@ -43,11 +42,7 @@ export default function SettingsProfile() {
 	const [showNew, setShowNew] = useState(false);
 	const [showConfirm, setShowConfirm] = useState(false);
 
-
-
 	const initials = currentEmail.slice(0, 2).toUpperCase();
-
-	
 
 	async function handleEmailUpdate() {
 		setEmailNotice("");
@@ -109,240 +104,337 @@ export default function SettingsProfile() {
 		}
 	}
 
+	async function handlexport() {
+		setExportError("");
+		setExportNotice("");
+		setExporting(true);
+
+		try {
+			await exportMyData();
+			setExportNotice("Your data was downloaded. A receipt was sent to your email.");
+		} catch(err) {
+			setExportError(err instanceof Error ? err.message : "Something went wrong.");
+		} finally { setExporting(false); }
+	}
+
+	async function handleDelete() {
+		if (!deletePassword) {
+			setDeleteError("Enter your current password.");
+			return;
+		}
+
+		if (!confirmDelete) {
+			setConfirmDelete(true);
+			setDeleteError("");
+			return;
+		}
+
+		setDeleteError("");
+		setDeleting(true);
+
+		try {
+			await deleteMyData(deletePassword);
+			queryClient.clear();
+			router.replace("/");
+		} catch(err) {
+			setDeleteError(err instanceof Error ? err.message : "Something went wrong.");
+		} finally {
+			setDeleting(false);
+			setConfirmDelete(false);
+		}
+	}
+
 	return (
-		<div className="mx-auto max-w-6xl space-y-6 p-4 pb-12 md:p-8">
+		<div
+			className="mx-auto w-full max-w-5xl space-y-5 p-4 pb-12 sm:p-6"
+		>
 			{/* Header */}
-			<div>
-				<div className="mb-2 flex items-center gap-2 text-violet-600 dark:text-violet-400">
-					<SettingsIcon className="h-5 w-5" />
+			<div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-900/60">
+				<h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">Settings</h1>
 
-					<span className="text-sm font-medium">Account settings</span>
-				</div>
-
-				<h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-
-				<p className="mt-2 text-zinc-500 dark:text-zinc-400">
+				<p className="text-sm text-muted-foreground">
 					Manage your account and security settings.
 				</p>
 			</div>
 
-			<div className="grid items-start gap-4 md:grid-cols-2">
-				{/* Profile */}
-				<section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-zinc-900/60 sm:p-6">
-					<div className="flex items-center gap-2">
-						<User className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+			{/* Profile */}
+			<section className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-white/10 dark:bg-zinc-900/60">
+				<div className="p-6">
+					<h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Profile</h2>
 
-						<h2 className="font-semibold text-zinc-900 dark:text-zinc-100">Profile</h2>
-					</div>
-
-					<p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+					<p className="text-sm text-muted-foreground">
 						Manage your account information.
 					</p>
 
 					{/* Avatar */}
-					<div className="mt-5 flex items-center gap-3">
-						<div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-violet-100 text-lg font-semibold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
+					<div className="mt-6 flex items-center gap-4">
+						<div className="flex h-16 w-16 items-center justify-center rounded-full bg-violet-600 text-lg font-semibold text-white">
 							{initials}
 						</div>
 
-						<div className="min-w-0">
-							<p className="truncate text-lg font-bold text-zinc-900 dark:text-zinc-100">{currentEmail}</p>
+						<div>
+							<p className="font-medium text-zinc-900 dark:text-zinc-100">{currentEmail}</p>
 
-							<p className="text-sm text-zinc-500 dark:text-zinc-400">Your account</p>
+							<p className="text-sm text-muted-foreground">Your account</p>
 						</div>
 					</div>
+				</div>
 
-					<Separator className="my-6 bg-zinc-200 dark:bg-white/10" />
+				<Separator />
 
-					{/* Email */}
-					<div className="space-y-4">
-						<div>
-							<Label htmlFor="email">Email address</Label>
+				{/* Email */}
+				<div className="space-y-4 p-6">
+					<div>
+						<Label htmlFor="email">Email address</Label>
 
-							<p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-								This email is used to access your account.
-							</p>
-						</div>
+						<p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+							This email is used to access your account.
+						</p>
+					</div>
+
+					<div className="relative">
+						<Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+						<Input
+							id="email"
+							type="email"
+							placeholder={currentEmail}
+							value={newEmail}
+							onChange={(e) => setNewEmail(e.target.value)}
+							disabled={savingEmail}
+							className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
+						/>
+					</div>
+
+					{/* Current password, separate from the Password section below */}
+					<div className="space-y-2">
+						<Label htmlFor="email-password">Current password</Label>
 
 						<div className="relative">
-							<Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500 dark:text-zinc-400" />
+							<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 
 							<Input
-								id="email"
-								type="email"
-								placeholder={currentEmail}
-								value={newEmail}
-								onChange={(e) => setNewEmail(e.target.value)}
+								id="email-password"
+								type={showEmailPassword ? "text" : "password"}
+								autoComplete="current-password"
+								value={emailPassword}
+								onChange={(e) => setEmailPassword(e.target.value)}
 								disabled={savingEmail}
-								className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
+								className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 pr-10 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
 							/>
-						</div>
 
-						{/* Current password, separate from the Password section */}
-						<div className="space-y-2">
-							<Label htmlFor="email-password">Current password</Label>
-
-							<div className="relative">
-								<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500 dark:text-zinc-400" />
-
-								<Input
-									id="email-password"
-									type={showEmailPassword ? "text" : "password"}
-									autoComplete="current-password"
-									value={emailPassword}
-									onChange={(e) => setEmailPassword(e.target.value)}
-									disabled={savingEmail}
-									className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 pr-10 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
-								/>
-
-								<button
-									type="button"
-									onClick={() => setShowEmailPassword(!showEmailPassword)}
-									className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 dark:text-zinc-400 hover:text-foreground"
-								>
-									{showEmailPassword ? (
-										<EyeOff className="h-4 w-4" />
-									) : (
-										<Eye className="h-4 w-4" />
-									)}
-								</button>
-							</div>
-						</div>
-
-						{emailError && <p role="alert" className="text-sm text-destructive">{emailError}</p>}
-						{emailNotice && <p role="status" className="text-sm text-green-600 dark:text-green-400">{emailNotice}</p>}
-
-						<div className="flex justify-end pt-2">
-							<Button
-								onClick={handleEmailUpdate}
-								disabled={savingEmail}
-								className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-violet-600 dark:hover:bg-violet-500"
+							<button
+								type="button"
+								onClick={() => setShowEmailPassword(!showEmailPassword)}
+								className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400"
 							>
-								{savingEmail ? "Saving..." : "Change email"}
-							</Button>
+								{showEmailPassword ? (
+									<EyeOff className="h-4 w-4" />
+								) : (
+									<Eye className="h-4 w-4" />
+								)}
+							</button>
 						</div>
 					</div>
-				</section>
 
-				{/* Password */}
-				<section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-zinc-900/60 sm:p-6">
-					<div className="flex items-center gap-2">
-						<Lock className="h-5 w-5 text-violet-600 dark:text-violet-400" />
-
-						<h2 className="font-semibold text-zinc-900 dark:text-zinc-100">Password</h2>
+					{emailError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{emailError}</p>}
+					{emailNotice && <p role="status" className="text-sm text-emerald-600 dark:text-emerald-400">{emailNotice}</p>}
+					<div className="flex justify-end pt-2 [&_button]:rounded-xl [&_button]:bg-violet-600 [&_button]:text-white [&_button]:hover:bg-violet-700">
+						<Button onClick={handleEmailUpdate} disabled={savingEmail}>{savingEmail ? "Saving..." : "Change email"}</Button>
 					</div>
+				</div>
+			</section>
 
-					<p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+			{/* Password */}
+			<section className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-white/10 dark:bg-zinc-900/60">
+				<div className="p-6">
+					<h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Password</h2>
+
+					<p className="text-sm text-muted-foreground">
 						Update your password to keep your account secure.
 					</p>
+				</div>
 
-					<Separator className="my-6 bg-zinc-200 dark:bg-white/10" />
+				<Separator />
 
-					<div className="space-y-5">
-						{/* Current password */}
-						<div className="space-y-2">
-							<Label htmlFor="current-password">Current password</Label>
+				<div className="space-y-5 p-6">
+					{/* Current password */}
+					<div className="space-y-2">
+						<Label htmlFor="current-password">Current password</Label>
 
-							<div className="relative">
-								<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500 dark:text-zinc-400" />
+						<div className="relative">
+							<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 
-								<Input
-									id="current-password"
-									type={showCurrent ? "text" : "password"}
-									value={currentPassword}
-									onChange={(e) => setCurrentPassword(e.target.value)}
-									className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 pr-10 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
-								/>
+							<Input
+								id="current-password"
+								type={showCurrent ? "text" : "password"}
+								value={currentPassword}
+								onChange={(e) => setCurrentPassword(e.target.value)}
+								className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 pr-10 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
+							/>
 
-								<button
-									type="button"
-									onClick={() => setShowCurrent(!showCurrent)}
-									className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 dark:text-zinc-400 hover:text-foreground"
-								>
-									{showCurrent ? (
-										<EyeOff className="h-4 w-4" />
-									) : (
-										<Eye className="h-4 w-4" />
-									)}
-								</button>
-							</div>
-						</div>
-
-						{/* New password */}
-						<div className="space-y-2">
-							<Label htmlFor="new-password">New password</Label>
-
-							<div className="relative">
-								<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500 dark:text-zinc-400" />
-
-								<Input
-									id="new-password"
-									type={showNew ? "text" : "password"}
-									value={newPassword}
-									onChange={(e) => setNewPassword(e.target.value)}
-									className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 pr-10 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
-								/>
-
-								<button
-									type="button"
-									onClick={() => setShowNew(!showNew)}
-									className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 dark:text-zinc-400 hover:text-foreground"
-								>
-									{showNew ? (
-										<EyeOff className="h-4 w-4" />
-									) : (
-										<Eye className="h-4 w-4" />
-									)}
-								</button>
-							</div>
-						</div>
-
-						{/* Confirm password */}
-						<div className="space-y-2">
-							<Label htmlFor="confirm-password">Confirm new password</Label>
-
-							<div className="relative">
-								<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500 dark:text-zinc-400" />
-
-								<Input
-									id="confirm-password"
-									type={showConfirm ? "text" : "password"}
-									value={confirmPassword}
-									onChange={(e) => setConfirmPassword(e.target.value)}
-									className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 pr-10 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
-								/>
-
-								<button
-									type="button"
-									onClick={() => setShowConfirm(!showConfirm)}
-									className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 dark:text-zinc-400 hover:text-foreground"
-								>
-									{showConfirm ? (
-										<EyeOff className="h-4 w-4" />
-									) : (
-										<Eye className="h-4 w-4" />
-									)}
-								</button>
-							</div>
-						</div>
-
-						{passwordError && <p role="alert" className="text-sm text-destructive">{passwordError}</p>}
-						{passwordNotice && <p role="status" className="text-sm text-green-600 dark:text-green-400">{passwordNotice}</p>}
-
-						<div className="flex justify-end pt-2">
-							<Button
-								onClick={handlePasswordUpdate}
-								disabled={savingPassword}
-								className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-violet-600 dark:hover:bg-violet-500"
+							<button
+								type="button"
+								onClick={() => setShowCurrent(!showCurrent)}
+								className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400"
 							>
-								{savingPassword ? "Saving..." : "Update password"}
-							</Button>
+								{showCurrent ? (
+									<EyeOff className="h-4 w-4" />
+								) : (
+									<Eye className="h-4 w-4" />
+								)}
+							</button>
 						</div>
 					</div>
-				</section>
-			</div>
 
-            {
+					{/* New password */}
+					<div className="space-y-2">
+						<Label htmlFor="new-password">New password</Label>
+
+						<div className="relative">
+							<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+							<Input
+								id="new-password"
+								type={showNew ? "text" : "password"}
+								value={newPassword}
+								onChange={(e) => setNewPassword(e.target.value)}
+								className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 pr-10 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
+							/>
+
+							<button
+								type="button"
+								onClick={() => setShowNew(!showNew)}
+								className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400"
+							>
+								{showNew ? (
+									<EyeOff className="h-4 w-4" />
+								) : (
+									<Eye className="h-4 w-4" />
+								)}
+							</button>
+						</div>
+					</div>
+
+					{/* Confirm password */}
+					<div className="space-y-2">
+						<Label htmlFor="confirm-password">Confirm new password</Label>
+
+						<div className="relative">
+							<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+							<Input
+								id="confirm-password"
+								type={showConfirm ? "text" : "password"}
+								value={confirmPassword}
+								onChange={(e) => setConfirmPassword(e.target.value)}
+								className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 pr-10 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
+							/>
+
+							<button
+								type="button"
+								onClick={() => setShowConfirm(!showConfirm)}
+								className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400"
+							>
+								{showConfirm ? (
+									<EyeOff className="h-4 w-4" />
+								) : (
+									<Eye className="h-4 w-4" />
+								)}
+							</button>
+						</div>
+					</div>
+					{passwordError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{passwordError}</p>}
+					{passwordNotice && <p role="status" className="text-sm text-emerald-600 dark:text-emerald-400">{passwordNotice}</p>}
+					<div className="flex justify-end pt-2 [&_button]:rounded-xl [&_button]:bg-violet-600 [&_button]:text-white [&_button]:hover:bg-violet-700">
+						<Button onClick={handlePasswordUpdate} disabled={savingPassword}>{savingPassword ? "Saving..." : "Update password"}
+
+						</Button>
+					</div>
+				</div>
+			</section>
+
+			{/* GDPR section */}
+			<section className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-white/10 dark:bg-zinc-900/60">
+				<div className="p-6">
+					<h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Privacy & data</h2>
+
+					<p className="text-sm text-muted-foreground">
+						Your rights under the GDPR: get a copy of your data or delete your account.
+					</p>
+				</div>
+
+				<Separator />
+
+				<div className="space-y-4 p-6">
+					<div>
+						<Label>Export my data</Label>
+						<p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+							Download everything InsightFlow stores about you as a JSON file.
+						</p>
+					</div>
+
+					{exportError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{exportError}</p>}
+					{exportNotice && <p role="status" className="text-sm text-emerald-600 dark:text-emerald-400">{exportNotice}</p>}
+
+					<div className="flex justify-end [&_button]:rounded-xl">
+						<Button variant="outline" onClick={handlexport} disabled={exporting}>
+							<Download className="h-4 w-4" />
+							{exporting ? "Preparing..." : "Export my data"}
+						</Button>
+					</div>
+				</div>
+
+				<Separator />
+
+				<div className="space-y-4 p-6">
+					<div>
+						<Label htmlFor="delete-password" className="text-red-600 dark:text-red-400">Delete my account</Label>
+						<p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+							This permanently deletes your account. If you are the only member, your organization is deleted too. This cannot be undone.
+						</p>
+					</div>
+
+					<div className="relative">
+						<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+						<Input
+							id="delete-password"
+							type={showDeletePassword ? "text" : "password"}
+							autoComplete="current-password"
+							placeholder="Current password"
+							value={deletePassword}
+							onChange={(e) => { setDeletePassword(e.target.value); setConfirmDelete(false); }}
+							disabled={deleting}
+							className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 pr-10 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
+						/>
+
+						<button
+							type="button"
+							onClick={() => setShowDeletePassword(!showDeletePassword)}
+							className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400"
+
+						>
+							{showDeletePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+						</button>
+					</div>
+						{deleteError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{deleteError}</p>}
+						{confirmDelete && !deleteError && (
+							<p role="alert" className="text-sm text-red-600 dark:text-red-400">Click again to confirm. Your account will be deleted.</p>
+						)}
+					
+					<div className="flex justify-end gap-2 [&_button]:rounded-xl">
+						{confirmDelete && (
+							<Button variant="outline" onClick={() => setConfirmDelete(false)} disabled={deleting}>Cancel</Button>
+						)}
+						<Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+							<Trash2 className="h-4 w-4" />
+							{deleting ? "Deleting..." : confirmDelete ? "Yes, delete my account" : "Delete my account"}
+						</Button>
+					</div>
+				</div>
+			</section>
+			{
                 user && <ApiKey orgId={user.org_id}/>
             }
 		</div>

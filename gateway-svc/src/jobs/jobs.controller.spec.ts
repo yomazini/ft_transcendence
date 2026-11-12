@@ -83,7 +83,10 @@ describe('JobsController', () => {
 
       await expect(
         controller.createJob(
-          { mode: 'post', target: 'https://www.reddit.com/r/test/comments/x/y/' },
+          {
+            mode: 'post',
+            target: 'https://www.reddit.com/r/test/comments/x/y/',
+          },
           { user: mockUser },
         ),
       ).rejects.toBeInstanceOf(ForbiddenException);
