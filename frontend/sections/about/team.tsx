@@ -71,7 +71,8 @@ export function TeamSection() {
             Meet the Team
           </span>
 
-          <h2 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl">
+          <h2 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl
+          bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 bg-clip-text text-transparent">
             The People Behind InsightFlow
           </h2>
 

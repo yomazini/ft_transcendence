@@ -2,37 +2,37 @@ import { Card, CardContent } from "@/components/ui/card";
 
 const culture = [
   {
-    emoji: "💡",
+    emoji: "",
     title: "Innovation",
     description:
       "We constantly explore new ideas, technologies, and better ways to solve real-world problems.",
   },
   {
-    emoji: "🤝",
+    emoji: "",
     title: "Collaboration",
     description:
       "Great products are built by great teams. We learn from each other and celebrate every success together.",
   },
   {
-    emoji: "🎯",
+    emoji: "",
     title: "Ownership",
     description:
       "Every team member takes responsibility for quality, reliability, and delivering meaningful results.",
   },
   {
-    emoji: "📚",
+    emoji: "",
     title: "Continuous Learning",
     description:
       "Technology never stands still, and neither do we. We improve our skills every day.",
   },
   {
-    emoji: "🔒",
+    emoji: "",
     title: "Quality First",
     description:
       "From design to deployment, we believe every detail contributes to a better user experience.",
   },
   {
-    emoji: "🚀",
+    emoji: "",
     title: "Customer Focus",
     description:
       "Every feature begins with understanding real user needs and delivering measurable value.",
@@ -55,7 +55,8 @@ export function CultureSection() {
             Our Culture
           </span>
 
-          <h2 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl">
+          <h2 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl
+          bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 bg-clip-text text-transparent">
             The Values That Shape Everything We Build
           </h2>
 

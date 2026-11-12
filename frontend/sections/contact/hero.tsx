@@ -18,8 +18,9 @@ export function HeroSection() {
           {/* Heading */}
 
           <h1 className="mt-8 text-5xl font-bold tracking-tight md:text-7xl">
-            Let's Start a
-            <span className="text-primary"> Conversation</span>
+            <span className="text-primary bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 bg-clip-text text-transparent">
+              Let's</span>  Start a
+            <span className="text-primary text-primary bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 bg-clip-text text-transparent"> Conversation</span>
           </h1>
 
           {/* Description */}
@@ -38,20 +39,12 @@ export function HeroSection() {
               size="lg"
               
             >
-              <Link href="#contact-form">
+              <Link href="https://www.linkedin.com/in/hamza-khairi-0383902b9/" target="_blank">
                 Get in Touch
               </Link>
             </Button>
 
-            <Button
-              size="lg"
-              variant="outline"
-              
-            >
-              <Link href="/docs">
-                View Documentation
-              </Link>
-            </Button>
+            
 
           </div>
 

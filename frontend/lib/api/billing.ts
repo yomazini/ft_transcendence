@@ -50,7 +50,7 @@ export interface CancelResponse {
   ends_at: string;
 }
 
-async function send<T>(
+export async function send<T>(
   path: string,
   init: RequestInit = {},
 ): Promise<T> {

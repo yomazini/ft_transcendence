@@ -17,19 +17,19 @@ export default function ContactPage() {
 
       <HeroSection />
 
-      <ContactOptionsSection />
+      {/* <ContactOptionsSection /> */}
 
-      <ContactFormSection />
+      {/* <ContactFormSection /> */}
 
-      <OfficeSection />
+      {/* <OfficeSection /> */}
 
-      <WhyContactSection />
+      {/* <WhyContactSection /> */}
 
-      <FAQSection />
+      {/* <FAQSection /> */}
 
-      <CommunitySection />
+      {/* <CommunitySection /> */}
 
-      <FinalCTASection />
+      {/* <FinalCTASection /> */}
 
       <FooterSection />
     </main>

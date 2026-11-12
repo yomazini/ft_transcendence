@@ -2,37 +2,37 @@ import { Card, CardContent } from "@/components/ui/card";
 
 const values = [
   {
-    emoji: "🛡️",
+    emoji: "",
     title: "Integrity",
     description:
       "We believe trust is earned through honesty, transparency, and delivering on our promises.",
   },
   {
-    emoji: "💡",
+    emoji: "",
     title: "Innovation",
     description:
       "We continuously explore better technologies, smarter solutions, and new ways to solve meaningful problems.",
   },
   {
-    emoji: "👥",
+    emoji: "",
     title: "User First",
     description:
       "Every feature begins with understanding our users and creating experiences that truly help them succeed.",
   },
   {
-    emoji: "⭐",
+    emoji: "",
     title: "Excellence",
     description:
       "From design to deployment, we care about quality, craftsmanship, and the smallest details.",
   },
   {
-    emoji: "🔒",
+    emoji: "",
     title: "Privacy & Security",
     description:
       "Protecting user data and building secure systems is a responsibility we never compromise.",
   },
   {
-    emoji: "🌱",
+    emoji: "",
     title: "Continuous Growth",
     description:
       "Learning, improving, and sharing knowledge are essential parts of how we grow as a team.",
@@ -55,7 +55,8 @@ export function ValuesSection() {
             Core Values
           </span>
 
-          <h2 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl">
+          <h2 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl
+          bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 bg-clip-text text-transparent">
             The Principles Behind Every Decision
           </h2>
 

@@ -2,19 +2,19 @@ import { Card, CardContent } from "@/components/ui/card";
 
 const values = [
   {
-    emoji: "🎯",
+    emoji: "",
     title: "Purpose",
     description:
       "Help teams make product decisions based on real customer conversations instead of assumptions.",
   },
   {
-    emoji: "💡",
+    emoji: "",
     title: "Innovation",
     description:
       "Build AI-powered tools that simplify complex market research and save valuable time.",
   },
   {
-    emoji: "🤝",
+    emoji: "",
     title: "Collaboration",
     description:
       "Create products through teamwork, continuous learning, and shared knowledge.",
@@ -39,7 +39,9 @@ export function MissionSection() {
               Our Mission
             </span>
 
-            <h2 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl">
+            <h2 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl
+            bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 bg-clip-text text-transparent"
+            >
               Building Products That Start With Listening
             </h2>
 
