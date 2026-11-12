@@ -1,6 +1,6 @@
 import scraper_svc.globals as g
 from time import sleep, monotonic
-from threading import Condition, Thread
+from threading import Condition
 
 REST_TIME=10
 BREAK_TIME=60
@@ -45,20 +45,11 @@ class SessionManager:
 			)
 			self._condition.notify_all()
 
-
-	def _delayed_release(self, cookie):
-		sleep(REST_TIME)
+	def release(self, cookie: str) -> None:
 		with self._condition:
 			self._sessions.insert(0, cookie)
 			self._log(f"session retreived left [{len(self._sessions)}]")
 			self._condition.notify()
-
-	def release(self, cookie: str) -> None:
-		Thread(
-			target=self._delayed_release,
-			args=(cookie, ),
-			daemon=True
-		).start()
 
 	def _log(self, msg: str):
 		g.logger.info("Session manager: %s", msg)

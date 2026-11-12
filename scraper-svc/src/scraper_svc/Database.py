@@ -34,7 +34,7 @@ class Database:
 	def get_session(self):
 		if self._SessionLocal is None:
 			self._error("Session local is not initialized")
-		return (self._SessionLocal.begin())
+		return (self._SessionLocal())
 
 	def close(self):
 		if self._engine:

@@ -1,135 +1,199 @@
+import enum,hashlib, json
 import scraper_svc.globals as g
 from curl_cffi import requests, Response
 from typing import Any
 from uuid import uuid4
 from sqlalchemy.orm import Session
-from urllib.parse import urlparse, ParseResult
-from sqlalchemy import update
-from scraper_svc.models import Comments, Jobmodes, Job
-from scraper_svc.models import Jobmodes
+from sqlalchemy import update, select, and_
+from scraper_svc.models import Comments, Jobmodes, Job, SubJob, Jobmodes
 
 # Reddit scrapping
 
-BASE_URL="https://www.reddit.com"
+BASE_URL="https://oauth.reddit.com"
 HEADERS = {
 	"User-Agent": "linux:ft-transcendence-scraper:v0.1",
 	"Accept": "application/json",
 }
 
+class WorkerState(enum.IntEnum):
+	SCRAPE = 0
+	CREATE_SUBJOBS = 1
+	SCRAPE_SUBJOB = 2
+	SAVE_NORM_DATA = 3
+	INSERT_BULK = 4
+	DONE = 5
+
 class RateLimitError(Exception):
     pass
 
 class BadJobError(Exception):
-		pass
+	pass
 
-def valid_post_url(url: str) -> str:
-	parsed: ParseResult = urlparse(url)
-	if parsed.scheme != "https" or parsed.hostname not in {'www.reddit.com', 'reddit.com'}:
+class SessionError(Exception):
+	pass
+
+# Validation helpers
+
+def clean_split(string:str, sep:str) -> list[str]:
+	return list(filter(None, string.split(sep)))
+
+def valid_keyword_url(path: str) -> tuple[str, dict]:
+	return f"{BASE_URL}/search.json", {'q': path, 'limit': 5}
+
+def valid_user_url(path: str) -> tuple[str, dict]:
+	path_list: list[str] = clean_split(path, "/")
+	print (path_list, flush=True)
+	if (len(path_list) != 2
+		or path_list[0] != 'user'):
+		raise RuntimeError("Invalid user")
+	return f"{BASE_URL}/{"/".join(path_list)}/submitted.json", {'limit': 5}
+
+def valid_subreddit_url(path: str) -> tuple[str, dict]:
+	path_list: list[str] = clean_split(path, "/")
+	if (len(path_list) != 3
+		or path_list[0] != 'r'
+		or path_list[2] not in ["top", "new", "rising", "best", "hot"]):
+		raise RuntimeError("Invalid subreddit")
+	return f"{BASE_URL}/{"/".join(path_list)}.json", {'limit': 5}
+
+def valid_post_url(path: str) -> str:
+	path_list: list[str] = clean_split(path, "/")
+	if (len(path_list) != 5
+		or path_list[0] != 'r'
+		or path_list[2] != "comments"):
 		raise RuntimeError("Invalid post url")
-	return f"{BASE_URL}{parsed.path.removesuffix('/')}.json"
+	return f"{BASE_URL}/{'/'.join(path_list)}.json"
 
-def scrape(target: str, limit: int) -> list[dict[str, Any]]:
+def get_scrape_target(target: str, mode: Jobmodes) -> tuple[str, dict]:
+	match mode:
+		case Jobmodes.SUBREDDIT:
+			return (valid_subreddit_url(target))
+		case Jobmodes.USER:
+			return (valid_user_url(target))
+		case Jobmodes.KEYWORD:
+			return (valid_keyword_url(target))
+		case Jobmodes.POST:
+			raise RuntimeError("Impossible action error")
+
+# Scraper
+
+def scrape(target: str, query:dict) -> list[dict[str, Any]] | dict[str, Any]:
 	response:Response | None = None
 	session_id = g.session.acquire()
 	try:
-		response = requests.get(target, headers=HEADERS,params={'limit': limit}, cookies={'reddit_session': session_id})
+		response = requests.get(target, headers=HEADERS,params=query, cookies={'reddit_session': session_id})
 	finally:
 		g.session.release(session_id)
 	g.scraper_reddit_requests_total.labels(str(response.status_code)).inc()
 	if response.status_code == 429:
 		g.session.pause_all()
 		raise RateLimitError("Reddit rate limit exceeded")
-
 	g.logger.info("Scraper: request status [%s]", response.status_code)
 	response.raise_for_status()
 	return response.json()
 
-def scrape_job(target: str, mode: Jobmodes, limit: int = 0) ->  list[dict[str, Any]]:
-	match mode:
-		case Jobmodes.POST:
-			return scrape_post(target, limit)
-		case _:
-			raise TypeError("Unsupported mode");
+# Normalization functions
 
-def scrape_post(target: str, limit: int) -> list[dict[str, Any]]:
-	target = valid_post_url(target)
-	g.logger.info("Scraping post: %s...", target)
-	response = scrape(target, limit)
-	return response
+def normalize_comments(data: list):
+	comments = []
+	for item in data:
+		if item["kind"] != "t1":
+			continue
+		comment_content = item["data"]
+		if comment_content["author"] == "AutoModerator":
+			continue
+		comment = {}
+		comment["body"] = comment_content["body"]
+		comment["author"]= comment_content["author"]
+		comment["upvotes"]= comment_content["ups"]
+		comment["reddit_id"]= comment_content["name"]
+		comment["children"]=[]
+		if comment_content["replies"] != "":
+			comment["children"] = normalize_comments(comment_content["replies"]["data"]["children"])
+		comments.append(comment)
+	return (comments)
 
-
-# Database Insertion
-
-def add_job(job_id: str, data:list[dict[str, Any]], mode: Jobmodes) -> None:
-	total_comments: int = 0
-	with g.db.get_session() as session:
-		match mode:
-			case Jobmodes.POST:
-				total_comments = add_post(session, job_id, data)
-			case _:
-				raise TypeError("Unsupported mode")
-	g.scraper_comments_total.inc(total_comments)
-
-def add_post(session: Session, job_id, data:list[dict[str, Any]]) -> int:
+def normalize_post(data: list):
+	comments = {}
 	post_data = data[0]["data"]["children"][0]["data"]
-	body = "\n\n".join(
+	comments["body"] = "\n\n".join(
 		part
 		for part in (post_data["title"], post_data["selftext"])
 		if part
 	)
-	post_id = str(uuid4())
-	post = Comments(
-		id=post_id,
-		job_id=job_id,
-		text_=body,
-		upvotes=post_data["ups"],
-		author=post_data["author"],
-		reddit_id=post_data["name"],
-		hash="a",
-		parent_id=None
-	)
-	session.add(post)
-	return add_comments(session, job_id, post_id, data[1]["data"]["children"]) + 1
+	comments["upvotes"]=post_data["ups"]
+	comments["author"]=post_data["author"]
+	comments["reddit_id"]=post_data["name"]
+	comments["children"] = normalize_comments(data[1]["data"]["children"])
+	return comments
 
+def normalize_posts(data:dict):
+	data_array = data["data"]["children"]
+	l = []
+	for item in data_array:
+		if item["kind"] != "t3":
+			continue
+		post_content = item["data"]
+		l.append(post_content["permalink"])
+	return l
 
-def add_comments(session: Session, job_id:str, parent_id: str, data: list[dict[str, Any]]) -> int:
-	total_comments: int = 0
-	for item in data:
-		comment_data = item["data"]
-		comment_id = str(uuid4())
+def normalize_data(data: list | dict, mode: Jobmodes) ->  dict | list:
+	match mode:
+		case Jobmodes.POST:
+			return (normalize_post(data))
+		case _:
+			return (normalize_posts(data))
+
+# Database Insertion
+
+def insert_comments(session:Session, job_id:str, parent_id: str | None, data: dict):
+	hashed_data = hashlib.sha256(json.dumps({k: data[k] for k in ("body", "upvotes")}, sort_keys=True).encode("utf-8")).hexdigest()
+	comment: Comments | None = session.execute(
+		select(Comments).where(and_(
+			Comments.job_id == job_id,
+			Comments.reddit_id == data["reddit_id"]
+		))
+	).scalar_one_or_none()
+	if (comment):
+		if (hashed_data != comment.hash):
+			comment.hash = hashed_data
+			comment.text_ = data["body"]
+			comment.upvotes = data["upvotes"]
+	else:
 		comment = Comments(
-			id=comment_id,
+			id=str(uuid4()),
 			job_id=job_id,
-			text_=comment_data["body"],
-			upvotes=comment_data["ups"],
-			author=comment_data["author"],
-			reddit_id=comment_data["name"],
-			hash="a",
-			parent_id=parent_id
+			text_=data["body"],
+			upvotes=data["upvotes"],
+			hash=hashed_data,
+			reddit_id=data["reddit_id"],
+			author=data["author"],
+			parent_id = parent_id
 		)
 		session.add(comment)
-		total_comments += 1
-		if comment_data["replies"] == "":
-			continue
-		total_comments += add_comments(session, job_id, comment_id, comment_data["replies"]["data"]["children"])
-	return (total_comments)
+	for comment_data in data["children"]:
+		insert_comments(session, job_id, comment.id, comment_data)
 
-async def update_job_status(job_id: str, job_status: str,error:str | None):
-	with g.db.get_session() as session:
-		session.execute(
-			update(Job)
-			.where(Job.id == job_id)
-			.values(status=job_status)
-			.returning(Job.id)
-		).scalar_one()
-
+async def update_job_status(session: Session, job_id: str, job_status: str,error:str | None):
+	session.execute(
+		update(Job)
+		.where(Job.id == job_id)
+		.values(status=job_status)
+		.returning(Job.id)
+	).scalar_one()
+	session.commit()
 	await g.events.publish(job_id, job_status, error)
 
 # get from db
 
-def get_job(job_id:str) -> Job:
-	with g.db.get_session() as session:
-		job = (session.get(Job, job_id))
-		if job is None:
-			raise BadJobError(f"Job [{job_id}] doesn't exist")
-		return (job)
+def get_job(session: Session, job_id:str) -> Job:
+	job = (session.get(Job, job_id))
+	if job is None:
+		raise BadJobError(f"Job [{job_id}] doesn't exist")
+	return (job)
+
+def get_subjob(session: Session, job_id:str) -> SubJob:
+	job = session.get(SubJob, job_id)
+	if job is None:
+		raise BadJobError(f"SubJob [{job_id}] doesn't exist")
+	return (job)
