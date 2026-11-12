@@ -132,7 +132,14 @@ async def get_report_by_job(job_id: str) -> dict | None:
         'SELECT * FROM "Report" WHERE job_id = $1 ORDER BY created_at DESC LIMIT 1',
         job_id,
     )
-    return dict(row) if row else None
+    if not row:
+        return None
+
+    report = dict(row)
+    for key in ("swot", "blue_ocean"):
+        if isinstance(report.get(key), str):
+            report[key] = json.loads(report[key])
+    return report
 
 
 async def search_comments_by_vector(
