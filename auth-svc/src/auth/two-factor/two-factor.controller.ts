@@ -27,4 +27,12 @@ export class TwoFactorController {
 	enableTwoFactor(@Req() req, @Body() dto: TwoFactorCodeDto) {
 		return this.twoFactorService.enable(req.user.sub, dto.code);
 	}
+
+	/* POST /auth/2fa/disable {code} */
+	@Post('disable')
+	@HttpCode(200)
+	@UseGuards(JwtGuard)
+	disableTwoFactor(@Req() req, @Body() dto: TwoFactorCodeDto) {
+		return this.twoFactorService.disable(req.user.sub, dto.code);
+	}
 }

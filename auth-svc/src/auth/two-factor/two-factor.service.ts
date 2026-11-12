@@ -40,7 +40,7 @@ export class TwoFactorService {
 	/* POST /auth/2fa/enable {code} */
 	async enable(userId: string, code: string) {
 
-		/* 0. user secret + is_2fa_enabled CHECK */
+		/* 0. query user secret + is_2fa_enabled CHECK */
 		const user = await this.prisma.user.findUnique({
 			where: { id: userId },
 			select: { two_factor_secret: true, is_2fa_enabled: true }
@@ -54,7 +54,7 @@ export class TwoFactorService {
 		const valid = authenticator.check(code, user.two_factor_secret);
 		if (!valid) { throw new UnauthorizedException('Invalid code') /* 401 */ }
 
-		/* 2. The phone holds the secret: turn 2FA on */
+		/* 2. turn 2FA on */
 		await this.prisma.user.update({
 			where: { id: userId },
 			data: { is_2fa_enabled: true },
@@ -63,4 +63,34 @@ export class TwoFactorService {
 		/* fn. return the new state */
 		return { enabled: true };
 	}
+
+	/* POST /auth/2fa/disable {code} */
+	async disable(userId: string, code: string) {
+		/* 0. query user secret + is_2fa_disable CHECK */
+		const user = await this.prisma.user.findUnique({
+			where: { id: userId },
+			select: { two_factor_secret: true, is_2fa_enabled: true }
+		});
+		if (!user) { throw new NotFoundException() /* 404 */ }
+		if (!user.is_2fa_enabled) { throw new BadRequestException('2FA is already disabled') /* 400 */ }
+		if (!user.two_factor_secret) { throw new BadRequestException('No 2FA secret found') }
+		/* @note two_factor_secret is String? (string | null) in the schema: TS needs this null check before authenticator.check(), even though it is always set when 2FA is on
+		- errormssg: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
+		*/
+
+		/* 1. Check the code against the secret */
+		const valid = authenticator.check(code, user.two_factor_secret);
+		if (!valid) { throw new UnauthorizedException('Invalid code') /* 401 */ }
+
+		/* 2. turn 2FA off */
+		await this.prisma.user.update({
+			where: { id: userId },
+			data: { is_2fa_enabled: false, two_factor_secret: null },
+		});
+
+		/* fn. return the new state */
+		return { enabled: false };
+	}
+
 }
+
