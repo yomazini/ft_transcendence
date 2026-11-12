@@ -350,35 +350,6 @@ export class ReportingService {
 		return Buffer.from(buffer);
 	}
 
-	async findAll(header: ReportingHeadersDto) {
-		if (!header["org-id"]) {
-			throw new BadRequestException("org-id header is required");
-		}
-		const organization = await this.prisma.organization.findUnique({
-			where: {
-				id: header["org-id"],
-			},
-		});
-
-		if (!organization) {
-			throw new NotFoundException(
-				"there is no organization with this id",
-			);
-		}
-		const jobs = await this.prisma.job.findMany({
-			where: {
-				org_id: header["org-id"],
-			},
-			select: {
-				target: true,
-			},
-		});
-		if (jobs.length === 0) {
-			throw new NotFoundException("there is no job");
-		}
-		return jobs;
-	}
-
 	async findOne(id: string, header: ReportingHeadersDto) {
 		if (!header["org-id"]) {
 			throw new NotFoundException(
