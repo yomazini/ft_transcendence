@@ -38,7 +38,8 @@ services:
       # The OWASP rules allow only GET HEAD POST OPTIONS by default; the API also
       # uses PATCH (change a role, edit the org) and DELETE (remove a member, a job, an account).
       ALLOWED_METHODS: "GET HEAD POST OPTIONS PATCH DELETE PUT"
-    depends_on: [gateway-svc, frontend, auth-svc, reporting-svc]
+    # depends_on: [gateway-svc, frontend, auth-svc, reporting-svc]
+    depends_on: [gateway-svc, auth-svc, reporting-svc]
     healthcheck:
       # The image's own check calls https on 8443; this project serves plain http on 8080.
       test: ["CMD-SHELL", "curl -fs http://localhost:8080/healthz || exit 1"]
@@ -48,14 +49,14 @@ services:
     networks: [ft_network]
     restart: unless-stopped
 
-  frontend:
-    container_name: frontend
-    image: frontend
-    build: ./frontend
-    expose: ["3000"]
-    depends_on: [gateway-svc]
-    networks: [ft_network]
-    restart: unless-stopped
+  # frontend:
+  #   container_name: frontend
+  #   image: frontend
+  #   build: ./frontend
+  #   expose: ["3000"]
+  #   depends_on: [gateway-svc]
+  #   networks: [ft_network]
+  #   restart: unless-stopped
     # Owner: Hamza
 
   # --- Application services ---------------------------------------------

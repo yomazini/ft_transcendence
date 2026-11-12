@@ -76,23 +76,27 @@ export function AppSidebar() {
 		>
 			{/* Logo */}
 			<SidebarHeader className="border-b">
-				<div className="flex h-14 items-center gap-3 ">
-					<div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-black text-white">
-						<span className="text-lg font-bold">
-							I
-						</span>
-					</div>
+				<Link href="/">
 
-					<div className="flex flex-1 flex-col pl-5">
-						<span className="text-sm font-semibold">
-							InsightFlow
-						</span>
 
-						<span className="text-[11px] text-muted-foreground">
-							Dashboard
-						</span>
+					<div className="flex h-14 items-center gap-3 ">
+						<div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-black text-white">
+							<span className="text-lg font-bold">
+								I
+							</span>
+						</div>
+
+						<div className="flex flex-1 flex-col pl-5">
+							<span className="text-sm font-semibold">
+								InsightFlow
+							</span>
+
+							<span className="text-[11px] text-muted-foreground">
+								Dashboard
+							</span>
+						</div>
 					</div>
-				</div>
+				</Link>
 			</SidebarHeader>
 
 			<SidebarContent>

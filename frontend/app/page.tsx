@@ -16,8 +16,8 @@ export default function Home() {
       <HeroSection />
       <ProblemSection />
       <FeaturesSection />
-      <ProductPreviewSection />
-      <TestimonialsSection />
+      {/* <ProductPreviewSection /> */}
+      {/* <TestimonialsSection /> */}
       <PricingSection />
       <FAQSection />
       <FinalCTASection />

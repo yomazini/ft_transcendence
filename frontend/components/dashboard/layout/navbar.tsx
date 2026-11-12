@@ -60,13 +60,7 @@ export function DashboardNavbar() {
       {/* Right */}
       <div className="ml-auto flex items-center gap-1">
         {/* Mobile search */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden"
-        >
-          <Search />
-        </Button>
+        
 
         {/* Theme */}
         {/* <Button

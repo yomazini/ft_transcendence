@@ -10,7 +10,6 @@ import {
   Users,
   CalendarDays,
   ArrowUpRight,
-  Clock3,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -110,6 +109,238 @@ function StatusBadge({ status }: { status: string }) {
     >
       {status}
     </span>
+  );
+}
+
+function BillingHeader() {
+  return (
+    <header>
+      <div className="mb-2 flex items-center gap-2 text-violet-600 dark:text-violet-400">
+        <CreditCard className="size-5" />
+        <span className="text-sm font-medium">Organization billing</span>
+      </div>
+      <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white sm:text-3xl">
+        Billing & Subscription
+      </h1>
+      <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+        Manage your organization plan, team capacity, and payments.
+      </p>
+    </header>
+  );
+}
+
+function PaymentVerification({ verifying, needsRetry, onRetry }: {
+  verifying: boolean;
+  needsRetry: boolean;
+  onRetry: () => void;
+}) {
+  if (verifying) {
+    return (
+      <div className="flex items-center gap-3 rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm dark:border-violet-500/20 dark:bg-violet-500/10">
+        <Loader2 className="size-5 animate-spin text-violet-600 dark:text-violet-400" />
+        Verifying your simulated payment...
+      </div>
+    );
+  }
+  if (!needsRetry) return null;
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-white/10 dark:bg-zinc-900">
+      <p className="text-sm">Payment confirmation is not complete yet.</p>
+      <button type="button" onClick={onRetry} className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700">
+        Check payment again
+      </button>
+    </div>
+  );
+}
+
+function CurrentPlanCard({ billing, isAdmin, canceling, verifying, onCancel }: {
+  billing: Billing;
+  isAdmin: boolean;
+  canceling: boolean;
+  verifying: boolean;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-900/60">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-semibold text-zinc-900 dark:text-white">Current plan</h2>
+        <StatusBadge status={billing.status} />
+      </div>
+      <div className="mt-6 flex items-center gap-4">
+        <div className="flex size-12 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400">
+          <Crown className="size-6" />
+        </div>
+        <div>
+          <p className="text-2xl font-semibold capitalize text-zinc-900 dark:text-white">{billing.plan}</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">{formatAmount(billing.price_cents, "USD")} / month</p>
+        </div>
+      </div>
+      {billing.subscription_end && (
+        <div className="mt-6 flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
+          <CalendarDays className="size-4" />
+          Access until {formatDate(billing.subscription_end)}
+        </div>
+      )}
+      {billing.cancel_at_period_end && (
+        <p className="mt-3 text-sm text-amber-600 dark:text-amber-400">Your subscription is scheduled to expire.</p>
+      )}
+      {isAdmin && billing.status === "active" && !billing.cancel_at_period_end && (
+        <button type="button" onClick={onCancel} disabled={canceling || verifying}
+          className="mt-5 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium hover:bg-zinc-50 disabled:opacity-50 dark:border-white/10 dark:hover:bg-zinc-800">
+          {canceling ? "Canceling..." : "Cancel subscription"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function TeamUsageCard({ billing, usagePercentage }: { billing: Billing; usagePercentage: number }) {
+  return (
+    <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-900/60">
+      <div className="flex items-center gap-2">
+        <Users className="size-5 text-violet-600 dark:text-violet-400" />
+        <h2 className="font-semibold text-zinc-900 dark:text-white">Team usage</h2>
+      </div>
+      <p className="mt-7 text-3xl font-semibold text-zinc-900 dark:text-white">
+        {billing.member_count}
+        <span className="text-base font-normal text-zinc-500 dark:text-zinc-400"> / {billing.max_users} members</span>
+      </p>
+      <div className="mt-5 h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+        <div className="h-full rounded-full bg-violet-600 transition-all" style={{ width: `${usagePercentage}%` }} />
+      </div>
+      <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
+        {Math.max(0, billing.max_users - billing.member_count)} seats available on your current plan.
+      </p>
+    </div>
+  );
+}
+
+type Plan = (typeof PLANS)[number];
+
+function PlanCard({ plan, current, canCheckout, processingPlan, onCheckout }: {
+  plan: Plan;
+  current: boolean;
+  canCheckout: boolean;
+  processingPlan: PaidPlan | null;
+  onCheckout: (plan: PaidPlan) => void;
+}) {
+  const paid = plan.id !== "free";
+  return (
+    <div className={`relative flex flex-col rounded-2xl border bg-white p-6 shadow-sm dark:bg-zinc-900/60 ${
+      current ? "border-violet-500 ring-1 ring-violet-500" : "border-zinc-200 dark:border-white/10"
+    }`}>
+      {current && (
+        <span className="absolute -top-3 right-4 rounded-full bg-violet-600 px-3 py-1 text-xs font-medium text-white">Current plan</span>
+      )}
+      <h3 className="text-xl font-semibold text-zinc-900 dark:text-white">{plan.name}</h3>
+      <p className="mt-2 min-h-10 text-sm text-zinc-500 dark:text-zinc-400">{plan.description}</p>
+      <div className="mt-5">
+        <span className="text-4xl font-bold text-zinc-900 dark:text-white">${plan.price}</span>
+        <span className="text-sm text-zinc-500 dark:text-zinc-400"> / month</span>
+      </div>
+      <div className="my-6 border-t border-zinc-100 dark:border-white/10" />
+      <ul className="mb-8 flex-1 space-y-3">
+        {plan.features.map((feature) => (
+          <li key={feature} className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+            <Check className="mt-0.5 size-4 shrink-0 text-violet-600 dark:text-violet-400" />
+            {feature}
+          </li>
+        ))}
+      </ul>
+      {current ? (
+        <button type="button" disabled className="w-full rounded-xl bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">Current plan</button>
+      ) : !paid ? (
+        <button type="button" disabled className="w-full rounded-xl border border-zinc-200 px-4 py-2.5 text-sm text-zinc-500 dark:border-white/10">Free plan</button>
+      ) : (
+        <button type="button" disabled={!canCheckout || processingPlan !== null}
+          onClick={() => onCheckout(plan.id as PaidPlan)}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50">
+          {processingPlan === plan.id ? (
+            <><Loader2 className="size-4 animate-spin" />Redirecting...</>
+          ) : (
+            <>Choose {plan.name}<ArrowUpRight className="size-4" /></>
+          )}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function AvailablePlans({ billing, isAdmin, verifying, needsRetry, processingPlan, onCheckout }: {
+  billing: Billing;
+  isAdmin: boolean;
+  verifying: boolean;
+  needsRetry: boolean;
+  processingPlan: PaidPlan | null;
+  onCheckout: (plan: PaidPlan) => void;
+}) {
+  return (
+    <section>
+      <h2 className="text-xl font-semibold text-zinc-900 dark:text-white">Available plans</h2>
+      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Choose the right capacity for your organization.</p>
+      <div className="mt-5 grid gap-4 md:grid-cols-3">
+        {PLANS.map((plan) => {
+          const current = billing.plan === plan.id;
+          const paid = plan.id !== "free";
+          const canCheckout = isAdmin && paid && !current && billing.status !== "active" && !verifying && !needsRetry;
+          return (
+            <PlanCard key={plan.id} plan={plan} current={current} canCheckout={canCheckout}
+              processingPlan={processingPlan} onCheckout={onCheckout} />
+          );
+        })}
+      </div>
+      {!isAdmin && (
+        <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">Only organization administrators can change subscription plans.</p>
+      )}
+    </section>
+  );
+}
+
+function PaymentHistory({ payments }: { payments: Payment[] }) {
+  return (
+    <section>
+      <h2 className="text-xl font-semibold text-zinc-900 dark:text-white">Payment history</h2>
+      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Recent simulated payments processed using Stripe Mock.</p>
+      <div className="mt-5 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-white/10 dark:bg-zinc-900/60">
+        {payments.length === 0 ? (
+          <div className="flex flex-col items-center p-12 text-center">
+            <div className="mb-3 rounded-xl bg-violet-50 p-3 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400">
+              <CreditCard className="size-7" />
+            </div>
+            <p className="font-medium">No payments yet</p>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Your payment history will appear here.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-500 dark:border-white/10 dark:bg-zinc-800/50 dark:text-zinc-400">
+                <tr>
+                  <th className="px-5 py-4 font-medium">Plan</th>
+                  <th className="px-5 py-4 font-medium">Date</th>
+                  <th className="px-5 py-4 font-medium">Amount</th>
+                  <th className="px-5 py-4 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.map((payment) => (
+                  <tr key={payment.id} className="border-b border-zinc-100 last:border-0 dark:border-white/10">
+                    <td className="px-5 py-4 font-medium capitalize">{payment.plan}</td>
+                    <td className="px-5 py-4 text-zinc-500 dark:text-zinc-400">{formatDate(payment.created_at)}</td>
+                    <td className="px-5 py-4">{formatAmount(payment.amount_cents, payment.currency)}</td>
+                    <td className="px-5 py-4">
+                      <StatusBadge status={payment.status} />
+                      {payment.status === "failed" && payment.failure_reason && (
+                        <p className="mt-1 text-xs text-red-600 dark:text-red-400">{payment.failure_reason}</p>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -380,365 +611,20 @@ export default function BillingPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 p-4 pb-12 md:p-8">
-      {/* Header */}
-      <div>
-        <div className="mb-2 flex items-center gap-2 text-primary">
-          <CreditCard className="h-5 w-5" />
-
-          <span className="text-sm font-medium">
-            Organization billing
-          </span>
-        </div>
-
-        <h1 className="text-3xl font-bold tracking-tight">
-          Billing & Subscription
-        </h1>
-
-        <p className="mt-2 text-muted-foreground">
-          Manage your organization plan, team capacity, and payments.
-        </p>
-      </div>
-
-      {/* Payment verification */}
-      {verifying && (
-        <div className="flex items-center gap-3 rounded-xl border bg-card p-4">
-          <Loader2 className="h-5 w-5 animate-spin text-primary" />
-
-          <span className="text-sm">
-            Verifying your simulated payment...
-          </span>
-        </div>
-      )}
-
-      {needsRetry && !verifying && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4">
-          <p className="text-sm">
-            Payment confirmation is not complete yet.
-          </p>
-
-          <button
-            type="button"
-            onClick={() =>
-              setVerificationRetry((count) => count + 1)
-            }
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-          >
-            Check payment again
-          </button>
-        </div>
-      )}
-
-      {/* Current subscription */}
+      <BillingHeader />
+      <PaymentVerification
+        verifying={verifying}
+        needsRetry={needsRetry}
+        onRetry={() => setVerificationRetry((count) => count + 1)}
+      />
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-xl border bg-card p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold">Current plan</h2>
-
-            <StatusBadge status={billing.status} />
-          </div>
-
-          <div className="mt-5 flex items-center gap-3">
-            <Crown className="h-8 w-8 text-primary" />
-
-            <div>
-              <p className="text-2xl font-bold capitalize">
-                {billing.plan}
-              </p>
-
-              <p className="text-sm text-muted-foreground">
-                {formatAmount(billing.price_cents, "USD")} / month
-              </p>
-            </div>
-          </div>
-
-          {billing.subscription_end && (
-            <div className="mt-5 flex items-center gap-2 text-sm text-muted-foreground">
-              <CalendarDays className="h-4 w-4" />
-              Access until {formatDate(billing.subscription_end)}
-            </div>
-          )}
-
-          {billing.cancel_at_period_end && (
-            <p className="mt-3 text-sm text-orange-600">
-              Your subscription is scheduled to expire.
-            </p>
-          )}
-
-          {isAdmin &&
-            billing.status === "active" &&
-            !billing.cancel_at_period_end && (
-              <button
-                type="button"
-                onClick={handleCancel}
-                disabled={canceling || verifying}
-                className="mt-5 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
-              >
-                {canceling
-                  ? "Canceling..."
-                  : "Cancel subscription"}
-              </button>
-            )}
-        </div>
-
-        {/* Team usage */}
-        <div className="rounded-xl border bg-card p-6">
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
-
-            <h2 className="font-semibold">
-              Team usage
-            </h2>
-          </div>
-
-          <p className="mt-5 text-3xl font-bold">
-            {billing.member_count}
-
-            <span className="text-lg font-normal text-muted-foreground">
-              {" "}/ {billing.max_users} members
-            </span>
-          </p>
-
-          <div className="mt-5 h-2 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary transition-all"
-              style={{ width: `${usagePercentage}%` }}
-            />
-          </div>
-
-          <p className="mt-3 text-sm text-muted-foreground">
-            {Math.max(
-              0,
-              billing.max_users - billing.member_count,
-            )}{" "}
-            seats available on your current plan.
-          </p>
-        </div>
+        <CurrentPlanCard billing={billing} isAdmin={isAdmin} canceling={canceling}
+          verifying={verifying} onCancel={handleCancel} />
+        <TeamUsageCard billing={billing} usagePercentage={usagePercentage} />
       </div>
-
-      {/* Available plans */}
-      <section>
-        <div className="mb-5">
-          <h2 className="text-xl font-semibold">
-            Available plans
-          </h2>
-
-          <p className="mt-1 text-sm text-muted-foreground">
-            Choose the right capacity for your organization.
-          </p>
-        </div>
-
-        <div className="grid gap-5 md:grid-cols-3">
-          {PLANS.map((plan) => {
-            const current = billing.plan === plan.id;
-            const paid = plan.id !== "free";
-
-            const canCheckout =
-              isAdmin &&
-              paid &&
-              !current &&
-              billing.status !== "active" &&
-              !verifying &&
-              !needsRetry;
-
-            return (
-              <div
-                key={plan.id}
-                className={`relative flex flex-col rounded-xl border bg-card p-6 ${
-                  current
-                    ? "border-primary ring-1 ring-primary"
-                    : ""
-                }`}
-              >
-                {current && (
-                  <span className="absolute -top-3 right-4 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-                    Current plan
-                  </span>
-                )}
-
-                <h3 className="text-xl font-semibold">
-                  {plan.name}
-                </h3>
-
-                <p className="mt-2 min-h-10 text-sm text-muted-foreground">
-                  {plan.description}
-                </p>
-
-                <div className="mt-5">
-                  <span className="text-4xl font-bold">
-                    ${plan.price}
-                  </span>
-
-                  <span className="text-muted-foreground">
-                    {" "}/ month
-                  </span>
-                </div>
-
-                <div className="my-6 border-t" />
-
-                <ul className="mb-8 flex-1 space-y-3">
-                  {plan.features.map((feature) => (
-                    <li
-                      key={feature}
-                      className="flex items-start gap-2 text-sm"
-                    >
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-
-                {current ? (
-                  <button
-                    type="button"
-                    disabled
-                    className="w-full rounded-lg border bg-muted px-4 py-2.5 text-sm font-medium text-muted-foreground"
-                  >
-                    Current plan
-                  </button>
-                ) : !paid ? (
-                  <button
-                    type="button"
-                    disabled
-                    className="w-full rounded-lg border px-4 py-2.5 text-sm text-muted-foreground"
-                  >
-                    Free plan
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={
-                      !canCheckout ||
-                      processingPlan !== null
-                    }
-                    onClick={() =>
-                      handleCheckout(plan.id as PaidPlan)
-                    }
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {processingPlan === plan.id ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Redirecting...
-                      </>
-                    ) : (
-                      <>
-                        Choose {plan.name}
-                        <ArrowUpRight className="h-4 w-4" />
-                      </>
-                    )}
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {!isAdmin && (
-          <p className="mt-4 text-sm text-muted-foreground">
-            Only organization administrators can change
-            subscription plans.
-          </p>
-        )}
-
-        {/* {billing.status === "active" && (
-          <p className="mt-4 text-sm text-muted-foreground">
-            Plan switching is not yet supported by the billing backend.
-          </p>
-        )} */}
-      </section>
-
-      {/* Payment history */}
-      {isAdmin && (
-        <section>
-          <div className="mb-5">
-            <h2 className="text-xl font-semibold">
-              Payment history
-            </h2>
-
-            <p className="mt-1 text-sm text-muted-foreground">
-              Recent simulated payments processed using Stripe Mock.
-            </p>
-          </div>
-
-          <div className="overflow-hidden rounded-xl border bg-card">
-            {payments.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-12 text-center">
-                <CreditCard className="mb-3 h-9 w-9 text-muted-foreground" />
-
-                <p className="font-medium">
-                  No payments yet
-                </p>
-
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Your payment history will appear here.
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="border-b bg-muted/40">
-                    <tr>
-                      <th className="px-5 py-4 font-medium">
-                        Plan
-                      </th>
-
-                      <th className="px-5 py-4 font-medium">
-                        Date
-                      </th>
-
-                      <th className="px-5 py-4 font-medium">
-                        Amount
-                      </th>
-
-                      <th className="px-5 py-4 font-medium">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {payments.map((payment) => (
-                      <tr
-                        key={payment.id}
-                        className="border-b last:border-0"
-                      >
-                        <td className="px-5 py-4 font-medium capitalize">
-                          {payment.plan}
-                        </td>
-
-                        <td className="px-5 py-4 text-muted-foreground">
-                          {formatDate(payment.created_at)}
-                        </td>
-
-                        <td className="px-5 py-4">
-                          {formatAmount(
-                            payment.amount_cents,
-                            payment.currency,
-                          )}
-                        </td>
-
-                        <td className="px-5 py-4">
-                          <StatusBadge status={payment.status} />
-
-                          {payment.status === "failed" &&
-                            payment.failure_reason && (
-                              <p className="mt-1 text-xs text-destructive">
-                                {payment.failure_reason}
-                              </p>
-                            )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* Development information */}
-      
+      <AvailablePlans billing={billing} isAdmin={isAdmin} verifying={verifying}
+        needsRetry={needsRetry} processingPlan={processingPlan} onCheckout={handleCheckout} />
+      {isAdmin && <PaymentHistory payments={payments} />}
     </div>
   );
 }

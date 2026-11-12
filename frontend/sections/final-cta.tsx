@@ -31,17 +31,7 @@ export function FinalCTASection() {
                 Start Free
               </Link>
             </Button>
-
-            <Button
-              size="lg"
-              variant="outline"
-              
-            >
-              <Link href="/contact">
-                Book a Demo
-              </Link>
-            </Button>
-
+            
           </div>
 
           <p className="mt-8 text-sm text-muted-foreground">
