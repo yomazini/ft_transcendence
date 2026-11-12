@@ -5,6 +5,7 @@ export interface User {
 	id: string;
 	org_id: string;
 	email: string;
+	is_2fa_enabled?: boolean;
 	role: Role;
 	created_at?: string;
 }
@@ -14,6 +15,9 @@ export interface AuthResponse {
 	token_type: string;
 	user: User;
 }
+
+/* The auth login can be 2 possible login answers */
+export type TwoFactorChallenge = { two_factor_required: true; two_factor_token: string };
 
 export const MIN_PASSWORD_LENGTH = 8;
 export const FORTY_TWO_LOGIN_URL = "/api/auth/42";
@@ -34,12 +38,18 @@ export function isValidEmail(email: string): boolean {
 export function login(
 	email: string,
 	password: string,
-): Promise<AuthResponse> /** this is a return type. It says "this function returns a Promise that will eventually deliver an AuthResponse" */
+): Promise<AuthResponse | TwoFactorChallenge> /** this is a return type. It says "this function returns a Promise that will eventually deliver an AuthResponse" */
 {
 	/** @MEHDIJAD @note ⚠️ it calls a helper post that sends a POST request to a URL with a JSON body, and returns the reply as a Promise. <AuthResponse> tells TypeScript what shape that reply has. */
-	return post<AuthResponse>("/api/auth/login", { email, password });
+	return post<AuthResponse | TwoFactorChallenge>("/api/auth/login", { email, password });
 
 	/** @note  shorthand property syntax: since the variables are already named email and password, this is equivalent to writing { email: email, password: password }. */
+}
+
+/* POST /api/auth/2fa/verify */
+/* [frontend]{token from login|42login + code inserted} ➞ [BOX] ➞ AuthResponse */
+export function verifyTwoFactor(two_factor_token: string, code: string): Promise<AuthResponse> {
+	return post<AuthResponse>("/api/auth/2fa/verify", {two_factor_token, code});
 }
 
 export function register(
@@ -166,6 +176,55 @@ export async function changePassword(current_password: string, new_password: str
 	if (!response.ok) {
 		throw new Error(Array.isArray(data?.message) ? data.message.join(", ") : data?.message ?? "Could not change the password");
 	}
+}
+
+/* 🆕 2FA CALLS */
+
+/** POST /auth/2fa/setup */
+export async function setupTwoFactor():
+Promise<{ qr_code: string, otpauth_url: string }> {
+	const response = await fetch("/api/auth/2fa/setup", {
+		method: "POST",
+		headers: authHeaders(),
+	});
+
+	const data = await response.json().catch(() => null);
+	if (!response.ok) {
+		throw new Error(Array.isArray(data?.message) ? data.message.join(", "): data?.message ?? "Could not start 2FA setup");
+	}
+	return data;
+}
+
+/* POST /auth/2fa/enable {code} */
+export async function enableTwoFactor(code: string):
+Promise<{ enabled: boolean }> {
+	const response = await fetch("/api/auth/2fa/enable", {
+		method: "POST",
+		headers: { "Content-Type": "application/json", ...authHeaders() },
+		body: JSON.stringify({ code }),
+	});
+
+	const data = await response.json().catch(() => null);
+	if (!response.ok) {
+		throw new Error(Array.isArray(data?.message) ? data.message.join(", "): data?.message ?? "Could not turn on 2FA");
+	}
+	return data;
+}
+
+/* POST /auth/2fa/enable {code} */
+export async function disableTwoFactor(code: string):
+Promise<{ enabled: boolean }> {
+	const response = await fetch("/api/auth/2fa/disable", {
+		method: "POST",
+		headers: { "Content-Type": "application/json", ...authHeaders() },
+		body: JSON.stringify({ code }),
+	});
+
+	const data = await response.json().catch(() => null);
+	if (!response.ok) {
+		throw new Error(Array.isArray(data?.message) ? data.message.join(", "): data?.message ?? "Could not turn off 2FA");
+	}
+	return data;
 }
 
 /** PATCH /api/auth/email — needs the login token and the current password. */

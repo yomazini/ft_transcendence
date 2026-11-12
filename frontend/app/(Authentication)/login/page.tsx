@@ -45,13 +45,17 @@ export default function LoginPage() {
 
 		try {
 			/** calls the helper login from lib/auth.ts, It sends the credentials to the backend */
-			const { access_token, user } = await login(email.trim(), password);
+			const result = await login(email.trim(), password);
+			if ('two_factor_required' in result) {
+				router.replace(`/login/2fa#two_factor_token=${result.two_factor_token}&remember=${remember ? 1 : 0}`)
+				return;
+			}
 			/** ⚠️ keeps the JWT in the browser so later requests can use it */
-			saveToken(access_token, remember);
+			saveToken(result.access_token, remember);
 			/** moves to the dashboard page without reloading the app
 			 * + adds the new URL to the browser history and shows the page.
 			 */
-			router.replace(`/${user.id}/dashboard`);
+			router.replace(`/${result.user.id}/dashboard`);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Something went wrong.");
 		} finally {
