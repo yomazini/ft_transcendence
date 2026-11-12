@@ -13,23 +13,31 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
   // The browser reaches the gateway through nginx on the frontend's own origin,
-  // so only that origin may call it cross-site (FRONTEND_URL, e.g. http://localhost).
+  // so only that origin may call it cross-site  (FRONTEND_URL, e.g. https://localhost).
+  // btw thi s browser only restriction that will auto send origin header ;
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost',
+    origin: process.env.FRONTEND_URL || 'https://localhost',
     methods: 'GET,HEAD,PATCH,POST,PUT,DELETE,OPTIONS',
+
+    // let secturity headers pass like cookies authen and etc...
     credentials: true,
   });
 
+  // Validate every request body, query, and route parameter before controllers.
   app.useGlobalPipes(
     new ValidationPipe({
+      // Convert plain JSON to DTO instances and apply type conversions.
       transform: true,
+      // Remove properties that have no validation decorator in the DTO.
       whitelist: true,
+      // Ignore unknown properties. Set to true to reject them with 400.
       forbidNonWhitelisted: false,
     }),
   );
 
+  // Swagger metadata only. This documents the API; it does not validate requests.
   const config = new DocumentBuilder()
-    .setTitle('Groundswell Gateway Service')
+    .setTitle('InsightFlow Gateway Service')
     .setDescription(
       'Public API Gateway, JWT verification, rate limiting, BullMQ producer, and WebSockets',
     )
