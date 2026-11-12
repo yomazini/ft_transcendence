@@ -7,6 +7,7 @@ export interface JobItem {
 	target: string;
 	mode: string;
 	status: JobStatus;
+	org_id: string
 	created_at: string;
 }
 

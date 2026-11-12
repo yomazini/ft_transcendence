@@ -26,10 +26,10 @@ export default function DashboardPage() {
 
 			<SummaryMetrics />
 			{/* Submit a new job */}
-			<NewJobCard />
+			{/* <NewJobCard /> */}
 
 			{/* All jobs with their live status */}
-			<JobsPanel />
+			{/* <JobsPanel /> */}
 
 			{/* Revenue overview and sales distribution */}
 			<RevenueOverview report={report} />

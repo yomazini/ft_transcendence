@@ -41,7 +41,7 @@ import { useParams, usePathname, useRouter, useSearchParams } from "next/navigat
 
 /** Pages under /<user id>/…; the id is read from the current URL. */
 const dashboardItems = [
-	{ title: "Home", page: "dashboard", icon: House },
+	{ title: "New Job", page: "new_job", icon: House },
 	{ title: "Billing", page: "billing", icon: CreditCard, adminOnly: true },
 	{ title: "Members", page: "members", icon: Users },
 	{ title: "Setting", page: "setting", icon: Settings },
