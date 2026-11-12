@@ -88,6 +88,14 @@ export class AuthService {
 			throw new UnauthorizedException('Invalid credentials');
 		}
 		const role = user.user_roles_organization[0];
+		/** if 2fa anable > New path */
+		if (user.is_2fa_enabled) {
+			const two_factor_token = await this.jwt.signAsync({
+				sub: user.id,
+				purpose: '2fa'}, { expiresIn: '5m'});
+
+			return { two_factor_required: true, two_factor_token }
+		}
 		const access_token = await this.jwt.signAsync({
 			sub: user.id,
 			org_id: role.org_id,
