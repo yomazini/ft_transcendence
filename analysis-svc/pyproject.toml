@@ -13,16 +13,11 @@ dependencies = [
   "pydantic",
   "pydantic-settings",
   "httpx",
-  "pytest",
-  "pytest-asyncio",
   "numpy",
   "bullmq",
   "prometheus-client>=0.26.0",
   "hvac>=2.4.0",
 ]
-
-[tool.pytest.ini_options]
-pythonpath = ["."]
 
 [tool.pyright]
 venvPath = "."

@@ -31,13 +31,6 @@ export interface ReportRecord {
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(DatabaseService.name);
   private pool: Pool | null = null;
-  private isConnected = false;
-
-  // In-memory stub storage for offline development & resilient fallback
-  private readonly inMemoryJobs = new Map<string, JobRecord>();
-  private readonly inMemoryReports = new Map<string, ReportRecord>();
-
-  private retryTimer?: NodeJS.Timeout;
 
   async onModuleInit() {
     await this.connect();
@@ -50,150 +43,78 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     const password = process.env.POSTGRES_PASSWORD;
     const database = process.env.POSTGRES_DB || 'ft_transcendence';
 
+    this.pool = new Pool({
+      host,
+      port,
+      user,
+      password,
+      database,
+      connectionTimeoutMillis: 3000,
+    });
+
     try {
-      this.pool = new Pool({
-        host,
-        port,
-        user,
-        password,
-        database,
-        connectionTimeoutMillis: 3000,
-      });
       const client = await this.pool.connect();
-      this.isConnected = true;
       client.release();
       this.logger.log(`Connected to PostgreSQL at ${host}:${port}/${database}`);
     } catch (err: any) {
-      this.isConnected = false;
-      this.logger.warn(
-        `PostgreSQL not reachable (${err.message}); retrying in 5s`,
+      await this.pool.end().catch(() => undefined);
+      this.pool = null;
+      throw new ServiceUnavailableException(
+        `database unavailable: ${err.message}`,
       );
-      this.retryTimer = setTimeout(() => void this.connect(), 5000);
     }
+  }
+
+  private get db(): Pool {
+    if (!this.pool) {
+      throw new ServiceUnavailableException('database unavailable');
+    }
+    return this.pool;
   }
 
   async onModuleDestroy() {
-    if (this.retryTimer) clearTimeout(this.retryTimer);
     if (this.pool) {
       await this.pool.end();
+      this.pool = null;
     }
-  }
-
-  async saveJob(job: JobRecord): Promise<void> {
-    if (!this.isProduction) {
-      this.inMemoryJobs.set(job.id, job);
-    }
-
-    if (!this.isConnected || !this.pool) {
-      if (this.isProduction) {
-        throw new ServiceUnavailableException('database unavailable');
-      }
-      return;
-    }
-
-    try {
-      const query = `
-        INSERT INTO "Job" (id, org_id, created_by, target, mode, status, customer_persona, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status;
-      `;
-      await this.pool.query(query, [
-        job.id,
-        job.org_id,
-        job.created_by,
-        job.target,
-        this.normalizeJobMode(job.mode),
-        this.normalizeJobStatus(job.status),
-        JSON.stringify(job.customer_persona),
-        new Date(job.created_at),
-      ]);
-      this.logger.log(`Persisted Job ${job.id} to PostgreSQL`);
-    } catch (err: any) {
-      if (this.isProduction) {
-        throw new ServiceUnavailableException('could not persist job');
-      }
-      this.logger.warn(
-        `Failed to persist Job to DB: ${err.message}. Retained in in-memory store.`,
-      );
-    }
-  }
-
-  private get isProduction(): boolean {
-    return process.env.NODE_ENV == 'production';
   }
 
   /** Used when a service that has no database access (scraper-svc) reports a failure. */
   async updateJobStatus(id: string, status: string): Promise<void> {
-    if (!this.isConnected || !this.pool) return;
-    try {
-      await this.pool.query('UPDATE "Job" SET status = $1 WHERE id = $2;', [
-        this.normalizeJobStatus(status),
-        id,
-      ]);
-    } catch (err: any) {
-      this.logger.warn(`Failed to update status of job ${id}: ${err.message}`);
-    }
+    await this.db.query('UPDATE "Job" SET status = $1 WHERE id = $2;', [
+      this.normalizeJobStatus(status),
+      id,
+    ]);
   }
 
   async findOrganizationDescription(orgId: string): Promise<string | null> {
-    if (!this.isConnected || !this.pool) return null;
-    try {
-      const res = await this.pool.query(
-        `SELECT description FROM "Organization" WHERE id = $1`,
-        [orgId],
-      );
-      return res.rows[0]?.description ?? null;
-    } catch (err: any) {
-      this.logger.warn(
-        `Failed to read organization ${orgId} description: ${err.message}`,
-      );
-      return null;
-    }
+    const res = await this.db.query(
+      `SELECT description FROM "Organization" WHERE id = $1`,
+      [orgId],
+    );
+    return res.rows[0]?.description ?? null;
   }
 
   /** The latest jobs of one organization, newest first (dashboard job list). */
   async findJobsByOrg(orgId: string, limit = 50): Promise<JobRecord[]> {
-    if (!this.isConnected || !this.pool) return [];
-    try {
-      const res: QueryResult = await this.pool.query(
-        `SELECT id, org_id, created_by, target, mode, status, customer_persona, created_at
-           FROM "Job" WHERE org_id = $1 ORDER BY created_at DESC LIMIT $2;`,
-        [orgId, limit],
-      );
-      return res.rows.map((row) => ({
-        id: row.id,
-        org_id: row.org_id,
-        created_by: row.created_by,
-        target: row.target,
-        mode: String(row.mode).toLowerCase(),
-        status: String(row.status).toLowerCase(),
-        customer_persona: row.customer_persona,
-        created_at:
-          row.created_at instanceof Date
-            ? row.created_at.toISOString()
-            : String(row.created_at),
-      }));
-    } catch (err: any) {
-      this.logger.warn(`Failed to list jobs of org ${orgId}: ${err.message}`);
-      return [];
-    }
-  }
-  async countJobsByOrgSince(orgId: string, since: Date): Promise<number> {
-    if (!this.isConnected || !this.pool) {
-      return Array.from(this.inMemoryJobs.values()).filter(
-        (job) =>
-          job.org_id === orgId &&
-          new Date(job.created_at).getTime() >= since.getTime(),
-      ).length;
-    }
-
-    const res = await this.pool.query(
-      `SELECT count(*)::int AS count
-       FROM "Job"
-      WHERE org_id = $1 AND created_at >= $2`,
-      [orgId, since],
+    const res: QueryResult = await this.db.query(
+      `SELECT id, org_id, created_by, target, mode, status, customer_persona, created_at
+         FROM "Job" WHERE org_id = $1 ORDER BY created_at DESC LIMIT $2;`,
+      [orgId, limit],
     );
-    return res.rows[0]?.count ?? 0;
+    return res.rows.map((row) => ({
+      id: row.id,
+      org_id: row.org_id,
+      created_by: row.created_by,
+      target: row.target,
+      mode: String(row.mode).toLowerCase(),
+      status: String(row.status).toLowerCase(),
+      customer_persona: row.customer_persona,
+      created_at:
+        row.created_at instanceof Date
+          ? row.created_at.toISOString()
+          : String(row.created_at),
+    }));
   }
 
   async saveJobWithLimit(
@@ -201,23 +122,8 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     maxJobs: number,
     since: Date,
   ): Promise<boolean> {
-    if (!this.isConnected || !this.pool) {
-      if (this.isProduction) {
-        throw new ServiceUnavailableException('database unavailable');
-      }
-      // One synchronous block: Node cannot interleave another request here.
-      const count = Array.from(this.inMemoryJobs.values()).filter(
-        (j) =>
-          j.org_id === job.org_id &&
-          new Date(j.created_at).getTime() >= since.getTime(),
-      ).length;
-      if (count >= maxJobs) return false;
-      this.inMemoryJobs.set(job.id, job);
-      return true;
-    }
-
     // Serialize count + insert per org so parallel creates cannot exceed the plan.
-    const client = await this.pool.connect();
+    const client = await this.db.connect();
     try {
       await client.query('BEGIN');
       await client.query('SELECT pg_advisory_xact_lock(hashtext($1::text))', [
@@ -270,13 +176,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       customer_persona?: unknown;
     },
   ): Promise<void> {
-    const cached = this.inMemoryJobs.get(id);
-    if (cached) {
-      this.inMemoryJobs.set(id, { ...cached, ...fields });
-    }
-    if (!this.isConnected || !this.pool) return;
-
-    await this.pool.query(
+    await this.db.query(
       `
         UPDATE "Job"
         SET target = COALESCE($1, target),
@@ -297,66 +197,46 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   }
 
   async deleteJob(id: string, orgId: string): Promise<void> {
-    this.inMemoryJobs.delete(id);
-    this.inMemoryReports.delete(id);
-
-    if (!this.isConnected || !this.pool) return;
-
-    await this.pool.query('DELETE FROM "Job" WHERE id = $1 AND org_id = $2;', [
+    await this.db.query('DELETE FROM "Job" WHERE id = $1 AND org_id = $2;', [
       id,
       orgId,
     ]);
   }
 
   async findJobById(id: string): Promise<JobRecord | null> {
-    if (this.isConnected && this.pool) {
-      try {
-        const res: QueryResult = await this.pool.query(
-          `SELECT id, org_id, created_by, target, mode, status, customer_persona, created_at FROM "Job" WHERE id = $1;`,
-          [id],
-        );
-        if (res.rows.length > 0) {
-          const row = res.rows[0];
-          return {
-            id: row.id,
-            org_id: row.org_id,
-            created_by: row.created_by,
-            target: row.target,
-            mode: row.mode,
-            status: String(row.status).toLowerCase(),
-            customer_persona: row.customer_persona,
-            created_at:
-              row.created_at instanceof Date
-                ? row.created_at.toISOString()
-                : String(row.created_at),
-          };
-        }
-      } catch (err: any) {
-        this.logger.warn(
-          `Postgres lookup failed: ${err.message}. Falling back to in-memory store.`,
-        );
-      }
+    const res: QueryResult = await this.db.query(
+      `SELECT id, org_id, created_by, target, mode, status, customer_persona, created_at FROM "Job" WHERE id = $1;`,
+      [id],
+    );
+    if (res.rows.length === 0) {
+      return null;
     }
 
-    return this.inMemoryJobs.get(id) || null;
+    const row = res.rows[0];
+    return {
+      id: row.id,
+      org_id: row.org_id,
+      created_by: row.created_by,
+      target: row.target,
+      mode: row.mode,
+      status: String(row.status).toLowerCase(),
+      customer_persona: row.customer_persona,
+      created_at:
+        row.created_at instanceof Date
+          ? row.created_at.toISOString()
+          : String(row.created_at),
+    };
   }
 
   async findReportByJobId(jobId: string): Promise<ReportRecord | null> {
-    if (this.isConnected && this.pool) {
-      try {
-        const res: QueryResult = await this.pool.query(
-          `SELECT id, job_id, swot, blue_ocean, conclusion, created_at FROM "Report" WHERE job_id = $1 OR id = $1 ORDER BY created_at DESC LIMIT 1;`,
-          [jobId],
-        );
-        if (res.rows.length > 0) {
-          return this.mapReport(res.rows[0]);
-        }
-      } catch (err: any) {
-        this.logger.warn(`Postgres report lookup failed: ${err.message}`);
-      }
+    const res: QueryResult = await this.db.query(
+      `SELECT id, job_id, swot, blue_ocean, conclusion, created_at FROM "Report" WHERE job_id = $1 OR id = $1 ORDER BY created_at DESC LIMIT 1;`,
+      [jobId],
+    );
+    if (res.rows.length === 0) {
+      return null;
     }
-
-    return this.inMemoryReports.get(jobId) || null;
+    return this.mapReport(res.rows[0]);
   }
 
   private mapReport(row: any): ReportRecord {
@@ -384,8 +264,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   }
 
   async findApiKeyByHash(hash: string) {
-    if (!this.isConnected || !this.pool) return null;
-    const res = await this.pool.query(
+    const res = await this.db.query(
       `SELECT user_id, org_id FROM "ApiKey" WHERE key_hash = $1  AND active= true LIMIT 1`,
       [hash],
     );
@@ -393,8 +272,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   }
 
   async touchApiKey(hash: string) {
-    if (!this.isConnected || !this.pool) return;
-    await this.pool.query(
+    await this.db.query(
       `UPDATE "ApiKey" SET last_used_at = now() WHERE key_hash=$1 `,
       [hash],
     );
