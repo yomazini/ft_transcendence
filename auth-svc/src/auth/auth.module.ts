@@ -9,10 +9,12 @@ import { MailModule } from '../mail/mail.module';
 import { DenylistModule } from './denylist.module';
 import { MetricsModule } from '../metrics/metrics.module';
 import { OrgModule } from '../org/org.module';
+import { TwoFactorController } from './two-factor/two-factor.controller';
+import { TwoFactorService } from './two-factor/two-factor.service';
 
 @Module({
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, FortyTwoStrategy],
+  controllers: [AuthController, TwoFactorController],
+  providers: [AuthService, JwtStrategy, FortyTwoStrategy, TwoFactorService],
   imports: [
     PrismaModule,
     DenylistModule,
