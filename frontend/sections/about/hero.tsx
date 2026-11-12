@@ -21,8 +21,9 @@ export function HeroSection() {
         {/* Heading */}
 
         <h1 className="mt-8 max-w-5xl text-center text-5xl font-extrabold tracking-tight md:text-6xl lg:text-7xl">
-          Building AI Products That Help Teams
-          <span className="text-primary">
+          <span className="bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 bg-clip-text text-transparent">
+           Building </span>  AI Products That Help Teams
+          <span className="text-primary bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 bg-clip-text text-transparent">
             {" "}Make Better Decisions
           </span>
         </h1>
@@ -37,27 +38,7 @@ export function HeroSection() {
           collaboration, and real customer needs.
         </p>
 
-        {/* Buttons */}
-
-        <div className="mt-12 flex flex-wrap justify-center gap-4">
-
-          <Button size="lg" >
-            <Link href="#team">
-              Meet the Team
-            </Link>
-          </Button>
-
-          <Button
-            size="lg"
-            variant="outline"
-            
-          >
-            <Link href="#story">
-              Our Story
-            </Link>
-          </Button>
-
-        </div>
+ 
 
         {/* Image */}
 

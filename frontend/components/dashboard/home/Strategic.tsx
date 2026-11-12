@@ -81,28 +81,28 @@ export default function Strategic({ report, loading } : {report : ReportDetails 
 			icon: ShieldCheck,
 			title: "STRENGTHS",
 			description: "Internal advantages",
-			iconColor: "text-gray-500",
+			iconColor: "text-violet-500",
 		},
 		{
 			items: asItems(report?.swot?.weaknesses),
 			icon: Link,
 			title: "WEAKNESSES",
 			description: "Internal limitations",
-			iconColor: "text-gray-500",
+			iconColor: "text-violet-500",
 		},
 		{
 			items: asItems(report?.swot?.opportunities),
 			icon: TrendingUp,
 			title: "OPPORTUNITIES",
 			description: "External possibilities",
-			iconColor: "text-gray-500",
+			iconColor: "text-violet-500",
 		},
 		{
 			items: asItems(report?.swot?.threats),
 			icon: ShieldCheck,
 			title: "THREATS",
 			description: "Potential external risks",
-			iconColor: "text-gray-500",
+			iconColor: "text-violet-500",
 		},
 	];
 
@@ -112,39 +112,39 @@ export default function Strategic({ report, loading } : {report : ReportDetails 
 			icon: Trash2,
 			title: "ELIMINATE",
 			description: "Remove unnecessary factors",
-			iconColor: "text-gray-500",
+			iconColor: "text-violet-500",
 		},
 		{
 			items: asItems(strategy?.reduce),
 			icon: MinusCircle,
 			title: "REDUCE",
 			description: "Lower factors below the standard",
-			iconColor: "text-gray-500",
+			iconColor: "text-violet-500",
 		},
 		{
 			items: asItems(strategy?.raise),
 			icon: TrendingUp,
 			title: "RAISE",
 			description: "Improve factors above the standard",
-			iconColor: "text-gray-500",
+			iconColor: "text-violet-500",
 		},
 		{
 			items: asItems(strategy?.create),
 			icon: PlusCircle,
 			title: "CREATE",
 			description: "Introduce new factors",
-			iconColor: "text-gray-500",
+			iconColor: "text-violet-500",
 		},
 	];
 
 	if (loading) {
 		return (
-			<div className="w-full min-w-0 self-start 2xl:col-span-2">
+			<div className="w-full min-w-0 self-start rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-zinc-900/60 sm:p-6 2xl:col-span-2">
 				<SectionTitle icon={Megaphone}>
 					Strategic Analysis
 				</SectionTitle>
 
-				<div className="p-4 text-sm text-muted-foreground">
+				<div className="py-6 text-sm text-zinc-500 dark:text-zinc-400">
 					{loading
 						? "Loading strategic analysis..."
 						: "Failed to load strategic analysis."}
@@ -156,29 +156,31 @@ export default function Strategic({ report, loading } : {report : ReportDetails 
 	const activeItems = selectedCard === 1 ? swot : blueOcean;
 
 	return (
-		<div className="flex h-auto w-full min-w-0 max-w-full flex-col self-start 2xl:col-span-2 bg-card">
+		<div className="flex h-auto w-full min-w-0 max-w-full flex-col self-start rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-colors dark:border-white/10 dark:bg-zinc-900/60 sm:p-6 2xl:col-span-2">
 
 			<SectionTitle icon={Megaphone}>
 				<span>Strategic Analysis</span>
 			</SectionTitle>
 
-			<div className="flex w-full min-w-0 flex-col divide-y">
+			<div className="flex w-full min-w-0 flex-col">
 
-				<div className="w-full min-w-0">
+				<div className="mt-5 w-full min-w-0">
 					<div
-						className={`grid w-full min-w-0 rounded-lg bg-slate-100 p-1 dark:bg-slate-900 ${hasConclusion
-							? "grid-cols-3 gap-2"
-							: "grid-cols-2 gap-2"
-							}`}
+						className={`grid w-full min-w-0 rounded-xl border border-zinc-200 bg-zinc-100 p-1.5 dark:border-white/10 dark:bg-zinc-800/70 ${
+							hasConclusion
+								? "grid-cols-3 gap-1.5"
+								: "grid-cols-2 gap-1.5"
+						}`}
 					>
 						<button
 							type="button"
 							onClick={() => setActiveCard(1)}
 							aria-pressed={selectedCard === 1}
-							className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:gap-2 sm:text-sm ${selectedCard === 1
-								? "bg-white text-black shadow-sm dark:bg-slate-800 dark:text-white"
-								: "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-								}`}
+							className={`flex min-w-0 items-center justify-center gap-1 rounded-lg px-2 py-2.5 text-xs font-medium transition-all duration-200 sm:gap-2 sm:text-sm ${
+								selectedCard === 1
+									? "bg-white text-violet-700 shadow-sm ring-1 ring-violet-200 dark:bg-violet-500/15 dark:text-violet-300 dark:ring-violet-500/20"
+									: "text-zinc-500 hover:bg-white/60 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white"
+							}`}
 						>
 							<Target className="size-4 shrink-0" />
 							<span className="truncate">SWOT</span>
@@ -188,10 +190,11 @@ export default function Strategic({ report, loading } : {report : ReportDetails 
 							type="button"
 							onClick={() => setActiveCard(2)}
 							aria-pressed={selectedCard === 2}
-							className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:gap-2 sm:text-sm ${selectedCard === 2
-								? "bg-white text-black shadow-sm dark:bg-slate-800 dark:text-white"
-								: "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-								}`}
+							className={`flex min-w-0 items-center justify-center gap-1 rounded-lg px-2 py-2.5 text-xs font-medium transition-all duration-200 sm:gap-2 sm:text-sm ${
+								selectedCard === 2
+									? "bg-white text-violet-700 shadow-sm ring-1 ring-violet-200 dark:bg-violet-500/15 dark:text-violet-300 dark:ring-violet-500/20"
+									: "text-zinc-500 hover:bg-white/60 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white"
+							}`}
 						>
 							<Waves className="size-4 shrink-0" />
 							<span className="truncate">Blue Ocean</span>
@@ -202,10 +205,11 @@ export default function Strategic({ report, loading } : {report : ReportDetails 
 								type="button"
 								onClick={() => setActiveCard(3)}
 								aria-pressed={selectedCard === 3}
-								className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs transition-colors duration-200 sm:gap-2 sm:text-sm ${selectedCard === 3
-									? "bg-white text-black shadow-sm dark:bg-slate-800 dark:text-white"
-									: "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-									}`}
+								className={`flex min-w-0 items-center justify-center gap-1 rounded-lg px-2 py-2.5 text-xs font-medium transition-all duration-200 sm:gap-2 sm:text-sm ${
+									selectedCard === 3
+										? "bg-white text-violet-700 shadow-sm ring-1 ring-violet-200 dark:bg-violet-500/15 dark:text-violet-300 dark:ring-violet-500/20"
+										: "text-zinc-500 hover:bg-white/60 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white"
+								}`}
 							>
 								<Lightbulb className="size-4 shrink-0" />
 								<span className="truncate">Conclusion</span>
@@ -215,7 +219,7 @@ export default function Strategic({ report, loading } : {report : ReportDetails 
 				</div>
 
 				{selectedCard !== 3 && (
-					<div className="grid h-auto w-full min-w-0 grid-cols-1 gap-4 px-2 py-4 sm:grid-cols-2 lg:min-h-[548px]">
+					<div className="grid h-auto w-full min-w-0 grid-cols-1 gap-4 py-5 sm:grid-cols-2 lg:min-h-[548px]">
 						{activeItems.map((item) => (
 							<Cards
 								key={item.title}
@@ -230,13 +234,13 @@ export default function Strategic({ report, loading } : {report : ReportDetails 
 				)}
 
 				{selectedCard === 3 && hasConclusion && (
-					<div className="h-[548px] grid w-full min-w-0 grid-cols-1 gap-4 px-2 py-4">
+					<div className="grid h-[548px] w-full min-w-0 grid-cols-1 gap-4 py-5">
 						<Cards
 							items={report?.conclusion ?? null}
 							icon={Lightbulb}
 							title="CONCLUSION"
 							description="Key insights and final takeaways from the analysis."
-							iconColor="text-gray-500"
+							iconColor="text-violet-500"
 						/>
 					</div>
 				)}

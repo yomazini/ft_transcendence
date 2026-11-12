@@ -25,29 +25,29 @@ export default function AboutPage() {
 
       <MissionSection />
 
-      <StorySection />
+      {/* <StorySection /> */}
 
       <TeamSection />
 
       <CultureSection />
 
-      <GallerySection />
+      {/* <GallerySection /> */}
 
-      <DevelopmentProcessSection />
+      {/* <DevelopmentProcessSection /> */}
 
-      <TechnologiesSection />
+      {/* <TechnologiesSection /> */}
 
       <ValuesSection />
 
-      <StatisticsSection />
+      {/* <StatisticsSection /> */}
 
-      <RoadmapSection />
+      {/* <RoadmapSection /> */}
 
-      <CommunitySection />
+      {/* <CommunitySection /> */}
 
-      <FAQSection />
+      {/* <FAQSection /> */}
 
-      <FinalCTASection />
+      {/* <FinalCTASection /> */}
 
       <FooterSection />
     </main>

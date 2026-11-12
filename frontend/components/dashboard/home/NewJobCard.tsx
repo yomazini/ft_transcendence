@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
@@ -65,16 +66,18 @@ export default function NewJobCard() {
 	const placeholder = MODES.find((m) => m.value === mode)?.placeholder;
 
 	return (
-		<section className="min-w-0 border p-5 sm:p-6 bg-card">
-			<h2 className="text-base font-semibold">New analysis job</h2>
-			<p className="mt-1 text-sm text-muted-foreground">
+		<section className="min-w-0 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-colors dark:border-white/10 dark:bg-zinc-900/60 sm:p-6">
+			<h2 className="text-base font-semibold tracking-tight text-zinc-900 dark:text-white">
+				New analysis job
+			</h2>
+			<p className="mt-1 text-sm leading-6 text-zinc-500 dark:text-zinc-400">
 				Pick what to analyze on Reddit. The status updates live while it runs.
 			</p>
 
-			<form className="mt-4 flex flex-col gap-3 sm:flex-row" onSubmit={handleSubmit} noValidate>
+			<form className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center" onSubmit={handleSubmit} noValidate>
 				<select
 					aria-label="Target type"
-					className="h-8 rounded-lg border border-input bg-background px-2.5 text-sm text-foreground dark:bg-zinc-900 dark:text-white"
+					className="h-10 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm font-medium text-zinc-800 outline-none transition-colors focus:border-violet-500 focus:ring-2 focus:ring-violet-500/15 dark:border-white/10 dark:bg-zinc-800 dark:text-zinc-100"
 					value={mode}
 					onChange={(e) => setMode(e.target.value as JobMode)}
 					disabled={submitting}
@@ -96,23 +99,27 @@ export default function NewJobCard() {
 					value={target}
 					onChange={(e) => setTarget(e.target.value)}
 					disabled={submitting}
-					className="sm:flex-1"
+					className="h-10 min-w-0 rounded-xl border-zinc-200 bg-zinc-50 px-4 text-sm shadow-none placeholder:text-zinc-400 focus-visible:border-violet-500 focus-visible:ring-violet-500/15 dark:border-white/10 dark:bg-zinc-800 dark:text-white dark:placeholder:text-zinc-500 sm:flex-1"
 				/>
 
-				<Button type="submit" disabled={submitting}>
+				<Button
+					type="submit"
+					disabled={submitting}
+					className="h-10 shrink-0 gap-2 rounded-xl bg-violet-600 px-5 font-medium text-white shadow-sm shadow-violet-500/20 transition-all hover:bg-violet-700 hover:shadow-md hover:shadow-violet-500/20 dark:bg-violet-600 dark:hover:bg-violet-500"
+				>
 					<Send className="size-4" />
 					{submitting ? "Sending..." : "Start job"}
 				</Button>
 			</form>
 
 			{error && (
-				<p role="alert" className="mt-3 text-sm text-destructive">
+				<p role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-400">
 					{error}
 				</p>
 			)}
 
 			{shownStatus && (
-				<p role="status" className="mt-3 text-sm">
+				<p role="status" className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600 dark:border-white/10 dark:bg-zinc-800/60 dark:text-zinc-300">
 					Job <span className="font-mono text-xs">{jobId}</span>:{" "}
 					<span className={`font-medium ${STATUS_STYLE[shownStatus] ?? ""}`}>{shownStatus}</span>
 					{lastError && <span className="text-destructive"> ({lastError})</span>}
