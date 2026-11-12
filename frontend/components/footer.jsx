@@ -3,35 +3,18 @@ import Link from "next/link";
 const product = [
   { label: "Features", href: "/#features" },
   { label: "Pricing", href: "/#pricing" },
-  { label: "Roadmap", href: "/about#roadmap" },
-  { label: "Changelog", href: "#" },
-];
-
-const resources = [
-  { label: "Documentation", href: "#" },
-  { label: "API Reference", href: "#" },
-  { label: "Blog", href: "#" },
-  { label: "Help Center", href: "#" },
 ];
 
 const company = [
   { label: "About", href: "/about" },
-  { label: "Careers", href: "#" },
   { label: "Contact", href: "/contact" },
 ];
 
 const legal = [
-  { label: "Terms of Service", href: "#" },
-  { label: "Privacy Policy", href: "#" },
-  { label: "Cookie Policy", href: "#" },
+  { label: "Terms of Service", href: "/terms" },
+  { label: "Privacy Policy", href: "/privacy" },
 ];
 
-const social = [
-  { label: "GitHub", href: "#" },
-  { label: "LinkedIn", href: "#" },
-  { label: "Discord", href: "#" },
-  { label: "X", href: "#" },
-];
 
 export function FooterSection() {
   return (
@@ -90,30 +73,7 @@ export function FooterSection() {
 
           </div>
 
-          {/* Resources */}
-
-          <div>
-
-            <h3 className="font-semibold">
-              Resources
-            </h3>
-
-            <ul className="mt-6 space-y-3">
-
-              {resources.map((item) => (
-                <li key={item.label}>
-                  <Link
-                    href={item.href}
-                    className="text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-
-            </ul>
-
-          </div>
+          
 
           {/* Company */}
 
@@ -178,19 +138,7 @@ export function FooterSection() {
               All rights reserved.
             </p>
 
-            <div className="flex items-center gap-6">
-
-              {social.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {item.label}
-                </Link>
-              ))}
-
-            </div>
+            
 
           </div>
 

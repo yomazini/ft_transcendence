@@ -1,42 +1,45 @@
+
 import { ReportDetails } from "@/app/types/report";
 import { AlertTriangle } from "lucide-react";
 
 export function FeaturesCard({ report } : { report : ReportDetails | null}) {
 	return (
-		<div className="w-full border p-5 bg-card">
-			<div className="mb-5 flex items-center justify-between">
+		<div className="w-full min-w-0 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-colors dark:border-white/10 dark:bg-zinc-900/60 sm:p-6">
+			<div className="mb-6 flex items-center justify-between">
 				<div>
-					<span>Features</span>
+					<span className="text-base font-semibold tracking-tight text-zinc-900 dark:text-white">
+						Features
+					</span>
 
-					<p className="mt-1 text-xs text-slate-400">
+					<p className="mt-1.5 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
 						AI-generated product improvement suggestions
 					</p>
 				</div>
 			</div>
 
-			<div className="divide-y divide-slate-100">
+			<div className="divide-y divide-zinc-100 dark:divide-white/10">
 				{(report?.blue_ocean?.features ?? []).map((feature, index) => {
 
 					return (
 						<div key={feature.name} className="flex gap-4 py-5 first:pt-0 last:pb-0">
-							<div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-slate-100 text-sm font-semibold text-slate-500">
+							<div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-violet-100 bg-violet-50 text-sm font-semibold text-violet-600 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-400">
 								{index + 1}
 							</div>
 
 							<div className="min-w-0 flex-1 space-y-2">
 								<div className="flex flex-wrap items-start justify-between gap-2">
-									<h4 className="text-sm font-semibold text-slate-800">
+									<h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
 										{feature.name}
 									</h4>
 
 									<span
-										className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize bg-gray-500`}
+										className={`rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-medium capitalize text-violet-700 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-300`}
 									>
 										{feature.priority}
 									</span>
 								</div>
 
-								<p className="text-sm leading-relaxed text-slate-500">
+								<p className="text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
 									{feature.justification}
 								</p>
 							</div>
@@ -46,23 +49,25 @@ export function FeaturesCard({ report } : { report : ReportDetails | null}) {
 				})}
 				{report?.blue_ocean?.weakest_suggestion && (
 					<div className="mt-5 pt-4">
-						<div className="mb-2 flex items-center gap-2">
-							<AlertTriangle className="size-4 text-amber-500" />
+						<div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-500/20 dark:bg-amber-500/5">
+							<div className="mb-2 flex items-center gap-2">
+								<AlertTriangle className="size-4 text-amber-500 dark:text-amber-400" />
 
-							<span className="text-sm font-semibold text-slate-700">
-								Weakest Suggestion
-							</span>
+								<span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+									Weakest Suggestion
+								</span>
+							</div>
+
+							<p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+								{report.blue_ocean.weakest_suggestion}
+							</p>
 						</div>
-
-						<p className="text-sm leading-relaxed text-slate-500">
-							{report.blue_ocean.weakest_suggestion}
-						</p>
 					</div>
 				)}
 			</div>
 
 			{!report?.blue_ocean?.features?.length && (
-				<p className="py-8 text-center text-sm text-slate-400">
+				<p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-8 text-center text-sm text-zinc-500 dark:border-white/10 dark:bg-zinc-800/40 dark:text-zinc-400">
 					No recommended features available.
 				</p>
 			)}

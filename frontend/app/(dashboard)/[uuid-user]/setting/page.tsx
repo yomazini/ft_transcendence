@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { changeEmail, changePassword, deleteMyData, exportMyData, isValidEmail, MIN_PASSWORD_LENGTH } from "@/lib/auth";
+import ApiKey from "@/components/srtting/apiKey";
 
 
 export default function SettingsProfile() {
@@ -145,12 +146,11 @@ export default function SettingsProfile() {
 
 	return (
 		<div
-			className="mx-auto w-full max-w-4xl space-y-8  border 
-			bg-[radial-gradient(#d4d4d4_1px,transparent_1px)] bg-size-[16px_16px]"
+			className="mx-auto w-full max-w-5xl space-y-5 p-4 pb-12 sm:p-6"
 		>
 			{/* Header */}
-			<div className=" border-b p-6 bg-background">
-				<h1 className="text-2xl font-semibold">Settings</h1>
+			<div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-900/60">
+				<h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">Settings</h1>
 
 				<p className="text-sm text-muted-foreground">
 					Manage your account and security settings.
@@ -158,9 +158,9 @@ export default function SettingsProfile() {
 			</div>
 
 			{/* Profile */}
-			<section className=" border-x-0 border bg-background p-6">
+			<section className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-white/10 dark:bg-zinc-900/60">
 				<div className="p-6">
-					<h2 className="text-lg font-semibold">Profile</h2>
+					<h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Profile</h2>
 
 					<p className="text-sm text-muted-foreground">
 						Manage your account information.
@@ -168,12 +168,12 @@ export default function SettingsProfile() {
 
 					{/* Avatar */}
 					<div className="mt-6 flex items-center gap-4">
-						<div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-lg font-semibold text-primary-foreground">
+						<div className="flex h-16 w-16 items-center justify-center rounded-full bg-violet-600 text-lg font-semibold text-white">
 							{initials}
 						</div>
 
 						<div>
-							<p className="font-medium">{currentEmail}</p>
+							<p className="font-medium text-zinc-900 dark:text-zinc-100">{currentEmail}</p>
 
 							<p className="text-sm text-muted-foreground">Your account</p>
 						</div>
@@ -187,7 +187,7 @@ export default function SettingsProfile() {
 					<div>
 						<Label htmlFor="email">Email address</Label>
 
-						<p className="mt-1 text-sm text-muted-foreground">
+						<p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
 							This email is used to access your account.
 						</p>
 					</div>
@@ -202,7 +202,7 @@ export default function SettingsProfile() {
 							value={newEmail}
 							onChange={(e) => setNewEmail(e.target.value)}
 							disabled={savingEmail}
-							className="pl-9"
+							className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
 						/>
 					</div>
 
@@ -220,13 +220,13 @@ export default function SettingsProfile() {
 								value={emailPassword}
 								onChange={(e) => setEmailPassword(e.target.value)}
 								disabled={savingEmail}
-								className="pl-9 pr-10"
+								className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 pr-10 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
 							/>
 
 							<button
 								type="button"
 								onClick={() => setShowEmailPassword(!showEmailPassword)}
-								className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+								className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400"
 							>
 								{showEmailPassword ? (
 									<EyeOff className="h-4 w-4" />
@@ -237,18 +237,18 @@ export default function SettingsProfile() {
 						</div>
 					</div>
 
-					{emailError && <p role="alert" className="text-sm text-destructive">{emailError}</p>}
-					{emailNotice && <p role="status" className="text-sm text-green-600">{emailNotice}</p>}
-					<div className="flex justify-end pt-2">
+					{emailError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{emailError}</p>}
+					{emailNotice && <p role="status" className="text-sm text-emerald-600 dark:text-emerald-400">{emailNotice}</p>}
+					<div className="flex justify-end pt-2 [&_button]:rounded-xl [&_button]:bg-violet-600 [&_button]:text-white [&_button]:hover:bg-violet-700">
 						<Button onClick={handleEmailUpdate} disabled={savingEmail}>{savingEmail ? "Saving..." : "Change email"}</Button>
 					</div>
 				</div>
 			</section>
 
 			{/* Password */}
-			<section className=" border-x-0 border-b-0  border bg-background p-6">
+			<section className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-white/10 dark:bg-zinc-900/60">
 				<div className="p-6">
-					<h2 className="text-lg font-semibold">Password</h2>
+					<h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Password</h2>
 
 					<p className="text-sm text-muted-foreground">
 						Update your password to keep your account secure.
@@ -270,13 +270,13 @@ export default function SettingsProfile() {
 								type={showCurrent ? "text" : "password"}
 								value={currentPassword}
 								onChange={(e) => setCurrentPassword(e.target.value)}
-								className="pl-9 pr-10"
+								className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 pr-10 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
 							/>
 
 							<button
 								type="button"
 								onClick={() => setShowCurrent(!showCurrent)}
-								className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+								className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400"
 							>
 								{showCurrent ? (
 									<EyeOff className="h-4 w-4" />
@@ -299,13 +299,13 @@ export default function SettingsProfile() {
 								type={showNew ? "text" : "password"}
 								value={newPassword}
 								onChange={(e) => setNewPassword(e.target.value)}
-								className="pl-9 pr-10"
+								className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 pr-10 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
 							/>
 
 							<button
 								type="button"
 								onClick={() => setShowNew(!showNew)}
-								className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+								className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400"
 							>
 								{showNew ? (
 									<EyeOff className="h-4 w-4" />
@@ -328,13 +328,13 @@ export default function SettingsProfile() {
 								type={showConfirm ? "text" : "password"}
 								value={confirmPassword}
 								onChange={(e) => setConfirmPassword(e.target.value)}
-								className="pl-9 pr-10"
+								className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 pr-10 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
 							/>
 
 							<button
 								type="button"
 								onClick={() => setShowConfirm(!showConfirm)}
-								className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+								className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400"
 							>
 								{showConfirm ? (
 									<EyeOff className="h-4 w-4" />
@@ -344,9 +344,9 @@ export default function SettingsProfile() {
 							</button>
 						</div>
 					</div>
-					{passwordError && <p role="alert" className="text-sm text-destructive">{passwordError}</p>}
-					{passwordNotice && <p role="status" className="text-sm text-green-600">{passwordNotice}</p>}
-					<div className="flex justify-end pt-2">
+					{passwordError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{passwordError}</p>}
+					{passwordNotice && <p role="status" className="text-sm text-emerald-600 dark:text-emerald-400">{passwordNotice}</p>}
+					<div className="flex justify-end pt-2 [&_button]:rounded-xl [&_button]:bg-violet-600 [&_button]:text-white [&_button]:hover:bg-violet-700">
 						<Button onClick={handlePasswordUpdate} disabled={savingPassword}>{savingPassword ? "Saving..." : "Update password"}
 
 						</Button>
@@ -355,9 +355,9 @@ export default function SettingsProfile() {
 			</section>
 
 			{/* GDPR section */}
-			<section className=" border-x-0 border-b-0 border bg-background p-6">
+			<section className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-white/10 dark:bg-zinc-900/60">
 				<div className="p-6">
-					<h2 className="text-lg font-semibold">Privacy & data</h2>
+					<h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Privacy & data</h2>
 
 					<p className="text-sm text-muted-foreground">
 						Your rights under the GDPR: get a copy of your data or delete your account.
@@ -369,15 +369,15 @@ export default function SettingsProfile() {
 				<div className="space-y-4 p-6">
 					<div>
 						<Label>Export my data</Label>
-						<p className="mt-1 text-sm text-muted-foreground">
+						<p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
 							Download everything InsightFlow stores about you as a JSON file.
 						</p>
 					</div>
 
-					{exportError && <p role="alert" className="text-sm text-destructive">{exportError}</p>}
-					{exportNotice && <p role="status" className="text-sm text-green-600">{exportNotice}</p>}
+					{exportError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{exportError}</p>}
+					{exportNotice && <p role="status" className="text-sm text-emerald-600 dark:text-emerald-400">{exportNotice}</p>}
 
-					<div className="flex justify-end">
+					<div className="flex justify-end [&_button]:rounded-xl">
 						<Button variant="outline" onClick={handlexport} disabled={exporting}>
 							<Download className="h-4 w-4" />
 							{exporting ? "Preparing..." : "Export my data"}
@@ -389,8 +389,8 @@ export default function SettingsProfile() {
 
 				<div className="space-y-4 p-6">
 					<div>
-						<Label htmlFor="delete-password" className="text-destructive">Delete my account</Label>
-						<p className="mt-1 text-sm text-muted-foreground">
+						<Label htmlFor="delete-password" className="text-red-600 dark:text-red-400">Delete my account</Label>
+						<p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
 							This permanently deletes your account. If you are the only member, your organization is deleted too. This cannot be undone.
 						</p>
 					</div>
@@ -406,24 +406,24 @@ export default function SettingsProfile() {
 							value={deletePassword}
 							onChange={(e) => { setDeletePassword(e.target.value); setConfirmDelete(false); }}
 							disabled={deleting}
-							className="pl-9 pr-10"
+							className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 pr-10 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
 						/>
 
 						<button
 							type="button"
 							onClick={() => setShowDeletePassword(!showDeletePassword)}
-							className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+							className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400"
 
 						>
 							{showDeletePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
 						</button>
 					</div>
-						{deleteError && <p role="alert" className="text-sm text-destructive">{deleteError}</p>}
+						{deleteError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{deleteError}</p>}
 						{confirmDelete && !deleteError && (
-							<p role="alert" className="text-sm text-destructive">Click again to confirm. Your account will be deleted.</p>
+							<p role="alert" className="text-sm text-red-600 dark:text-red-400">Click again to confirm. Your account will be deleted.</p>
 						)}
 					
-					<div className="flex justify-end gap-2">
+					<div className="flex justify-end gap-2 [&_button]:rounded-xl">
 						{confirmDelete && (
 							<Button variant="outline" onClick={() => setConfirmDelete(false)} disabled={deleting}>Cancel</Button>
 						)}
@@ -434,6 +434,9 @@ export default function SettingsProfile() {
 					</div>
 				</div>
 			</section>
+			{
+                user && <ApiKey orgId={user.org_id}/>
+            }
 		</div>
 	);
 }

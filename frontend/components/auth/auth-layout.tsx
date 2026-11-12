@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { ReactNode } from "react"
 
 interface AuthLayoutProps {
@@ -5,7 +6,7 @@ interface AuthLayoutProps {
 }
 
 export function AuthLayout({
-	children,
+  children,
 }: AuthLayoutProps) {
   return (
     <main className="min-h-screen bg-background">
@@ -17,18 +18,18 @@ export function AuthLayout({
 
           {/* Background image */}
           <video
-    className="absolute inset-0 h-full w-full object-cover"
-    autoPlay
-    loop
-    muted
-    playsInline
-  >
-    <source
-      src="https://images.shadcnspace.com/assets/video/wave-video-loop.mp4"
-      type="video/mp4"
-    />
-  </video>
-          
+            className="absolute inset-0 h-full w-full object-cover"
+            autoPlay
+            loop
+            muted
+            playsInline
+          >
+            <source
+              src="https://images.shadcnspace.com/assets/video/wave-video-loop.mp4"
+              type="video/mp4"
+            />
+          </video>
+
 
           {/* Overlay */}
           <div className="absolute inset-0 bg-black/50" />
@@ -38,9 +39,11 @@ export function AuthLayout({
 
             {/* Logo */}
             <div>
-              <h1 className="text-2xl font-bold">
-                InsightFlow
-              </h1>
+              <Link href={"/"} >
+                <h1 className="text-2xl font-bold">
+                  InsightFlow
+                </h1>
+              </Link>
             </div>
 
             {/* Main content */}
@@ -83,7 +86,7 @@ export function AuthLayout({
 
         </div>
 
-			</div>
+      </div>
 
     </main>
   )

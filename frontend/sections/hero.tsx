@@ -44,7 +44,7 @@ export function HeroSection() {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-500 opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-orange-500" />
           </span>
-          Live — scanning 2.4M+ Reddit threads right now
+          Turn Reddit discussions into strategy reports
         </div>
 
         {/* Heading */}
@@ -89,11 +89,6 @@ export function HeroSection() {
               Start free
               <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
-          </Button>
-
-          <Button size="lg" variant="outline" className="gap-2">
-            <PlayCircle className="h-4 w-4" />
-            Watch demo
           </Button>
         </div>
 

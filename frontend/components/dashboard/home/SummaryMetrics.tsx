@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Badge } from "@/components/ui/badge";
@@ -18,18 +19,18 @@ function MetricCard({
     color: string;
 }) {
     return (
-        <div className="w-full min-w-0 max-w-full p-4 bg-card">
+        <div className="w-full min-w-0 max-w-full rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-colors dark:border-white/10 dark:bg-zinc-900/60 sm:p-6">
             <div className="flex min-w-0 items-start justify-between gap-3">
 
                 <div className="min-w-0 flex-1">
                     <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
-                        <span className="text-xl font-semibold tracking-tight sm:text-2xl">
+                        <span className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white sm:text-3xl">
                             {value}
                         </span>
 
                         <Badge
                             variant="secondary"
-                            className={`border-0 bg-teal-50 dark:bg-teal-950 ${color}`}
+                            className={`rounded-lg border-0 bg-violet-50 px-2.5 py-1 text-xs font-medium dark:bg-violet-500/10 ${color}`}
                         >
                             Jobs
                         </Badge>
@@ -38,15 +39,15 @@ function MetricCard({
                     <Button
                         variant="outline"
                         size="sm"
-                        className="mt-3 max-w-full"
+                        className="mt-4 max-w-full rounded-xl border-zinc-200 bg-zinc-50 px-3 text-zinc-600 shadow-none transition-colors hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 dark:border-white/10 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-violet-500/10 dark:hover:text-violet-300"
                     >
                         <span className="truncate">{change}</span>
                         <ArrowRight className="ml-1 size-3.5 shrink-0" />
                     </Button>
                 </div>
 
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border">
-                    <Icon className="size-4" />
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-violet-100 bg-violet-50 text-violet-600 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-300">
+                    <Icon className="size-5" />
                 </div>
 
             </div>
@@ -63,10 +64,8 @@ export default function SummaryMetrics() {
         { status: "Queued", icon: Clock3, iconColor: 'purple-500', number: count("queued") },
     ]
 
-
-
     return (
-        <section className="bg-card grid w-full min-w-0 max-w-full grid-cols-1 border divide-y sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-3 lg:divide-x">
+        <section className="grid w-full min-w-0 max-w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {jobStatus.map((item, i) => (
                 <MetricCard
                     key={i}
@@ -76,6 +75,5 @@ export default function SummaryMetrics() {
                     color={item.iconColor} />
             ))}
         </section>
-
     )
 }
