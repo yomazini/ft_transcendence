@@ -88,6 +88,14 @@ export class AuthService {
 			throw new UnauthorizedException('Invalid credentials');
 		}
 		const role = user.user_roles_organization[0];
+		/** if 2fa anable > New path */
+		if (user.is_2fa_enabled) {
+			const two_factor_token = await this.jwt.signAsync({
+				sub: user.id,
+				purpose: '2fa'}, { expiresIn: '5m'});
+
+			return { two_factor_required: true, two_factor_token }
+		}
 		const access_token = await this.jwt.signAsync({
 			sub: user.id,
 			org_id: role.org_id,
@@ -122,6 +130,7 @@ export class AuthService {
 			id: user.id,
 			org_id: role.org_id,
 			email: user.email,
+			is_2fa_enabled: user.is_2fa_enabled,
 			role: role.role,
 			created_at: user.created_at,
 		};
@@ -145,6 +154,14 @@ export class AuthService {
 			return { signup_token };
 		}
 		/** 2. If the user exists, we log them in */
+		/** 2.a if 2fa anable > New path */
+		if (user.is_2fa_enabled) {
+			const two_factor_token = await this.jwt.signAsync({
+				sub: user.id,
+				purpose: '2fa'}, { expiresIn: '5m'});
+
+			return { two_factor_required: true, two_factor_token }
+		}
 		const role = user.user_roles_organization[0];
 		const access_token = await this.jwt.signAsync({
 			sub: user.id,

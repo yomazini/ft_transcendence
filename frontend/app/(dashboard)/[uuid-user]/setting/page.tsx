@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { changeEmail, changePassword, deleteMyData, exportMyData, isValidEmail, MIN_PASSWORD_LENGTH } from "@/lib/auth";
 import ApiKey from "@/components/srtting/apiKey";
+import TwoFactor from "@/components/srtting/twoFactor";
 
 
 export default function SettingsProfile() {
@@ -353,6 +354,8 @@ export default function SettingsProfile() {
 					</div>
 				</div>
 			</section>
+
+			{user && <TwoFactor enabled={!!user.is_2fa_enabled} />}
 
 			{/* GDPR section */}
 			<section className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-white/10 dark:bg-zinc-900/60">

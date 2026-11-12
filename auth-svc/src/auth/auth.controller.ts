@@ -1,5 +1,26 @@
-import { Body, Controller, Get, HttpCode, Post, Req, UseGuards, Res, Delete, Patch } from '@nestjs/common';
-import { AcceptInviteDto, ChangeEmailDto, ChangePasswordDto, Complete42Dto, DeleteAccountDto, ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from './dto';
+import {
+	Body,
+	Controller,
+	Get,
+	HttpCode,
+	Post,
+	Req,
+	UseGuards,
+	Res,
+	Delete,
+	Patch,
+} from '@nestjs/common';
+import {
+	AcceptInviteDto,
+	ChangeEmailDto,
+	ChangePasswordDto,
+	Complete42Dto,
+	DeleteAccountDto,
+	ForgotPasswordDto,
+	LoginDto,
+	RegisterDto,
+	ResetPasswordDto,
+} from './dto';
 import { AuthService } from './auth.service';
 import { JwtGuard } from './guard/jwt.guard';
 import { FortyTwoGuard } from './guard/42.guard';
@@ -18,7 +39,10 @@ export class AuthController {
 	) {}
 
 	@ApiResponse({ status: 201, description: 'User created' })
-	@ApiResponse({ status: 400, description: 'Invalid body or user already exists' })
+	@ApiResponse({
+		status: 400,
+		description: 'Invalid body or user already exists',
+	})
 	@Post('signup') /** POST /auth/signup */
 	register(@Body() registerDto: RegisterDto) {
 		return this.authService.register(registerDto);
@@ -51,15 +75,26 @@ export class AuthController {
 	@UseGuards(FortyTwoGuard)
 	@ApiResponse({ status: 302, description: 'Redirect (to 42 / to frontend)' })
 	async fortyTwoAuthCallback(@Req() req, @Res() res) {
-
 		const result = await this.authService.fortyTwoLogin(req.user);
 		if ('signup_token' in result) {
-			return res.redirect(`${process.env.FRONTEND_URL}/auth/42/complete#signup_token=${result.signup_token}`);
+			return res.redirect(
+				`${process.env.FRONTEND_URL}/auth/42/complete#signup_token=${result.signup_token}`,
+			);
 		}
-		return res.redirect(`${process.env.FRONTEND_URL}/auth/42/done#token=${result.access_token}`);
+		if ('two_factor_token' in result) {
+			return res.redirect(
+				`${process.env.FRONTEND_URL}/login/2fa#two_factor_token=${result.two_factor_token}`,
+			);
+		}
+		return res.redirect(
+			`${process.env.FRONTEND_URL}/auth/42/done#token=${result.access_token}`,
+		);
 	}
 
-	@ApiResponse({ status: 201, description: 'Account created, returns access_token' })
+	@ApiResponse({
+		status: 201,
+		description: 'Account created, returns access_token',
+	})
 	@ApiResponse({ status: 401, description: 'Invalid or expired signup_token' })
 	@Post('42/complete') /** POST /auth/42/complete */
 	complete42Auth(@Body() dto: Complete42Dto) {
@@ -67,7 +102,10 @@ export class AuthController {
 	}
 
 	@ApiResponse({ status: 201, description: 'Invite accepted' })
-	@ApiResponse({ status: 400, description: 'User already exists or organization deleted' })
+	@ApiResponse({
+		status: 400,
+		description: 'User already exists or organization deleted',
+	})
 	@ApiResponse({ status: 401, description: 'Invalid or expired invite token' })
 	@Post('invite/accept') /** POST /auth/invite/accept */
 	acceptInvitation(@Body() dto: AcceptInviteDto) {
@@ -79,9 +117,12 @@ export class AuthController {
 	@UseGuards(JwtGuard)
 	@HttpCode(200)
 	@ApiResponse({ status: 200, description: 'Password changed' })
-	@ApiResponse({ status: 401, description: 'Wrong current password or bad token' })
+	@ApiResponse({
+		status: 401,
+		description: 'Wrong current password or bad token',
+	})
 	changePassword(@Body() dto: ChangePasswordDto, @Req() req) {
-		return this.authService.changePassword(req.user.sub, dto); 
+		return this.authService.changePassword(req.user.sub, dto);
 		/** ⚠️ id from the token, never from the body
 		 * The token is signed by the server, so the id inside it (req.user.sub) cannot be faked.
 			The body is typed by the user, so anything in it can be a lie.
@@ -93,7 +134,10 @@ export class AuthController {
 	@UseGuards(JwtGuard)
 	@ApiResponse({ status: 200, description: 'Email changed' })
 	@ApiResponse({ status: 401, description: 'Bad token or password' })
-	@ApiResponse({ status: 400, description: 'Invalid email or email already in use' })
+	@ApiResponse({
+		status: 400,
+		description: 'Invalid email or email already in use',
+	})
 	changeEmail(@Body() dto: ChangeEmailDto, @Req() req) {
 		return this.authService.changeEmail(req.user.sub, dto);
 	}
@@ -108,7 +152,10 @@ export class AuthController {
 	@Post('reset-password') /** POST /auth/reset-password */
 	@HttpCode(200)
 	@ApiResponse({ status: 200, description: 'Password reset' })
-	@ApiResponse({ status: 400, description: 'Invalid body (new password too short)' })
+	@ApiResponse({
+		status: 400,
+		description: 'Invalid body (new password too short)',
+	})
 	@ApiResponse({ status: 401, description: 'Invalid or expired reset token' })
 	resetPassword(@Body() dto: ResetPasswordDto) {
 		return this.authService.resetPassword(dto);
@@ -129,7 +176,10 @@ export class AuthController {
 	@UseGuards(JwtGuard)
 	@HttpCode(204)
 	@ApiResponse({ status: 204, description: 'Account deleted' })
-	@ApiResponse({ status: 400, description: 'Last Admin of an organization that still has members' })
+	@ApiResponse({
+		status: 400,
+		description: 'Last Admin of an organization that still has members',
+	})
 	@ApiResponse({ status: 401, description: 'Bad token or password' })
 	deleteAccount(@Req() req, @Body() dto: DeleteAccountDto) {
 		return this.authService.deleteAccount(req.user.sub, dto);
@@ -143,10 +193,11 @@ export class AuthController {
 	@ApiResponse({ status: 401, description: 'Missing or invalid token' })
 	async logout(@Req() req) {
 		const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
-		if (token) { await this.denylist.add(token, req.user.exp); }
+		if (token) {
+			await this.denylist.add(token, req.user.exp);
+		}
 		this.metrics.logouts.inc();
 	}
-
 
 	@ApiBearerAuth()
 	/** TODO: Uderstand MORE */
@@ -155,7 +206,10 @@ export class AuthController {
 	 *  to a service that has no auth of its own (reporting-svc). */
 	@UseGuards(JwtGuard)
 	@HttpCode(204)
-	@ApiResponse({ status: 204, description: 'Valid, sets X-User-Id / X-Org-Id / X-Role' })
+	@ApiResponse({
+		status: 204,
+		description: 'Valid, sets X-User-Id / X-Org-Id / X-Role',
+	})
 	@ApiResponse({ status: 401, description: 'Missing or invalid token' })
 	verify(@Req() req, @Res({ passthrough: true }) res) {
 		res.setHeader('X-User-Id', req.user.sub);

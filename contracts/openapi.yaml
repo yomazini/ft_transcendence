@@ -23,7 +23,7 @@ components:
         Access token issued by auth-svc, valid 1 hour, signed HS256 with JWT_SECRET.
         Claims: sub (user id, uuid), org_id (uuid), role (Admin | Analyst | Viewer), iat, exp.
         There is no email claim. Tokens that carry a "purpose" claim (signup, invite,
-        reset) are single-use-case tokens and are refused as access tokens (401).
+        reset, 2fa) are single-use-case tokens and are refused as access tokens (401).
     apiKeyAuth:
       type: apiKey
       in: header
@@ -54,6 +54,7 @@ components:
         id: { type: string, format: uuid }
         org_id: { type: string, format: uuid }
         email: { type: string, format: email }
+        is_2fa_enabled: { type: boolean }
         role: { $ref: "#/components/schemas/Role" }
         created_at: { type: string, format: date-time }
 
@@ -64,6 +65,41 @@ components:
         access_token: { type: string }
         token_type: { type: string, example: "Bearer" }
         user: { $ref: "#/components/schemas/User" }
+
+    TwoFactorChallenge:
+      type: object
+      description: >
+        Returned by POST /auth/login instead of AuthResponse when the user has 2FA on.
+        The password was correct, but no access token is issued yet. Send
+        two_factor_token with the 6-digit code to POST /auth/2fa/verify.
+      required: [two_factor_required, two_factor_token]
+      properties:
+        two_factor_required: { type: boolean, enum: [true] }
+        two_factor_token:
+          type: string
+          description: JWT { sub, purpose "2fa" }, valid 5 minutes. Refused as an access token.
+
+    TwoFactorCode:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string, pattern: "^\\d{6}$", example: "123456", description: The 6-digit code from the authenticator app }
+
+    TwoFactorSetup:
+      type: object
+      required: [qr_code, otpauth_url]
+      properties:
+        qr_code: { type: string, description: "PNG QR code as a data URL (data:image/png;base64,...)" }
+        otpauth_url:
+          type: string
+          example: "otpauth://totp/InsightFlow:user%40example.com?secret=JBSWY3DPEHPK3PXP&issuer=InsightFlow"
+          description: The same secret as text, for apps that can't scan the QR code
+
+    TwoFactorState:
+      type: object
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
 
     Member:
       type: object
@@ -302,12 +338,18 @@ paths:
                 password: { type: string }
       responses:
         "200":
-          description: Login successful
+          description: >
+            Password correct. 2FA off: AuthResponse with the access token.
+            2FA on: TwoFactorChallenge (no access token), then call POST /auth/2fa/verify.
+            Check the body: access_token or two_factor_required.
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/AuthResponse" }
+              schema:
+                oneOf:
+                  - { $ref: "#/components/schemas/AuthResponse" }
+                  - { $ref: "#/components/schemas/TwoFactorChallenge" }
         "401":
-          description: Invalid credentials
+          description: Invalid credentials (same answer for an unknown email and a wrong password)
 
   /auth/me:
     get:
@@ -343,6 +385,8 @@ paths:
         "302":
           description: >
             Existing user: redirect to {FRONTEND_URL}/auth/42/done#token=<access_token>.
+            Existing user with 2FA on: no access token; redirect to
+            {FRONTEND_URL}/login/2fa#two_factor_token=<jwt valid 5 minutes>, then POST /auth/2fa/verify.
             First-time user: no account is created yet; redirect to
             {FRONTEND_URL}/auth/42/complete#signup_token=<jwt valid 10 minutes>.
         "401":
@@ -552,6 +596,102 @@ paths:
           description: Invalid parameters, or the caller is the last Admin of an organization that still has other members
         "401":
           description: Missing or invalid token, or wrong password
+
+  /auth/2fa/setup:
+    post:
+      summary: Start 2FA setup, returns a QR code (2FA stays off until /auth/2fa/enable)
+      operationId: setupTwoFactor
+      security: [{ bearerAuth: [] }]
+      responses:
+        "201":
+          description: >
+            A new TOTP secret is saved for the user and 2FA is still off. Calling setup
+            again before enable replaces the secret, so only the last QR code works.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TwoFactorSetup" }
+        "400":
+          description: 2FA is already on ("Disable 2FA first")
+        "401":
+          description: Missing or invalid token
+        "404":
+          description: User not found
+
+  /auth/2fa/enable:
+    post:
+      summary: Turn 2FA on with the first code from the authenticator app
+      operationId: enableTwoFactor
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TwoFactorCode" }
+      responses:
+        "200":
+          description: 2FA is on. The next logins ask for a code.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TwoFactorState" }
+        "400":
+          description: code is not 6 digits, 2FA is already on, or setup was not called first
+        "401":
+          description: Missing or invalid token, or wrong code ("Invalid code")
+        "404":
+          description: User not found
+
+  /auth/2fa/disable:
+    post:
+      summary: Turn 2FA off (needs a valid code) and delete the secret
+      operationId: disableTwoFactor
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TwoFactorCode" }
+      responses:
+        "200":
+          description: 2FA is off and the secret is deleted. Turning it on again needs a new setup.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TwoFactorState" }
+        "400":
+          description: code is not 6 digits, or 2FA is already off
+        "401":
+          description: Missing or invalid token, or wrong code ("Invalid code")
+        "404":
+          description: User not found
+
+  /auth/2fa/verify:
+    post:
+      summary: Second login step, swaps the two_factor_token and a code for the access token
+      operationId: verifyTwoFactor
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - { $ref: "#/components/schemas/TwoFactorCode" }
+                - type: object
+                  required: [two_factor_token]
+                  properties:
+                    two_factor_token: { type: string, description: From the /auth/login answer or the 42 callback redirect }
+      responses:
+        "200":
+          description: Code correct, same body as a normal login
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+        "400":
+          description: code is not 6 digits, or two_factor_token is missing or not a JWT
+        "401":
+          description: >
+            "Invalid or expired 2fa token" (bad signature, older than 5 minutes, wrong purpose,
+            or 2FA was turned off meanwhile), or "Invalid code". On a wrong code the same
+            two_factor_token can be sent again until it expires.
 
   /orgs/{id}:
     parameters:
