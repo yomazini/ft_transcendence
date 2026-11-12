@@ -17,17 +17,23 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiSecurity,
 } from '@nestjs/swagger';
-import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
+import { ApiKeyThrottlerGuard } from '../auth/api-key-throttler.guard';
 import { JobsService } from './jobs.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { RagQueryDto } from './dto/rag-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Public } from '../auth/public.decorator';
+import { RolesGuard } from '../auth/roles.guards';
+import { Roles } from '../auth/roles.decorators';
+import { RequeueJobDto } from './dto/requeueJob.dto';
 
 @ApiTags('Public API Gateway')
+@ApiSecurity('api-key')
 @Controller('api')
-@UseGuards(ThrottlerGuard, JwtAuthGuard)
+@UseGuards(ApiKeyThrottlerGuard, JwtAuthGuard, RolesGuard)
 export class JobsController {
   constructor(private readonly jobsService: JobsService) {}
 
@@ -38,41 +44,8 @@ export class JobsController {
   getHealth() {
     return { status: 'ok', service: 'gateway-svc' };
   }
-
-  @Public()
-  @Get('status')
-  @ApiOperation({ summary: 'Aggregated service health' })
-  @ApiResponse({ status: 200, description: 'Per-service status' })
-  async status() {
-    const targets = [
-      { service: 'gateway-svc', url: 'http://localhost:3001/api/health' },
-      { service: 'auth-svc', url: 'http://auth-svc:3002/auth/verify' },
-      { service: 'analysis-svc', url: 'http://analysis-svc:8001/health' },
-      { service: 'reporting-svc', url: 'http://reporting-svc:3003/health' },
-      { service: 'scraper-svc', url: 'http://scraper-svc:8000/health' },
-    ];
-
-    const results = await Promise.allSettled(
-      targets.map(async (t) => {
-        const res = await fetch(t.url, {
-          signal: AbortSignal.timeout(1500),
-        });
-        // 4xx means the process is reachable; auth-svc returns 401 on /verify.
-        return {
-          service: t.service,
-          status: res.status < 500 ? 'healthy' : 'unhealthy',
-        };
-      }),
-    );
-
-    return results.map((r, i) =>
-      r.status === 'fulfilled'
-        ? r.value
-        : { service: targets[i].service, status: 'unavailable' },
-    );
-  }
-
   @Post('jobs')
+  @Roles('Admin', 'Analyst')
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth()
   @Throttle({ default: { limit: 20, ttl: 60000 } })
@@ -87,10 +60,26 @@ export class JobsController {
     description: 'Too Many Requests — Rate limit exceeded',
   })
   createJob(@Body() body: CreateJobDto, @Req() req: any) {
-    return this.jobsService.createJob(body, req.user);
+    return this.jobsService.createJob(
+      body,
+      req.user,
+      req.headers?.authorization,
+    );
+  }
+
+  @Post('jobs/requeue')
+  @HttpCode(HttpStatus.OK)
+  @Roles('Admin', 'Analyst')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Queue an existing job again' })
+  @ApiResponse({ status: 200, description: 'Job queued' })
+  @ApiResponse({ status: 409, description: 'Job is running' })
+  requeueJob(@Body() dto: RequeueJobDto, @Req() req: any) {
+    return this.jobsService.requeueJob(dto.id, req.user);
   }
 
   @Put('jobs/:id')
+  @Roles('Admin', 'Analyst')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a job target/mode/persona' })
   @ApiResponse({ status: 200, description: 'Job updated' })
@@ -104,6 +93,7 @@ export class JobsController {
   }
 
   @Delete('jobs/:id')
+  @Roles('Admin')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a job and its comments/report' })
@@ -150,7 +140,7 @@ export class JobsController {
   @Get('reports/:id')
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Fetch synthesized SWOT & Blue Ocean Strategy Report',
+    summary: 'Fetch the latest SWOT & Blue Ocean Strategy Report for a job',
   })
   @ApiResponse({ status: 200, description: 'Report retrieved' })
   @ApiResponse({ status: 404, description: 'Report not found' })

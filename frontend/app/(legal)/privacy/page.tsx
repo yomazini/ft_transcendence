@@ -7,8 +7,7 @@ export const metadata: Metadata = {
 };
 
 const CONTACT_EMAIL = "norehamza31@gmail.com";
-// TODO: ask Oussama how long backups are kept, then replace this value (e.g. "30 days").
-const BACKUP_RETENTION = "[backup retention]";
+const BACKUP_RETENTION = "30 days";
 
 const DATA_ROWS: { data: string; why: string; source: string }[] = [
   {

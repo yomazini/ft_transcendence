@@ -1,11 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable } from "@nestjs/common";
 
 @Injectable()
 export class HealthService {
 	getHealth() {
 		return {
-			status: 'healthy',
-			service: 'reporting-svc',
+			status: "healthy",
+			service: "reporting-svc",
 		};
 	}
 }

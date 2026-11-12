@@ -1,3 +1,4 @@
+import hashlib
 import json
 
 import asyncpg
@@ -49,15 +50,20 @@ async def insert_comment(
 ):
     pool = await get_pool()
     embedding_str = "[" + ",".join(str(v) for v in embedding) + "]"
+    # Legacy payload path has no Reddit id, so reuse the row id.
+    reddit_id = comment_id
+    text_hash = hashlib.sha256(text.encode()).hexdigest()
     await pool.execute(
         """
-        INSERT INTO "Comments" (id, job_id, text, author, upvotes, sentiment_score, embedding)
-        VALUES ($1, $2, $3, $4, $5, $6, $7::vector)
+        INSERT INTO "Comments" (id, job_id, text, reddit_id, hash, author, upvotes, sentiment_score, embedding)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::vector)
         ON CONFLICT (id) DO NOTHING
         """,
         comment_id,
         job_id,
         text,
+        reddit_id,
+        text_hash,
         author,
         upvotes,
         sentiment_score,
@@ -96,9 +102,6 @@ async def insert_report(
         """
         INSERT INTO "Report" (id, job_id, swot, blue_ocean, conclusion)
         VALUES ($1, $2, $3::jsonb, $4::jsonb, $5)
-        ON CONFLICT (job_id) DO UPDATE
-        SET swot = EXCLUDED.swot, blue_ocean = EXCLUDED.blue_ocean,
-            conclusion = EXCLUDED.conclusion
         """,
         report_id,
         job_id,
@@ -125,7 +128,10 @@ async def get_comments_by_job(job_id: str) -> list[dict]:
 
 async def get_report_by_job(job_id: str) -> dict | None:
     pool = await get_pool()
-    row = await pool.fetchrow('SELECT * FROM "Report" WHERE job_id = $1', job_id)
+    row = await pool.fetchrow(
+        'SELECT * FROM "Report" WHERE job_id = $1 ORDER BY created_at DESC LIMIT 1',
+        job_id,
+    )
     return dict(row) if row else None
 
 

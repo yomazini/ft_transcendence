@@ -1,3 +1,4 @@
+import { ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { JobsController } from './jobs.controller';
@@ -34,6 +35,11 @@ describe('JobsController', () => {
     controller = module.get<JobsController>(JobsController);
     service = module.get<JobsService>(JobsService);
 
+    // Unit tests do not call auth-svc; use a deterministic plan.
+    jest
+      .spyOn(service as any, 'getPlanLimit')
+      .mockResolvedValue({ plan: 'free', maxJobs: 5 });
+
     // createJob now fails fast when the queue is unavailable.
     (service as any).scrapeQueue = {
       add: jest.fn().mockResolvedValue({ id: 'queue-job-1' }),
@@ -48,32 +54,6 @@ describe('JobsController', () => {
     it('should return health status', () => {
       const result = controller.getHealth();
       expect(result).toEqual({ status: 'ok', service: 'gateway-svc' });
-    });
-  });
-
-  describe('status', () => {
-    it('reports each service independently', async () => {
-      const fetchMock = jest
-        .spyOn(globalThis, 'fetch')
-        .mockImplementation(async (input: RequestInfo | URL) => {
-          const url = String(input);
-          if (url.includes('analysis-svc')) {
-            throw new Error('analysis down');
-          }
-          return { status: url.includes('auth-svc') ? 401 : 200 } as Response;
-        });
-
-      const result = await controller.status();
-
-      expect(result).toEqual([
-        { service: 'gateway-svc', status: 'healthy' },
-        { service: 'auth-svc', status: 'healthy' },
-        { service: 'analysis-svc', status: 'unavailable' },
-        { service: 'reporting-svc', status: 'healthy' },
-        { service: 'scraper-svc', status: 'healthy' },
-      ]);
-
-      fetchMock.mockRestore();
     });
   });
 
@@ -94,6 +74,22 @@ describe('JobsController', () => {
       expect(result.id).toBeDefined();
       expect(result.status).toBe('Queued');
       expect(result.target).toBe('r/freelance');
+    });
+
+    it('rejects the job when the plan limit is reached', async () => {
+      jest
+        .spyOn((service as any).databaseService, 'saveJobWithLimit')
+        .mockResolvedValue(false);
+
+      await expect(
+        controller.createJob(
+          {
+            mode: 'post',
+            target: 'https://www.reddit.com/r/test/comments/x/y/',
+          },
+          { user: mockUser },
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
     it('uses the organization description when no persona is sent', async () => {
@@ -155,14 +151,18 @@ describe('JobsController', () => {
   describe('EventsGateway', () => {
     it('should emit job:done and job:update events to the org room', async () => {
       const database = {
-        findJobById: jest.fn().mockResolvedValue({ id: 'job-123', org_id: 'org-1' }),
+        findJobById: jest
+          .fn()
+          .mockResolvedValue({ id: 'job-123', org_id: 'org-1' }),
       } as any;
       const gateway = new EventsGateway(database);
       const emitMock = jest.fn();
       const toMock = jest.fn().mockReturnValue({ emit: emitMock });
       gateway.server = { to: toMock } as any;
 
-      await gateway.broadcastJobStatus('job-123', 'done', { report_id: 'rep-456' });
+      await gateway.broadcastJobStatus('job-123', 'done', {
+        report_id: 'rep-456',
+      });
 
       expect(toMock).toHaveBeenCalledWith('org-1');
       expect(emitMock).toHaveBeenCalledWith('job:done', {

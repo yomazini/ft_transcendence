@@ -150,13 +150,11 @@ export async function logout(): Promise<void> {
 	try {
 		await fetch("/api/auth/logout", { method: "POST", headers: authHeaders() });
 	} finally {
-		localStorage.removeItem(TOKEN_KEY);
-		sessionStorage.removeItem(TOKEN_KEY);
+		clearToken();
 	}
 }
 
 /** POST /api/auth/change-password — needs the login token. */
-
 export async function changePassword(current_password: string, new_password: string): Promise<void> {
 	const response = await fetch("/api/auth/change-password", {
 		method: "POST",
@@ -185,6 +183,53 @@ export async function changeEmail(new_email: string, password: string): Promise<
 	return data;
 }
 
+export async function exportMyData(): Promise<void> {
+	const response = await fetch("/api/auth/gdpr/export", {
+		method: "POST",
+		headers: authHeaders(),
+	});
+
+	const data = await response.json().catch(() => null);
+
+	if (!response.ok) {
+		throw new Error(data?.message ?? "Could not export your data");
+	}
+
+	const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+	const url = URL.createObjectURL(blob);
+	const link = document.createElement("a");
+	link.href = url;
+	link.download = `insightflow-my-data-${new Date().toISOString().slice(0, 10)}.json`;
+	document.body.appendChild(link);
+	link.click();
+	link.remove();
+	URL.revokeObjectURL(url);
+}
+
+export async function deleteMyData(password: string): Promise<void> {
+	const response = await fetch("/api/auth/gdpr/delete", {
+		method: "DELETE",
+		headers: {  "Content-Type": "application/json" , ...authHeaders() },
+		body: JSON.stringify({ password }),
+	});
+
+	if (!response.ok) {
+		const data = await response.json().catch(() => null);
+		throw new Error(Array.isArray(data?.message) ? data.message.join(", ") : data?.message ?? "Could not delete the account");
+	}
+	localStorage.removeItem(TOKEN_KEY);
+	sessionStorage.removeItem(TOKEN_KEY);
+}
+
 export function getToken(): string | null {
 	return localStorage.getItem(TOKEN_KEY) ?? sessionStorage.getItem(TOKEN_KEY);
 }
+
+export function clearToken(): void {
+	localStorage.removeItem(TOKEN_KEY);
+	sessionStorage.removeItem(TOKEN_KEY);
+}
+
+
+
+

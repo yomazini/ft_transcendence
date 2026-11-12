@@ -32,16 +32,16 @@ services:
     container_name: nginx
     image: nginx-waf
     build: ./nginx
-    # Host port is configurable: 42's rootless Docker cannot bind ports below 1024.
-    ports: ["${HTTP_PORT:-8080}:8080"]
+    ports: ["${HTTP_PORT:-8080}:8080", "127.0.0.1:${PORT_GF:-3030}:${PORT_GF:-3030}"]
     environment:
-      # The OWASP rules allow only GET HEAD POST OPTIONS by default; the API also
-      # uses PATCH (change a role, edit the org) and DELETE (remove a member, a job, an account).
-      ALLOWED_METHODS: "GET HEAD POST OPTIONS PATCH DELETE PUT"
-    depends_on: [gateway-svc, frontend, auth-svc, reporting-svc]
+      PORT_GF: ${PORT_GF:-3030}
+      ALLOWED_METHODS: "GET POST PATCH DELETE PUT"
+    depends_on: [gateway-svc, frontend, auth-svc, reporting-svc, grafana]
+    volumes:
+      - "./nginx/cert:/etc/nginx/ssl:ro"
     healthcheck:
       # The image's own check calls https on 8443; this project serves plain http on 8080.
-      test: ["CMD-SHELL", "curl -fs http://localhost:8080/healthz || exit 1"]
+      test: ["CMD-SHELL", "curl -kfs https://localhost:8080/healthz || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -85,6 +85,7 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       vault: { condition: service_healthy }
+      redis: { condition: service_healthy }
     volumes:
       - "./vault/creds/auth-svc:/run/vault:ro" # [HOST_PATH]:[CONTAIENRT_PATH]:ro(readonly)
     networks: [ft_network]
@@ -142,8 +143,6 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
     depends_on:
-      minio-init:
-        condition: service_completed_successfully
       postgres: { condition: service_healthy }
       minio: { condition: service_healthy }
     networks: [ft_network]
@@ -155,16 +154,14 @@ services:
     container_name: minio
     image: minio
     build:
-      context: ./reporting-svc
+      context: ./restore-svc
       dockerfile: Dockerfile.minio
 
     volumes:
       - minio_data:/bitnami/minio/data
       - minio_certs:/certs
-      - ./vault/creds/minio:/run/vault:ro
+      - ./vault/creds/minio:/run/vault
 
-    tmpfs:
-      - /tmp/minio-vault:mode=0700,uid=0,gid=0
     depends_on:
       vault:
         condition: service_healthy
@@ -194,11 +191,12 @@ services:
       context: ./reporting-svc
       dockerfile: Dockerfile.postgres
     container_name: postgres
+    image: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./vault/creds/database:/run/vault:ro
       - ./reporting-svc/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
-
+    expose: ["5432"]
     depends_on:
       vault:
         condition: service_healthy
@@ -284,7 +282,7 @@ services:
       - "prometheus_data:/prometheus"
     # Prometheus has no login: published on this machine only. Grafana reaches it
     # inside ft_network at http://prometheus:9090.
-    ports: ["127.0.0.1:9090:9090"]
+    # ports: ["127.0.0.1:9090:9090"]
     networks: [ft_network]
     restart: unless-stopped
     # Owner: Mehdi
@@ -294,6 +292,11 @@ services:
     container_name: grafana
     image: grafana/grafana:13.2.4
     environment:
+      GF_SERVER_PROTOCOL: http
+      GF_SERVER_HTTP_PORT: 3030
+      GF_SERVER_DOMAIN: grafana.localhost
+      GF_SERVER_ROOT_URL: https://grafana.localhost:8080/
+      GF_SERVER_SERVE_FROM_SUB_PATH: "false"
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
       GF_AUTH_ANONYMOUS_ENABLED: "false" # no access without login
       GF_USERS_ALLOW_SIGN_UP: "false" # nobody can create an account
@@ -301,7 +304,7 @@ services:
       - "grafana_data:/var/lib/grafana"
       - "./grafana/provisioning:/etc/grafana/provisioning:ro"
       - "./grafana/dashboards:/var/lib/grafana/dashboards:ro"
-    ports: ["3030:3000"]
+    # ports: ["3040:3000"]
     depends_on: [prometheus]
     networks: [ft_network]
     restart: unless-stopped
@@ -368,20 +371,18 @@ services:
       - ft_network
 
     restart: "no"
-# new service to init minio
-  minio-init:
-    build:
-      context: ./restore-svc
-      dockerfile: Dockerfile.init
-    container_name: minio-init
+
+  gatus:
+    image: twinproduction/gatus:stable
+    container_name: gatus
+    restart: unless-stopped
+    environment:
+      GATUS_CONFIG_PATH: /config/config.yaml
+      SSL_CERT_FILE: /certs/server.pem
+    ports:
+      - "4443:8080"
     volumes:
-      - ./restore-svc/scripts/init-minio.sh:/scripts/init-minio.sh:ro
-      - ./vault/creds/minio:/run/vault:ro
-    depends_on:
-      vault:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
+      - ./gatus/config.yaml:/config/config.yaml:ro
+      - ./nginx/cert:/certs:ro
     networks:
       - ft_network
-    restart: "no"

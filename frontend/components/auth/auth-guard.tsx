@@ -2,19 +2,20 @@
 
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useQueryClient } from "@tanstack/react-query";
+import { clearToken } from "@/lib/auth";
 
-/** Shows the dashboard only to a logged-in user.
- *  No token, an expired or logged-out token (auth-svc answers 401), or another
- *  user's id in the URL: the visitor is sent away before any page is shown. */
 export function AuthGuard({ children }: { children: React.ReactNode }) {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const urlUserId = useParams<{ "uuid-user": string }>()["uuid-user"];
 	const { user, loading, error } = useCurrentUser();
 
 	useEffect(() => {
 		if (error) {
+			clearToken();
+			queryClient.clear();
 			router.replace("/login");
 		} else if (user && user.id !== urlUserId) {
 			router.replace(`/${user.id}/dashboard`);

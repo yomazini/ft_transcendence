@@ -1,16 +1,27 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Download, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { changeEmail, changePassword, isValidEmail, MIN_PASSWORD_LENGTH } from "@/lib/auth";
+import { changeEmail, changePassword, deleteMyData, exportMyData, isValidEmail, MIN_PASSWORD_LENGTH } from "@/lib/auth";
+
 
 export default function SettingsProfile() {
+	const router = useRouter();
+	const [exporting, setExporting] = useState(false);
+	const [exportNotice, setExportNotice] = useState("");
+	const [exportError, setExportError] = useState("");
+	const [deletePassword, setDeletePassword] = useState("");
+	const [showDeletePassword, setShowDeletePassword] = useState(false);
+	const [confirmDelete, setConfirmDelete] = useState(false);
+	const [deleting, setDeleting] = useState(false);
+	const [deleteError, setDeleteError] = useState("");
 	const queryClient = useQueryClient();
 	const { user } = useCurrentUser();
 	const currentEmail = user?.email ?? "";
@@ -89,6 +100,46 @@ export default function SettingsProfile() {
 			setPasswordError(err instanceof Error ? err.message : "Something went wrong.");
 		} finally {
 			setSavingPassword(false);
+		}
+	}
+
+	async function handlexport() {
+		setExportError("");
+		setExportNotice("");
+		setExporting(true);
+
+		try {
+			await exportMyData();
+			setExportNotice("Your data was downloaded. A receipt was sent to your email.");
+		} catch(err) {
+			setExportError(err instanceof Error ? err.message : "Something went wrong.");
+		} finally { setExporting(false); }
+	}
+
+	async function handleDelete() {
+		if (!deletePassword) {
+			setDeleteError("Enter your current password.");
+			return;
+		}
+
+		if (!confirmDelete) {
+			setConfirmDelete(true);
+			setDeleteError("");
+			return;
+		}
+
+		setDeleteError("");
+		setDeleting(true);
+
+		try {
+			await deleteMyData(deletePassword);
+			queryClient.clear();
+			router.replace("/");
+		} catch(err) {
+			setDeleteError(err instanceof Error ? err.message : "Something went wrong.");
+		} finally {
+			setDeleting(false);
+			setConfirmDelete(false);
 		}
 	}
 
@@ -298,6 +349,87 @@ export default function SettingsProfile() {
 					<div className="flex justify-end pt-2">
 						<Button onClick={handlePasswordUpdate} disabled={savingPassword}>{savingPassword ? "Saving..." : "Update password"}
 
+						</Button>
+					</div>
+				</div>
+			</section>
+
+			{/* GDPR section */}
+			<section className=" border-x-0 border-b-0 border bg-background p-6">
+				<div className="p-6">
+					<h2 className="text-lg font-semibold">Privacy & data</h2>
+
+					<p className="text-sm text-muted-foreground">
+						Your rights under the GDPR: get a copy of your data or delete your account.
+					</p>
+				</div>
+
+				<Separator />
+
+				<div className="space-y-4 p-6">
+					<div>
+						<Label>Export my data</Label>
+						<p className="mt-1 text-sm text-muted-foreground">
+							Download everything InsightFlow stores about you as a JSON file.
+						</p>
+					</div>
+
+					{exportError && <p role="alert" className="text-sm text-destructive">{exportError}</p>}
+					{exportNotice && <p role="status" className="text-sm text-green-600">{exportNotice}</p>}
+
+					<div className="flex justify-end">
+						<Button variant="outline" onClick={handlexport} disabled={exporting}>
+							<Download className="h-4 w-4" />
+							{exporting ? "Preparing..." : "Export my data"}
+						</Button>
+					</div>
+				</div>
+
+				<Separator />
+
+				<div className="space-y-4 p-6">
+					<div>
+						<Label htmlFor="delete-password" className="text-destructive">Delete my account</Label>
+						<p className="mt-1 text-sm text-muted-foreground">
+							This permanently deletes your account. If you are the only member, your organization is deleted too. This cannot be undone.
+						</p>
+					</div>
+
+					<div className="relative">
+						<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+						<Input
+							id="delete-password"
+							type={showDeletePassword ? "text" : "password"}
+							autoComplete="current-password"
+							placeholder="Current password"
+							value={deletePassword}
+							onChange={(e) => { setDeletePassword(e.target.value); setConfirmDelete(false); }}
+							disabled={deleting}
+							className="pl-9 pr-10"
+						/>
+
+						<button
+							type="button"
+							onClick={() => setShowDeletePassword(!showDeletePassword)}
+							className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+
+						>
+							{showDeletePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+						</button>
+					</div>
+						{deleteError && <p role="alert" className="text-sm text-destructive">{deleteError}</p>}
+						{confirmDelete && !deleteError && (
+							<p role="alert" className="text-sm text-destructive">Click again to confirm. Your account will be deleted.</p>
+						)}
+					
+					<div className="flex justify-end gap-2">
+						{confirmDelete && (
+							<Button variant="outline" onClick={() => setConfirmDelete(false)} disabled={deleting}>Cancel</Button>
+						)}
+						<Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+							<Trash2 className="h-4 w-4" />
+							{deleting ? "Deleting..." : confirmDelete ? "Yes, delete my account" : "Delete my account"}
 						</Button>
 					</div>
 				</div>

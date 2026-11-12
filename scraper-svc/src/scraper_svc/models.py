@@ -30,6 +30,7 @@ class Jobstatuses(str, enum.Enum):
     RUNNING = 'Running'
     DONE = 'Done'
     FAILED = 'Failed'
+    SCRAPING = 'Scraping'
 
 
 class Paymentstatus(str, enum.Enum):
@@ -83,8 +84,8 @@ class Organization(Base):
     description: Mapped[str] = mapped_column(String(200), nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False, server_default=text('CURRENT_TIMESTAMP'))
 
+    ApiKey: Mapped[list['ApiKey']] = relationship('ApiKey', back_populates='org')
     Job: Mapped[list['Job']] = relationship('Job', back_populates='org')
-    Messages: Mapped[list['Messages']] = relationship('Messages', back_populates='org')
     Subscription: Mapped[list['Subscription']] = relationship('Subscription', back_populates='org')
     role_and_organization: Mapped[list['RoleAndOrganization']] = relationship('RoleAndOrganization', back_populates='org')
     Payment: Mapped[list['Payment']] = relationship('Payment', back_populates='org')
@@ -105,8 +106,8 @@ class User(Base):
     is_2fa_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
     two_factor_secret: Mapped[Optional[str]] = mapped_column(Text)
 
+    ApiKey: Mapped[list['ApiKey']] = relationship('ApiKey', back_populates='user')
     Job: Mapped[list['Job']] = relationship('Job', back_populates='User_')
-    Messages: Mapped[list['Messages']] = relationship('Messages', back_populates='user')
     role_and_organization: Mapped[list['RoleAndOrganization']] = relationship('RoleAndOrganization', back_populates='user')
 
 
@@ -124,6 +125,33 @@ class PrismaMigrations(Base):
     finished_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     logs: Mapped[Optional[str]] = mapped_column(Text)
     rolled_back_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+
+
+class ApiKey(Base):
+    __tablename__ = 'ApiKey'
+    __table_args__ = (
+        ForeignKeyConstraint(['org_id'], ['Organization.id'], ondelete='CASCADE', onupdate='CASCADE', name='ApiKey_org_id_fkey'),
+        ForeignKeyConstraint(['user_id'], ['User.id'], ondelete='CASCADE', onupdate='CASCADE', name='ApiKey_user_id_fkey'),
+        PrimaryKeyConstraint('id', name='ApiKey_pkey'),
+        Index('ApiKey_key_hash_key', 'key_hash', unique=True),
+        Index('ApiKey_org_id_active_idx', 'org_id', 'active'),
+        Index('ApiKey_org_id_key', 'org_id', unique=True),
+        Index('ApiKey_user_id_key', 'user_id', unique=True)
+    )
+
+    id: Mapped[str] = mapped_column(Text, primary_key=True)
+    org_id: Mapped[str] = mapped_column(Text, nullable=False)
+    user_id: Mapped[str] = mapped_column(Text, nullable=False)
+    key_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    prefix: Mapped[str] = mapped_column(Text, nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False, server_default=text('CURRENT_TIMESTAMP'))
+    label: Mapped[Optional[str]] = mapped_column(Text)
+    last_used_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=3))
+    revoked_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=3))
+
+    org: Mapped['Organization'] = relationship('Organization', back_populates='ApiKey')
+    user: Mapped['User'] = relationship('User', back_populates='ApiKey')
 
 
 class Job(Base):
@@ -147,26 +175,6 @@ class Job(Base):
     org: Mapped['Organization'] = relationship('Organization', back_populates='Job')
     Comments: Mapped[list['Comments']] = relationship('Comments', back_populates='job')
     Report: Mapped[list['Report']] = relationship('Report', back_populates='job')
-
-
-class Messages(Base):
-    __tablename__ = 'Messages'
-    __table_args__ = (
-        ForeignKeyConstraint(['org_id'], ['Organization.id'], ondelete='CASCADE', onupdate='CASCADE', name='Messages_org_id_fkey'),
-        ForeignKeyConstraint(['user_id'], ['User.id'], ondelete='CASCADE', onupdate='CASCADE', name='Messages_user_id_fkey'),
-        PrimaryKeyConstraint('id', name='Messages_pkey')
-    )
-
-    id: Mapped[str] = mapped_column(Text, primary_key=True)
-    user_id: Mapped[str] = mapped_column(Text, nullable=False)
-    org_id: Mapped[str] = mapped_column(Text, nullable=False)
-    response: Mapped[str] = mapped_column(Text, nullable=False)
-    text_: Mapped[str] = mapped_column('text', Text, nullable=False)
-    read_status: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
-    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False, server_default=text('CURRENT_TIMESTAMP'))
-
-    org: Mapped['Organization'] = relationship('Organization', back_populates='Messages')
-    user: Mapped['User'] = relationship('User', back_populates='Messages')
 
 
 class Subscription(Base):
@@ -215,7 +223,8 @@ class Comments(Base):
     __table_args__ = (
         ForeignKeyConstraint(['job_id'], ['Job.id'], ondelete='CASCADE', onupdate='CASCADE', name='Comments_job_id_fkey'),
         ForeignKeyConstraint(['parent_id'], ['Comments.id'], ondelete='SET NULL', onupdate='CASCADE', name='Comments_parent_id_fkey'),
-        PrimaryKeyConstraint('id', name='Comments_pkey')
+        PrimaryKeyConstraint('id', name='Comments_pkey'),
+        Index('Comments_reddit_id_key', 'reddit_id', unique=True)
     )
 
     id: Mapped[str] = mapped_column(Text, primary_key=True)
@@ -223,6 +232,9 @@ class Comments(Base):
     text_: Mapped[str] = mapped_column('text', Text, nullable=False)
     upvotes: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False, server_default=text('CURRENT_TIMESTAMP'))
+    hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    reddit_id: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False, server_default=text('CURRENT_TIMESTAMP'))
     author: Mapped[Optional[str]] = mapped_column(Text)
     sentiment_score: Mapped[Optional[float]] = mapped_column(Double(53))
     embedding: Mapped[Optional[object]] = mapped_column(VECTOR)

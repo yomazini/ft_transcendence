@@ -178,6 +178,88 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       return [];
     }
   }
+  async countJobsByOrgSince(orgId: string, since: Date): Promise<number> {
+    if (!this.isConnected || !this.pool) {
+      return Array.from(this.inMemoryJobs.values()).filter(
+        (job) =>
+          job.org_id === orgId &&
+          new Date(job.created_at).getTime() >= since.getTime(),
+      ).length;
+    }
+
+    const res = await this.pool.query(
+      `SELECT count(*)::int AS count
+       FROM "Job"
+      WHERE org_id = $1 AND created_at >= $2`,
+      [orgId, since],
+    );
+    return res.rows[0]?.count ?? 0;
+  }
+
+  async saveJobWithLimit(
+    job: JobRecord,
+    maxJobs: number,
+    since: Date,
+  ): Promise<boolean> {
+    if (!this.isConnected || !this.pool) {
+      if (this.isProduction) {
+        throw new ServiceUnavailableException('database unavailable');
+      }
+      // One synchronous block: Node cannot interleave another request here.
+      const count = Array.from(this.inMemoryJobs.values()).filter(
+        (j) =>
+          j.org_id === job.org_id &&
+          new Date(j.created_at).getTime() >= since.getTime(),
+      ).length;
+      if (count >= maxJobs) return false;
+      this.inMemoryJobs.set(job.id, job);
+      return true;
+    }
+
+    // Serialize count + insert per org so parallel creates cannot exceed the plan.
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1::text))', [
+        job.org_id,
+      ]);
+
+      const countRes = await client.query(
+        `SELECT count(*)::int AS count
+         FROM "Job"
+        WHERE org_id = $1 AND created_at >= $2`,
+        [job.org_id, since],
+      );
+      if ((countRes.rows[0]?.count ?? 0) >= maxJobs) {
+        await client.query('ROLLBACK');
+        return false;
+      }
+
+      await client.query(
+        `INSERT INTO "Job"
+        (id, org_id, created_by, target, mode, status, customer_persona, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status`,
+        [
+          job.id,
+          job.org_id,
+          job.created_by,
+          job.target,
+          this.normalizeJobMode(job.mode),
+          this.normalizeJobStatus(job.status),
+          JSON.stringify(job.customer_persona),
+          new Date(job.created_at),
+        ],
+      );
+      await client.query('COMMIT');
+      return true;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
 
   async updateJob(
     id: string,
@@ -263,22 +345,11 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     if (this.isConnected && this.pool) {
       try {
         const res: QueryResult = await this.pool.query(
-          `SELECT id, job_id, swot, blue_ocean, conclusion, created_at FROM "Report" WHERE job_id = $1 OR id = $1;`,
+          `SELECT id, job_id, swot, blue_ocean, conclusion, created_at FROM "Report" WHERE job_id = $1 OR id = $1 ORDER BY created_at DESC LIMIT 1;`,
           [jobId],
         );
         if (res.rows.length > 0) {
-          const row = res.rows[0];
-          return {
-            id: row.id,
-            job_id: row.job_id,
-            swot: row.swot,
-            blue_ocean: row.blue_ocean,
-            conclusion: row.conclusion,
-            created_at:
-              row.created_at instanceof Date
-                ? row.created_at.toISOString()
-                : String(row.created_at),
-          };
+          return this.mapReport(res.rows[0]);
         }
       } catch (err: any) {
         this.logger.warn(`Postgres report lookup failed: ${err.message}`);
@@ -286,6 +357,20 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     }
 
     return this.inMemoryReports.get(jobId) || null;
+  }
+
+  private mapReport(row: any): ReportRecord {
+    return {
+      id: row.id,
+      job_id: row.job_id,
+      swot: row.swot,
+      blue_ocean: row.blue_ocean,
+      conclusion: row.conclusion,
+      created_at:
+        row.created_at instanceof Date
+          ? row.created_at.toISOString()
+          : String(row.created_at),
+    };
   }
 
   private normalizeJobMode(mode: string): string {
@@ -298,6 +383,23 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     return map[mode.toLowerCase()] || 'Subreddit';
   }
 
+  async findApiKeyByHash(hash: string) {
+    if (!this.isConnected || !this.pool) return null;
+    const res = await this.pool.query(
+      `SELECT user_id, org_id FROM "ApiKey" WHERE key_hash = $1  AND active= true LIMIT 1`,
+      [hash],
+    );
+    return res.rows[0] ?? null;
+  }
+
+  async touchApiKey(hash: string) {
+    if (!this.isConnected || !this.pool) return;
+    await this.pool.query(
+      `UPDATE "ApiKey" SET last_used_at = now() WHERE key_hash=$1 `,
+      [hash],
+    );
+  }
+
   private normalizeJobStatus(status: string): string {
     const map: Record<string, string> = {
       queued: 'Queued',
@@ -307,6 +409,4 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     };
     return map[status.toLowerCase()] || 'Queued';
   }
-
-
 }

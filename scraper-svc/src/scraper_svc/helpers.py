@@ -84,6 +84,8 @@ def add_post(session: Session, job_id, data:list[dict[str, Any]]) -> int:
 		text_=body,
 		upvotes=post_data["ups"],
 		author=post_data["author"],
+		reddit_id=post_data["name"],
+		hash="a",
 		parent_id=None
 	)
 	session.add(post)
@@ -101,6 +103,8 @@ def add_comments(session: Session, job_id:str, parent_id: str, data: list[dict[s
 			text_=comment_data["body"],
 			upvotes=comment_data["ups"],
 			author=comment_data["author"],
+			reddit_id=comment_data["name"],
+			hash="a",
 			parent_id=parent_id
 		)
 		session.add(comment)
