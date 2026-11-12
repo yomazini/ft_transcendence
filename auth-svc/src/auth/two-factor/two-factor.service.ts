@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { authenticator } from 'otplib';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as QRCode from 'qrcode';
@@ -35,5 +35,32 @@ export class TwoFactorService {
 
 		/* fn. return QR code + link url */
 		return { qr_code: qrcode, otpauth_url }
+	}
+
+	/* POST /auth/2fa/enable {code} */
+	async enable(userId: string, code: string) {
+
+		/* 0. user secret + is_2fa_enabled CHECK */
+		const user = await this.prisma.user.findUnique({
+			where: { id: userId },
+			select: { two_factor_secret: true, is_2fa_enabled: true }
+		})
+
+		if (!user) { throw new NotFoundException() /* 404 */ }
+		if (user.is_2fa_enabled) { throw new BadRequestException('2FA is already enabled') /* 400 */ }
+		if (!user.two_factor_secret) { throw new BadRequestException('Run 2FA setup first') /* 400 */ }
+
+		/* 1. Check the 6 digits against the saved secret (current 30 s window) */
+		const valid = authenticator.check(code, user.two_factor_secret);
+		if (!valid) { throw new UnauthorizedException('Invalid code') /* 401 */ }
+
+		/* 2. The phone holds the secret: turn 2FA on */
+		await this.prisma.user.update({
+			where: { id: userId },
+			data: { is_2fa_enabled: true },
+		});
+
+		/* fn. return the new state */
+		return { enabled: true };
 	}
 }
