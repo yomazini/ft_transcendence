@@ -22,5 +22,7 @@ chmod 644 /tmp/postgres-health-user /tmp/postgres-health-db
 
 echo "Starting PostgreSQL..."
 
+./start-postgres.sh &
+
 exec /usr/local/bin/docker-entrypoint.sh "$@"
 

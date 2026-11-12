@@ -26,6 +26,10 @@
 				{
 					"name": "database",
 					"env": "POSTGRES_DB"
+				},
+				{
+					"name": "database_url",
+					"env": "DATABASE_URL"
 				}
 			]
 		},

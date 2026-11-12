@@ -300,7 +300,7 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 	}
 
 	return (
-		<Card className="w-full h-full min-w-0 max-w-full ">
+		<Card className="w-full min-w-0 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-colors dark:border-white/10 dark:bg-zinc-900/60 sm:p-6">
 			<CardHeader className="border-b">
 				<div className="flex flex-wrap items-start justify-between gap-4">
 					<div>
