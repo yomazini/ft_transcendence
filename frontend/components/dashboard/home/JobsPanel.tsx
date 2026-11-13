@@ -10,6 +10,7 @@ import type { JobStatus } from "@/lib/api/jobs";
 
 const STATUS_STYLE: Record<JobStatus, string> = {
 	queued: "bg-muted text-muted-foreground",
+	scraping: "bg-blue-500/15 text-orange-500",
 	running: "bg-blue-500/15 text-blue-500",
 	done: "bg-green-500/15 text-green-500",
 	failed: "bg-destructive/15 text-destructive",

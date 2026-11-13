@@ -1,6 +1,6 @@
 import { authHeaders } from "@/lib/auth";
 
-export type JobStatus = "queued" | "running" | "done" | "failed";
+export type JobStatus = "queued" | "running" | "scraping" | "done" | "failed";
 
 export interface JobItem {
 	id: string;
