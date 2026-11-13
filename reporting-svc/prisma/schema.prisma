@@ -76,7 +76,6 @@ model Organization {
     payment           Payment[]
     description       String                  @db.VarChar(200)
     created_at        DateTime                @default(now())
-    counter           Int                     @default(0)
     apiKeys           ApiKey?
 }
 
@@ -101,7 +100,6 @@ model User {
     email                   String                  @unique
     password                String
     user_roles_organization role_and_organization[]
-    // jobs                    Job[]
     two_factor_secret       String?
     is_2fa_enabled          Boolean                 @default(false)
     email_verified          Boolean                 @default(false)
@@ -142,9 +140,7 @@ model Job {
     id               String       @id @default(uuid())
     organization     Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
     org_id           String
-    // user             User?        @relation(fields: [created_by], references: [id], onDelete: SetNull)
     updatable        Boolean      @default(true)
-    // created_by       String?
     target           String
     name             String
     mode             JobModes     @default(Keyword)
