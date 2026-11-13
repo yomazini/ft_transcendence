@@ -610,7 +610,7 @@ export default function BillingPage() {
   );
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 p-4 pb-12 md:p-8">
+    <div className="page-d"> {/*mx-auto max-w-9xl space-y-8 p-4 pb-12 md:p-8*/}
       <BillingHeader />
       <PaymentVerification
         verifying={verifying}

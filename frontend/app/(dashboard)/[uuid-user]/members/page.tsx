@@ -67,7 +67,7 @@ export default function MembersPage() {
 	}
 
 	return (
-		<main className="mx-auto w-full max-w-[1730px] space-y-5 p-4 sm:p-5 lg:p-6">
+		<main className="page-d"> {/*mx-auto w-full max-w-9xl space-y-5 p-4 sm:p-5 lg:p-6*/}
 			<section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-zinc-900/60 sm:p-6">
 				<h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-white">
 					Members

@@ -147,7 +147,7 @@ export default function SettingsProfile() {
 
 	return (
 		<div
-			className="mx-auto w-full max-w-5xl space-y-5 p-4 pb-12 sm:p-6"
+			className="page-d" //mx-auto w-full max-w-5xl space-y-5 p-4 pb-12 sm:p-6
 		>
 			{/* Header */}
 			<div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-900/60">

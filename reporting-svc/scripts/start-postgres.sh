@@ -13,6 +13,6 @@ done
 
 export DATABASE_URL=$(echo "$JSON" | jq -er '.data.data.database_url')
 
-echo "mwaahhhhhhhhhhhhhhhhhhhhhhhhhh"
-
 node /app/node_modules/prisma/build/index.js migrate deploy
+
+unset DATABASE_URL

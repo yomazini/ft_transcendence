@@ -76,6 +76,7 @@ model Organization {
     payment           Payment[]
     description       String                  @db.VarChar(200)
     created_at        DateTime                @default(now())
+    counter           Int                     @default(1)
     apiKeys           ApiKey?
 }
 
@@ -86,14 +87,13 @@ enum PriceSensitivity {
 }
 
 model SubJob {
-    id         String      @id @default(uuid())
+    id         String   @id @default(uuid())
     job_id     String
-    job        Job         @relation(fields: [job_id], references: [id], onDelete: Cascade)
-    nex_id     String?     @unique
-    status     JobStatuses @default(Running)
+    job        Job      @relation(fields: [job_id], references: [id], onDelete: Cascade)
+    next_id    String?  @unique
     url        String
     data       Json?
-    created_at DateTime    @default(now())
+    created_at DateTime @default(now())
 }
 
 model User {
@@ -101,7 +101,7 @@ model User {
     email                   String                  @unique
     password                String
     user_roles_organization role_and_organization[]
-    jobs                    Job[]
+    // jobs                    Job[]
     two_factor_secret       String?
     is_2fa_enabled          Boolean                 @default(false)
     email_verified          Boolean                 @default(false)
@@ -142,11 +142,11 @@ model Job {
     id               String       @id @default(uuid())
     organization     Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
     org_id           String
-    user             User?        @relation(fields: [created_by], references: [id], onDelete: SetNull)
+    // user             User?        @relation(fields: [created_by], references: [id], onDelete: SetNull)
     updatable        Boolean      @default(true)
-    created_by       String?
+    // created_by       String?
     target           String
-    updated_at       DateTime     @default(now())
+    name             String
     mode             JobModes     @default(Keyword)
     status           JobStatuses  @default(Queued)
     customer_persona Json?
