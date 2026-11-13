@@ -46,6 +46,7 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --container-9xl: 100rem;
 }
 
 :root {
@@ -122,87 +123,30 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
   html {
     @apply font-sans;
   }
 }
 
 @layer components {
-	.job-status-card {
-		@apply flex min-w-0 items-center gap-2 bg-white opacity-100 px-5 py-2 duration-200 ;
-	}
+  .stat-card-icon-box {
+    @apply flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-gray-50;
+  }
 
-	.job-status-icon-box {
-		@apply flex min-w-0 items-center transition-colors;
-	}
+  .stat-list-item {
+    @apply flex items-center gap-3 rounded-lg border border-transparent px-3 py-2 text-sm font-medium text-slate-700 transition-all duration-200 hover:border-gray-200 hover:bg-gray-50 hover:text-slate-900;
+  }
 
-	.job-status-label {
-		@apply min-w-0 sm:inline leading-none sm:flex;
-	}
+  .stat-list-dot {
+    @apply h-1.5 w-1.5 shrink-0 rounded-full bg-gray-400 transition-all duration-200 group-hover:scale-100 group-hover:bg-gray-100;
+  }
 
-	.job-status-label-text {
-		@apply truncate text-sm font-medium uppercase tracking-wide text-slate-400;
-	}
-
-	.job-status-value {
-		@apply mt-2 truncate text-xl font-bold text-slate-800;
-	}
-
-	.border-rounded {
-		@apply rounded-sm border border-slate-200;
-	}
-
-.btn-primary {
-	@apply min-w-0! h-8! px-3! text-xs!
-		inline-flex items-center justify-center gap-1
-		rounded-md
-		bg-black text-white;
-}
-
-	.btn-secondary {
-		@apply relative! flex! items-center! gap-2! rounded-lg! border! border-slate-200! px-5! py-2! text-sm! font-semibold! shadow-sm! transition-all! duration-200! hover:border-gray-300! hover:bg-gray-50! hover:text-gray-600! hover:shadow-md!;
-	}
-
-	.sidebar-hover-lift {
-		@apply transition-all! duration-200! hover:-translate-y-[5px]! hover:shadow-[0_2px_8px_oklch(64.6%_0.222_41.116_/_0.2)]!;
-	}
-
-	.sidebar-icon-box {
-		@apply flex size-10 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-semibold;
-	}
-
-	.sidebar-avatar-box {
-		@apply flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground;
-	}
-
-	.job-menu-button {
-		@apply relative! h-10! rounded-lg! border! border-transparent! bg-white! px-3! text-sm! font-medium! text-slate-700! shadow-sm! transition-all! duration-200! hover:border-gray-200! hover:bg-gray-50! hover:text-slate-900! hover:shadow-md!;
-	}
-
-	.job-dot {
-		@apply h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300 transition-all duration-200 group-hover:scale-125 group-hover:bg-gray-500;
-	}
-
-	.stat-card {
-		@apply h-full w-full min-w-0;
-	}
-
-	.stat-card-glow {
-		@apply pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gray-400/5 blur-3xl transition-all;
-	}
-
-	.stat-card-icon-box {
-		@apply flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-gray-50;
-	}
-
-	.stat-list-item {
-		@apply flex items-center gap-3 rounded-lg border border-transparent px-3 py-2 text-sm font-medium text-slate-700 transition-all duration-200 hover:border-gray-200 hover:bg-gray-50 hover:text-slate-900;
-	}
-
-	.stat-list-dot {
-		@apply h-1.5 w-1.5 shrink-0 rounded-full bg-gray-400 transition-all duration-200 group-hover:scale-100 group-hover:bg-gray-100;
-	}
+  .page-d {
+    @apply min-w-0 w-full mx-auto max-w-9xl space-y-3 bg-background p-3 text-foreground sm:p-5 lg:p-6
+  }
 }
