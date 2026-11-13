@@ -77,6 +77,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     authorization?: string,
   ) {
     const target = dto.target.trim();
+    const name = dto.name?.trim() || target;
     const jobId = randomUUID();
     const now = new Date().toISOString();
 
@@ -88,6 +89,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       id: jobId,
       org_id: user.org_id,
       created_by: user.id,
+      name,
       target,
       mode: JOB_MODES[dto.mode.toLowerCase()],
       status: 'Queued',
@@ -252,11 +254,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
 
   async updateJob(id: string, dto: UpdateJobDto, user: AuthenticatedUser) {
     await this.getJobById(id, user);
-    await this.databaseService.updateJob(id, user.org_id, {
-      target: dto.target,
-      mode: dto.mode ? JOB_MODES[dto.mode.toLowerCase()] : undefined,
-      customer_persona: dto.customer_persona,
-    });
+    await this.databaseService.updateJob(id, user.org_id, dto.name.trim());
     return this.getJobById(id, user);
   }
 

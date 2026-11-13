@@ -81,7 +81,7 @@ export class JobsController {
   @Put('jobs/:id')
   @Roles('Admin', 'Analyst')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update a job target/mode/persona' })
+  @ApiOperation({ summary: 'Update a job name' })
   @ApiResponse({ status: 200, description: 'Job updated' })
   @ApiResponse({ status: 404, description: 'Job not found' })
   updateJob(

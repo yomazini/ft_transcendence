@@ -1,4 +1,9 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateJobDto } from './create-job.dto';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsString } from 'class-validator';
 
-export class UpdateJobDto extends PartialType(CreateJobDto) {}
+export class UpdateJobDto {
+  @ApiProperty({ example: 'Freelance pricing research' })
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+}

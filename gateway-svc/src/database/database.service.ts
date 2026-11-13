@@ -10,8 +10,9 @@ import { Pool, QueryResult } from 'pg';
 export interface JobRecord {
   id: string;
   org_id: string;
-  created_by: string;
+  created_by: string | null;
   target: string;
+  name: string;
   mode: string;
   status: string;
   customer_persona: any;
@@ -98,15 +99,16 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   /** The latest jobs of one organization, newest first (dashboard job list). */
   async findJobsByOrg(orgId: string, limit = 50): Promise<JobRecord[]> {
     const res: QueryResult = await this.db.query(
-      `SELECT id, org_id, created_by, target, mode, status, customer_persona, created_at
+      `SELECT id, org_id, target, name, mode, status, customer_persona, created_at
          FROM "Job" WHERE org_id = $1 ORDER BY created_at DESC LIMIT $2;`,
       [orgId, limit],
     );
     return res.rows.map((row) => ({
       id: row.id,
       org_id: row.org_id,
-      created_by: row.created_by,
+      created_by: null,
       target: row.target,
+      name: row.name,
       mode: String(row.mode).toLowerCase(),
       status: String(row.status).toLowerCase(),
       customer_persona: row.customer_persona,
@@ -143,14 +145,14 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
       await client.query(
         `INSERT INTO "Job"
-        (id, org_id, created_by, target, mode, status, customer_persona, created_at)
+        (id, org_id, target, name, mode, status, customer_persona, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status`,
         [
           job.id,
           job.org_id,
-          job.created_by,
           job.target,
+          job.name,
           this.normalizeJobMode(job.mode),
           this.normalizeJobStatus(job.status),
           JSON.stringify(job.customer_persona),
@@ -167,32 +169,10 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async updateJob(
-    id: string,
-    orgId: string,
-    fields: {
-      target?: string;
-      mode?: string;
-      customer_persona?: unknown;
-    },
-  ): Promise<void> {
+  async updateJob(id: string, orgId: string, name: string): Promise<void> {
     await this.db.query(
-      `
-        UPDATE "Job"
-        SET target = COALESCE($1, target),
-            mode = COALESCE($2::"JobModes", mode),
-            customer_persona = COALESCE($3::jsonb, customer_persona)
-        WHERE id = $4 AND org_id = $5;
-      `,
-      [
-        fields.target ?? null,
-        fields.mode ?? null,
-        fields.customer_persona
-          ? JSON.stringify(fields.customer_persona)
-          : null,
-        id,
-        orgId,
-      ],
+      `UPDATE "Job" SET name = $1 WHERE id = $2 AND org_id = $3;`,
+      [name, id, orgId],
     );
   }
 
@@ -205,7 +185,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
   async findJobById(id: string): Promise<JobRecord | null> {
     const res: QueryResult = await this.db.query(
-      `SELECT id, org_id, created_by, target, mode, status, customer_persona, created_at FROM "Job" WHERE id = $1;`,
+      `SELECT id, org_id, target, name, mode, status, customer_persona, created_at FROM "Job" WHERE id = $1;`,
       [id],
     );
     if (res.rows.length === 0) {
@@ -216,8 +196,9 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     return {
       id: row.id,
       org_id: row.org_id,
-      created_by: row.created_by,
+      created_by: null,
       target: row.target,
+      name: row.name,
       mode: row.mode,
       status: String(row.status).toLowerCase(),
       customer_persona: row.customer_persona,
