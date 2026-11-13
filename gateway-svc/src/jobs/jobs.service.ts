@@ -32,6 +32,10 @@ const JOB_MODES: Record<string, string> = {
   user: 'User',
 };
 
+// BullMQ has no built-in unlimited value. It counts attempts, so use the
+// largest safe integer instead of Infinity (Infinity is not valid JSON).
+const UNLIMITED_ATTEMPTS = Number.MAX_SAFE_INTEGER;
+
 @Injectable()
 export class JobsService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(JobsService.name);
@@ -142,7 +146,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
           },
           {
             jobId,
-            attempts: 3,
+            attempts: UNLIMITED_ATTEMPTS,
             backoff: {
               type: 'exponential',
               delay: 2000,
@@ -233,7 +237,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
         },
         {
           jobId: `${job.id}-${Date.now()}`,
-          attempts: 3,
+          attempts: UNLIMITED_ATTEMPTS,
           backoff: { type: 'exponential', delay: 2000 },
         },
       );
