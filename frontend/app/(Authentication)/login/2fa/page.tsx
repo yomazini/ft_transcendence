@@ -12,7 +12,7 @@ import { OtpInput } from "@/components/auth/otp-input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
-import { saveToken, verifyTwoFactor } from "@/lib/auth";
+import { saveToken, verifyTwoFactor, homePath } from "@/lib/auth";
 
 export default function TwoFactorPage() {
 
@@ -49,7 +49,7 @@ export default function TwoFactorPage() {
         try {
             const { access_token, user } = await verifyTwoFactor(token, code);
             saveToken(access_token, remember);
-            router.replace(`/${user.id}/dashboard`);
+            router.replace(homePath(user.id));
         } catch (err) {
             const message = err instanceof Error ? err.message : "Something went wrong.";
             if (message.includes("2fa token")) {

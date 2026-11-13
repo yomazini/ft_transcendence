@@ -17,12 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-import {
-	MIN_PASSWORD_LENGTH,
-	isValidEmail,
-	register,
-	saveToken,
-} from "@/lib/auth";
+import { MIN_PASSWORD_LENGTH, isValidEmail, register, saveToken, homePath } from "@/lib/auth";
 
 import { RedirectIfLoggedIn } from "@/components/auth/redirect-if-logged-in";
 
@@ -74,7 +69,7 @@ export default function RegisterPage() {
 				orgDescription.trim()
 			);
 			saveToken(access_token, false);
-			router.replace(`/${user.id}/dashboard`);
+			router.replace(homePath(user.id));
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Something went wrong.");
 		} finally {

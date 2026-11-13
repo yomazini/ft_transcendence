@@ -22,6 +22,10 @@ export type TwoFactorChallenge = { two_factor_required: true; two_factor_token: 
 export const MIN_PASSWORD_LENGTH = 8;
 export const FORTY_TWO_LOGIN_URL = "/api/auth/42";
 
+export function homePath(userId: string): string {
+	return `/${userId}/new_job`;
+}
+
 /** Constants */
 
 const TOKEN_KEY = "access_token";

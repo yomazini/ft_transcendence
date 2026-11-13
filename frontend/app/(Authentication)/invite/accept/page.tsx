@@ -11,7 +11,7 @@ import { PasswordInput } from "@/components/auth/password-input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
-import { acceptInvite, saveToken, MIN_PASSWORD_LENGTH } from "@/lib/auth";
+import { acceptInvite, saveToken, MIN_PASSWORD_LENGTH, homePath } from "@/lib/auth";
 
 /** Landing page of the invite email link: /invite/accept#invite_token=<jwt>.
  *  No account exists yet — it is created only when this form is submitted. */
@@ -55,7 +55,7 @@ export default function AcceptInvitePage() {
 		try {
 			const { access_token, user } = await acceptInvite(inviteToken, password);
 			saveToken(access_token, true);
-			router.replace(`/${user.id}/dashboard`);
+			router.replace(homePath(user.id));
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Something went wrong.");
 		} finally {

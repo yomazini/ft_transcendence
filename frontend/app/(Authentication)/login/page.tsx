@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { login, saveToken } from "@/lib/auth";
+import { login, saveToken, homePath } from "@/lib/auth";
 
 import { RedirectIfLoggedIn } from "@/components/auth/redirect-if-logged-in";
 
@@ -55,7 +55,7 @@ export default function LoginPage() {
 			/** moves to the dashboard page without reloading the app
 			 * + adds the new URL to the browser history and shows the page.
 			 */
-			router.replace(`/${result.user.id}/dashboard`);
+			router.replace(homePath(result.user.id));
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Something went wrong.");
 		} finally {
