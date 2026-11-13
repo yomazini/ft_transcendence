@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { AuthCard } from "@/components/auth/auth-card";
@@ -8,6 +9,7 @@ import { AuthHeader } from "@/components/auth/auth-header";
 import { AuthLayout } from "@/components/auth/auth-layout";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,6 +30,7 @@ export default function FortyTwoCompletePage() {
 	const [orgDescription, setOrgDescription] = useState<string>("");
 	const [password, setPassword] = useState<string>("");
 	const [confirmPassword, setConfirmPassword] = useState<string>("");
+	const [terms, setTerms] = useState<boolean>(false);
 	const [error, setError] = useState<string>("");
 	const [loading, setLoading] = useState<boolean>(false);
 
@@ -49,6 +52,7 @@ export default function FortyTwoCompletePage() {
 			return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
 		}
 		if (password !== confirmPassword) return "Passwords do not match.";
+		if (!terms) return "You must accept the Terms of Service and Privacy Policy.";
 		return "";
 	}
 
@@ -154,6 +158,36 @@ export default function FortyTwoCompletePage() {
 							disabled={loading}
 							required
 						/>
+					</div>
+
+					<div className="flex items-start space-x-2">
+						<Checkbox
+							id="terms"
+							className="mt-1"
+							checked={terms}
+							onCheckedChange={(checked) => setTerms(checked)}
+							disabled={loading}
+						/>
+						<Label
+							htmlFor="terms"
+							className="block font-normal leading-6"
+						>
+							I agree to the{" "}
+							<Link
+								href="/terms"
+								className="text-primary hover:underline"
+							>
+								Terms of Service
+							</Link>{" "}
+							and{" "}
+							<Link
+								href="/privacy"
+								className="text-primary hover:underline"
+							>
+								Privacy Policy
+							</Link>
+							.
+						</Label>
 					</div>
 
 					{error && (
