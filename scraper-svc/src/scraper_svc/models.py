@@ -83,6 +83,7 @@ class Organization(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str] = mapped_column(String(200), nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False, server_default=text('CURRENT_TIMESTAMP'))
+    counter: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
 
     ApiKey: Mapped[list['ApiKey']] = relationship('ApiKey', back_populates='org')
     Job: Mapped[list['Job']] = relationship('Job', back_populates='org')
@@ -107,7 +108,6 @@ class User(Base):
     two_factor_secret: Mapped[Optional[str]] = mapped_column(Text)
 
     ApiKey: Mapped[list['ApiKey']] = relationship('ApiKey', back_populates='user')
-    Job: Mapped[list['Job']] = relationship('Job', back_populates='User_')
     role_and_organization: Mapped[list['RoleAndOrganization']] = relationship('RoleAndOrganization', back_populates='user')
 
 
@@ -157,7 +157,6 @@ class ApiKey(Base):
 class Job(Base):
     __tablename__ = 'Job'
     __table_args__ = (
-        ForeignKeyConstraint(['created_by'], ['User.id'], ondelete='SET NULL', onupdate='CASCADE', name='Job_created_by_fkey'),
         ForeignKeyConstraint(['org_id'], ['Organization.id'], ondelete='CASCADE', onupdate='CASCADE', name='Job_org_id_fkey'),
         PrimaryKeyConstraint('id', name='Job_pkey')
     )
@@ -168,12 +167,10 @@ class Job(Base):
     mode: Mapped[Jobmodes] = mapped_column(Enum(Jobmodes, values_callable=lambda cls: [member.value for member in cls], name='JobModes'), nullable=False, server_default=text('\'Keyword\'::"JobModes"'))
     status: Mapped[Jobstatuses] = mapped_column(Enum(Jobstatuses, values_callable=lambda cls: [member.value for member in cls], name='JobStatuses'), nullable=False, server_default=text('\'Queued\'::"JobStatuses"'))
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False, server_default=text('CURRENT_TIMESTAMP'))
-    updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False, server_default=text('CURRENT_TIMESTAMP'))
     updatable: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
-    created_by: Mapped[Optional[str]] = mapped_column(Text)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
     customer_persona: Mapped[Optional[object]] = mapped_column(JSONB)
 
-    User_: Mapped[Optional['User']] = relationship('User', back_populates='Job')
     org: Mapped['Organization'] = relationship('Organization', back_populates='Job')
     Comments: Mapped[list['Comments']] = relationship('Comments', back_populates='job')
     Report: Mapped[list['Report']] = relationship('Report', back_populates='job')
@@ -299,15 +296,14 @@ class SubJob(Base):
     __table_args__ = (
         ForeignKeyConstraint(['job_id'], ['Job.id'], ondelete='CASCADE', onupdate='CASCADE', name='SubJob_job_id_fkey'),
         PrimaryKeyConstraint('id', name='SubJob_pkey'),
-        Index('SubJob_nex_id_key', 'nex_id', unique=True)
+        Index('SubJob_next_id_key', 'next_id', unique=True)
     )
 
     id: Mapped[str] = mapped_column(Text, primary_key=True)
     job_id: Mapped[str] = mapped_column(Text, nullable=False)
-    status: Mapped[Jobstatuses] = mapped_column(Enum(Jobstatuses, values_callable=lambda cls: [member.value for member in cls], name='JobStatuses'), nullable=False, server_default=text('\'Running\'::"JobStatuses"'))
     url: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False, server_default=text('CURRENT_TIMESTAMP'))
-    nex_id: Mapped[Optional[str]] = mapped_column(Text)
     data: Mapped[Optional[object]] = mapped_column(JSONB)
+    next_id: Mapped[Optional[str]] = mapped_column(Text)
 
     job: Mapped['Job'] = relationship('Job', back_populates='SubJob')

@@ -18,9 +18,11 @@ const MODES: { value: JobMode; label: string; placeholder: string }[] = [
 ];
 
 const DOMAINS=["www.reddit.com", "reddit.com"]
+const SEARCHMODE=["top", "new", "rising", "best", "hot"]
 
-function checkInputUrl(target:string): boolean
+function checkInputUrl(target:string): string | null
 {
+	let path: string | null = null
 	try {
 		const url = new URL(target)
 		const urlpath = url.pathname.split("/").filter(Boolean)
@@ -32,32 +34,81 @@ function checkInputUrl(target:string): boolean
 			|| urlpath[2] !== "comments")
 		{
 			notifyUser("Malformed post url", false)
-			return false
+			return null
 		}
+		path = urlpath.join("/")
 	} catch (error) {
 		notifyUser("Invalid URL", false)
-		return false
+		return null
 	}
-	return true
+	return path
 }
 
-function checkInput(target: string, mode: JobMode): boolean
+function checkSubreddit(target: string): string | null
+{
+	let path: string | null = null
+	try {
+		const urlpath = target.split("/").filter(Boolean)
+		if ((urlpath.length !== 2 && urlpath.length !== 3)
+			|| urlpath[0] !== "r"
+			|| (urlpath.length === 3 && !SEARCHMODE.includes(urlpath[2]))
+		)
+		{
+			notifyUser("Malformed Subreddit", false)
+			return null
+		}
+		if (urlpath.length === 2)
+			urlpath.push("new")
+		path = urlpath.join("/")
+	} catch (error) {
+		notifyUser("Invalid URL", false)
+		return null
+	}
+	return path
+}
+
+function checkUser(target: string): string | null
+{
+	let path: string | null = null
+	try {
+		const urlpath = target.split("/").filter(Boolean)
+		if ((urlpath.length !== 2)
+			|| urlpath[0] !== "user"
+		)
+		{
+			notifyUser("Malformed User", false)
+			return null
+		}
+		path = urlpath.join("/")
+	} catch (error) {
+		notifyUser("Invalid URL", false)
+		return null
+	}
+	return path
+}
+
+function checkInput(target: string, mode: JobMode): string | null
 {
 	if (target === "")
 	{
 		notifyUser("Empty string", false)
-		return false;
+		return null;
 	}
 	else if (mode === "post")
 		return checkInputUrl(target)
-	return true
+	else if (mode === "subreddit")
+		return checkSubreddit(target)
+	else if (mode === "user")
+		return checkUser(target)
+	else
+		return (target)
 }
 //send url 
 export default function NewJobCard()
 {
 	const [mode, setMode] = useState<JobMode>(MODES[0].value);
-	const router = useRouter();
-	const userId = useParams<{ "uuid-user": string }>()["uuid-user"];
+	// const router = useRouter();
+	// const userId = useParams<{ "uuid-user": string }>()["uuid-user"];
 	// const [sending, setSending] = useState<boolean>(false);
 	const placeholder = MODES.find((m) => m.value == mode)?.placeholder;
 	const createJobMutation = useCreateJob();
@@ -65,7 +116,8 @@ export default function NewJobCard()
 		event.preventDefault();
 		const formData = new FormData(event.currentTarget)
 		const target = (formData.get("target") as string).trim()
-		if (!checkInput(target, mode))
+		const result = checkInput(target, mode)
+		if (result === null)
 			return;
 		
 		// setSending(true)
@@ -73,7 +125,7 @@ export default function NewJobCard()
 		try {
 			await createJobMutation.mutateAsync({
 				mode,
-				target
+				target: result
 			})
 			// router.push(`/dashboard?job=`)
 		} catch (err) {

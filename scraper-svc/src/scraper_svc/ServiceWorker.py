@@ -68,7 +68,7 @@ class ServiceWorker:
 		job_data = WorkerData(job.data.get("id", "missing"), job.data.get("data", None), job.data.get("state", WorkerState.SCRAPE))
 		try:
 			job_data.session = self.validate_job(job_data.job_id)
-			await update_job_status(job_data.session, job_data.job_id, Jobstatuses.RUNNING.value)
+			await update_job_status(job_data.session, job_data.job_id, Jobstatuses.SCRAPING.value)
 			i = job_data.state
 			while (i < WorkerState.DONE):
 				i = await actions[i.value](job_data)
@@ -111,7 +111,7 @@ class ServiceWorker:
 				id=str(uuid4()),
 				job_id=data.job_id,
 				url=post,
-				nex_id=last_id,
+				next_id=last_id,
 				data=None
 			)
 			data.session.add(job)
@@ -140,7 +140,7 @@ class ServiceWorker:
 			update(SubJob)
 			.where(SubJob.id == subjob_id)
 			.values(data=data.data["data"])
-			.returning(SubJob.nex_id)
+			.returning(SubJob.next_id)
 		).scalar_one()
 		data.session.commit()
 		if next_id:

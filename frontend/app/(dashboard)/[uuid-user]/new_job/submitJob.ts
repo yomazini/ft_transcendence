@@ -22,7 +22,7 @@ export async function submitJob(mode:JobMode, target: string) {
 					"Content-type": "application/json",
 					...authHeaders()
 				},
-				body: JSON.stringify({"mode": mode, "target": target})
+				body: JSON.stringify({"mode": mode, "target": target, "name": target})
 			}
 		)
 		notifyUser(`${response.statusText} ${response.status}`, response.ok)

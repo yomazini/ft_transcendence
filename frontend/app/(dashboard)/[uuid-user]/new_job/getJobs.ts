@@ -15,6 +15,7 @@ export type Job = {
 export const STATUS_STYLE: Record<JobStatus, string> = {
     queued: "bg-muted text-muted-foreground",
     running: "bg-blue-500/15 text-blue-500",
+    scraping: "bg-blue-500/15 text-orange-500",
     done: "bg-green-500/15 text-green-500",
     failed: "bg-destructive/15 text-destructive",
 };
