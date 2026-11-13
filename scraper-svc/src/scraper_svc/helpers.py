@@ -174,7 +174,7 @@ def insert_comments(session:Session, job_id:str, parent_id: str | None, data: di
 	for comment_data in data["children"]:
 		insert_comments(session, job_id, comment.id, comment_data)
 
-async def update_job_status(session: Session, job_id: str, job_status: str,error:str | None):
+async def update_job_status(session: Session, job_id: str, job_status: str,error:str | None = None):
 	session.execute(
 		update(Job)
 		.where(Job.id == job_id)

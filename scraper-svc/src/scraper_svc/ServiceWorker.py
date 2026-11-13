@@ -68,7 +68,7 @@ class ServiceWorker:
 		job_data = WorkerData(job.data.get("id", "missing"), job.data.get("data", None), job.data.get("state", WorkerState.SCRAPE))
 		try:
 			job_data.session = self.validate_job(job_data.job_id)
-			await update_job_status(job_data.session, job_data.job_id, Jobstatuses.RUNNING.value)
+			await update_job_status(job_data.session, job_data.job_id, Jobstatuses.SCRAPING.value)
 			i = job_data.state
 			while (i < WorkerState.DONE):
 				i = await actions[i.value](job_data)
