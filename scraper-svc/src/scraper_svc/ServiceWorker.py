@@ -111,7 +111,7 @@ class ServiceWorker:
 				id=str(uuid4()),
 				job_id=data.job_id,
 				url=post,
-				nex_id=last_id,
+				next_id=last_id,
 				data=None
 			)
 			data.session.add(job)
@@ -140,7 +140,7 @@ class ServiceWorker:
 			update(SubJob)
 			.where(SubJob.id == subjob_id)
 			.values(data=data.data["data"])
-			.returning(SubJob.nex_id)
+			.returning(SubJob.next_id)
 		).scalar_one()
 		data.session.commit()
 		if next_id:
