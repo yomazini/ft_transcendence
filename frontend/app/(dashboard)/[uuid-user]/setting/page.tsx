@@ -12,6 +12,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { changeEmail, changePassword, deleteMyData, exportMyData, isValidEmail, MIN_PASSWORD_LENGTH } from "@/lib/auth";
 import ApiKey from "@/components/srtting/apiKey";
 import TwoFactor from "@/components/srtting/twoFactor";
+import Organization from "@/components/srtting/organization";
 
 
 export default function SettingsProfile() {
@@ -354,6 +355,8 @@ export default function SettingsProfile() {
 					</div>
 				</div>
 			</section>
+
+			{user && <Organization orgId={user.org_id} isAdmin={user.role === "Admin"} />}
 
 			{user && <TwoFactor enabled={!!user.is_2fa_enabled} />}
 
