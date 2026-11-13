@@ -47,6 +47,14 @@ export class CreateJobDto {
   ])
   mode: string;
 
+  @ApiPropertyOptional({
+    example: 'Freelance pricing research',
+    description: 'Display name. Defaults to target when omitted.',
+  })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
   @ApiProperty({
     example: 'r/freelance',
     description: 'Target subreddit, search keyword, or Reddit post URL',
