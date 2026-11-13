@@ -76,7 +76,7 @@ model Organization {
     payment           Payment[]
     description       String                  @db.VarChar(200)
     created_at        DateTime                @default(now())
-    counter           Int                     @default(1)
+    counter           Int                     @default(0)
     apiKeys           ApiKey?
 }
 
