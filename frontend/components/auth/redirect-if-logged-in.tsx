@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import { clearToken, getMe, getToken } from "@/lib/auth";
+import { clearToken, getMe, getToken, homePath } from "@/lib/auth";
 
 /**
  * @MEHDIJAD/PSEUDOCODE🤖
@@ -35,7 +35,7 @@ export function RedirectIfLoggedIn() {
 		let stillOnPage = true;
 		// GET /api/auth/me
 		getMe().then((user) => {
-			if (stillOnPage) { router.replace(`/${user.id}/dashboard`); }
+			if (stillOnPage) { router.replace(homePath(user.id)); }
 		}).catch(() => {
 			clearToken();
 			if (stillOnPage) { setTokenRejected(true); }

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-import { saveToken } from "@/lib/auth";
+import { saveToken, homePath } from "@/lib/auth";
 
 /** Landing page for the 42 OAuth redirect: /auth/42/done#token=<jwt>.
  *  The backend can't hand the token to frontend code directly after a full-page
@@ -21,7 +21,7 @@ export default function FortyTwoDonePage() {
 
 		fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })
 			.then((response) => (response.ok ? response.json() : Promise.reject()))
-			.then((user: { id: string }) => router.replace(`/${user.id}/dashboard`))
+			.then((user: { id: string }) => router.replace(homePath(user.id)))
 			.catch(() => router.replace("/login"));
 	}, [router]);
 

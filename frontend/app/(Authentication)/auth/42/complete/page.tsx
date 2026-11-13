@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-import { completeFortyTwoSignup, saveToken, MIN_PASSWORD_LENGTH } from "@/lib/auth";
+import { completeFortyTwoSignup, saveToken, MIN_PASSWORD_LENGTH, homePath } from "@/lib/auth";
 import { PasswordInput } from "@/components/auth/password-input";
 
 const MIN_ORG_DESCRIPTION_CHARS = 100;
@@ -71,7 +71,7 @@ export default function FortyTwoCompletePage() {
 				password,
 			);
 			saveToken(access_token, true);
-			router.replace(`/${user.id}/dashboard`);
+			router.replace(homePath(user.id));
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Something went wrong.");
 		} finally {
