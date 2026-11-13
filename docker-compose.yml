@@ -282,7 +282,7 @@ services:
       - "prometheus_data:/prometheus"
     # Prometheus has no login: published on this machine only. Grafana reaches it
     # inside ft_network at http://prometheus:9090.
-    # ports: ["127.0.0.1:9090:9090"]
+    ports: ["127.0.0.1:9090:9090"]
     networks: [ft_network]
     restart: unless-stopped
     # Owner: Mehdi
