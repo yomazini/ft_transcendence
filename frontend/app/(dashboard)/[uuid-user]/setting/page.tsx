@@ -114,7 +114,7 @@ export default function SettingsProfile() {
 		try {
 			await exportMyData();
 			setExportNotice("Your data was downloaded. A receipt was sent to your email.");
-		} catch(err) {
+		} catch (err) {
 			setExportError(err instanceof Error ? err.message : "Something went wrong.");
 		} finally { setExporting(false); }
 	}
@@ -138,7 +138,7 @@ export default function SettingsProfile() {
 			await deleteMyData(deletePassword);
 			queryClient.clear();
 			router.replace("/");
-		} catch(err) {
+		} catch (err) {
 			setDeleteError(err instanceof Error ? err.message : "Something went wrong.");
 		} finally {
 			setDeleting(false);
@@ -154,7 +154,7 @@ export default function SettingsProfile() {
 			<div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-900/60">
 				<h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">Settings</h1>
 
-				<p className="text-sm text-muted-foreground">
+				<p className="text-sm text-zinc-600 dark:text-zinc-300">
 					Manage your account and security settings.
 				</p>
 			</div>
@@ -164,20 +164,20 @@ export default function SettingsProfile() {
 				<div className="p-6">
 					<h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Profile</h2>
 
-					<p className="text-sm text-muted-foreground">
+					<p className="text-sm text-zinc-600 dark:text-zinc-300">
 						Manage your account information.
 					</p>
 
 					{/* Avatar */}
 					<div className="mt-6 flex items-center gap-4">
-						<div className="flex h-16 w-16 items-center justify-center rounded-full bg-violet-600 text-lg font-semibold text-white">
+						<div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 text-lg font-semibold text-white">
 							{initials}
 						</div>
 
 						<div>
 							<p className="font-medium text-zinc-900 dark:text-zinc-100">{currentEmail}</p>
 
-							<p className="text-sm text-muted-foreground">Your account</p>
+							<p className="text-sm text-zinc-600 dark:text-zinc-300">Your account</p>
 						</div>
 					</div>
 				</div>
@@ -189,13 +189,13 @@ export default function SettingsProfile() {
 					<div>
 						<Label htmlFor="email">Email address</Label>
 
-						<p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+						<p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
 							This email is used to access your account.
 						</p>
 					</div>
 
 					<div className="relative">
-						<Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+						<Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600 dark:text-zinc-300" />
 
 						<Input
 							id="email"
@@ -204,7 +204,7 @@ export default function SettingsProfile() {
 							value={newEmail}
 							onChange={(e) => setNewEmail(e.target.value)}
 							disabled={savingEmail}
-							className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
+							className="h-10 rounded-xl border-orange-200 bg-orange-50/30 text-zinc-900 focus-visible:border-orange-400 focus-visible:ring-orange-500/20 dark:border-orange-500/20 dark:bg-zinc-800/50 dark:text-zinc-100"
 						/>
 					</div>
 
@@ -213,7 +213,7 @@ export default function SettingsProfile() {
 						<Label htmlFor="email-password">Current password</Label>
 
 						<div className="relative">
-							<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+							<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600 dark:text-zinc-300" />
 
 							<Input
 								id="email-password"
@@ -222,13 +222,13 @@ export default function SettingsProfile() {
 								value={emailPassword}
 								onChange={(e) => setEmailPassword(e.target.value)}
 								disabled={savingEmail}
-								className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 pr-10 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
+								className="h-10 rounded-xl border-orange-200 bg-orange-50/30 text-zinc-900 focus-visible:border-orange-400 focus-visible:ring-orange-500/20 dark:border-orange-500/20 dark:bg-zinc-800/50 dark:text-zinc-100"
 							/>
 
 							<button
 								type="button"
 								onClick={() => setShowEmailPassword(!showEmailPassword)}
-								className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400"
+								className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-orange-600 dark:hover:text-orange-400"
 							>
 								{showEmailPassword ? (
 									<EyeOff className="h-4 w-4" />
@@ -241,7 +241,7 @@ export default function SettingsProfile() {
 
 					{emailError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{emailError}</p>}
 					{emailNotice && <p role="status" className="text-sm text-emerald-600 dark:text-emerald-400">{emailNotice}</p>}
-					<div className="flex justify-end pt-2 [&_button]:rounded-xl [&_button]:bg-violet-600 [&_button]:text-white [&_button]:hover:bg-violet-700">
+					<div className="flex justify-end pt-2 [&_button]:rounded-xl [&_button]:bg-gradient-to-r [&_button]:from-orange-500 [&_button]:via-orange-400 [&_button]:to-amber-500 [&_button]:text-white [&_button]:hover:from-orange-600 [&_button]:hover:via-orange-500 [&_button]:hover:to-amber-600">
 						<Button onClick={handleEmailUpdate} disabled={savingEmail}>{savingEmail ? "Saving..." : "Change email"}</Button>
 					</div>
 				</div>
@@ -252,7 +252,7 @@ export default function SettingsProfile() {
 				<div className="p-6">
 					<h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Password</h2>
 
-					<p className="text-sm text-muted-foreground">
+					<p className="text-sm text-zinc-600 dark:text-zinc-300">
 						Update your password to keep your account secure.
 					</p>
 				</div>
@@ -265,20 +265,20 @@ export default function SettingsProfile() {
 						<Label htmlFor="current-password">Current password</Label>
 
 						<div className="relative">
-							<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+							<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600 dark:text-zinc-300" />
 
 							<Input
 								id="current-password"
 								type={showCurrent ? "text" : "password"}
 								value={currentPassword}
 								onChange={(e) => setCurrentPassword(e.target.value)}
-								className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 pr-10 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
+								className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 pr-10 focus-visible:ring-orange-500/20 dark:border-white/10 dark:bg-zinc-800/50"
 							/>
 
 							<button
 								type="button"
 								onClick={() => setShowCurrent(!showCurrent)}
-								className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400"
+								className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-orange-600 dark:hover:text-orange-400"
 							>
 								{showCurrent ? (
 									<EyeOff className="h-4 w-4" />
@@ -294,20 +294,20 @@ export default function SettingsProfile() {
 						<Label htmlFor="new-password">New password</Label>
 
 						<div className="relative">
-							<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+							<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600 dark:text-zinc-300" />
 
 							<Input
 								id="new-password"
 								type={showNew ? "text" : "password"}
 								value={newPassword}
 								onChange={(e) => setNewPassword(e.target.value)}
-								className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 pr-10 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
+								className="h-10 rounded-xl border-orange-200 bg-orange-50/30 text-zinc-900 focus-visible:border-orange-400 focus-visible:ring-orange-500/20 dark:border-orange-500/20 dark:bg-zinc-800/50 dark:text-zinc-100"
 							/>
 
 							<button
 								type="button"
 								onClick={() => setShowNew(!showNew)}
-								className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400"
+								className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-orange-600 dark:hover:text-orange-400"
 							>
 								{showNew ? (
 									<EyeOff className="h-4 w-4" />
@@ -323,20 +323,20 @@ export default function SettingsProfile() {
 						<Label htmlFor="confirm-password">Confirm new password</Label>
 
 						<div className="relative">
-							<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+							<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600 dark:text-zinc-300" />
 
 							<Input
 								id="confirm-password"
 								type={showConfirm ? "text" : "password"}
 								value={confirmPassword}
 								onChange={(e) => setConfirmPassword(e.target.value)}
-								className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 pr-10 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
+								className="h-10 rounded-xl border-orange-200 bg-orange-50/30 text-zinc-900 focus-visible:border-orange-400 focus-visible:ring-orange-500/20 dark:border-orange-500/20 dark:bg-zinc-800/50 dark:text-zinc-100"
 							/>
 
 							<button
 								type="button"
 								onClick={() => setShowConfirm(!showConfirm)}
-								className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400"
+								className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-orange-600 dark:hover:text-orange-400"
 							>
 								{showConfirm ? (
 									<EyeOff className="h-4 w-4" />
@@ -348,7 +348,7 @@ export default function SettingsProfile() {
 					</div>
 					{passwordError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{passwordError}</p>}
 					{passwordNotice && <p role="status" className="text-sm text-emerald-600 dark:text-emerald-400">{passwordNotice}</p>}
-					<div className="flex justify-end pt-2 [&_button]:rounded-xl [&_button]:bg-violet-600 [&_button]:text-white [&_button]:hover:bg-violet-700">
+					<div className="flex justify-end pt-2 [&_button]:rounded-xl [&_button]:bg-gradient-to-r [&_button]:from-orange-500 [&_button]:via-orange-400 [&_button]:to-amber-500 [&_button]:text-white [&_button]:hover:from-orange-600 [&_button]:hover:via-orange-500 [&_button]:hover:to-amber-600">
 						<Button onClick={handlePasswordUpdate} disabled={savingPassword}>{savingPassword ? "Saving..." : "Update password"}
 
 						</Button>
@@ -365,7 +365,7 @@ export default function SettingsProfile() {
 				<div className="p-6">
 					<h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Privacy & data</h2>
 
-					<p className="text-sm text-muted-foreground">
+					<p className="text-sm text-zinc-600 dark:text-zinc-300">
 						Your rights under the GDPR: get a copy of your data or delete your account.
 					</p>
 				</div>
@@ -375,7 +375,7 @@ export default function SettingsProfile() {
 				<div className="space-y-4 p-6">
 					<div>
 						<Label>Export my data</Label>
-						<p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+						<p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
 							Download everything InsightFlow stores about you as a JSON file.
 						</p>
 					</div>
@@ -396,13 +396,13 @@ export default function SettingsProfile() {
 				<div className="space-y-4 p-6">
 					<div>
 						<Label htmlFor="delete-password" className="text-red-600 dark:text-red-400">Delete my account</Label>
-						<p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+						<p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
 							This permanently deletes your account. If you are the only member, your organization is deleted too. This cannot be undone.
 						</p>
 					</div>
 
 					<div className="relative">
-						<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+						<Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600 dark:text-zinc-300" />
 
 						<Input
 							id="delete-password"
@@ -412,23 +412,23 @@ export default function SettingsProfile() {
 							value={deletePassword}
 							onChange={(e) => { setDeletePassword(e.target.value); setConfirmDelete(false); }}
 							disabled={deleting}
-							className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 pl-9 pr-10 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
+							className="h-10 rounded-xl border-orange-200 bg-orange-50/30 text-zinc-900 focus-visible:border-orange-400 focus-visible:ring-orange-500/20 dark:border-orange-500/20 dark:bg-zinc-800/50 dark:text-zinc-100"
 						/>
 
 						<button
 							type="button"
 							onClick={() => setShowDeletePassword(!showDeletePassword)}
-							className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400"
+							className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-orange-600 dark:hover:text-orange-400"
 
 						>
 							{showDeletePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
 						</button>
 					</div>
-						{deleteError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{deleteError}</p>}
-						{confirmDelete && !deleteError && (
-							<p role="alert" className="text-sm text-red-600 dark:text-red-400">Click again to confirm. Your account will be deleted.</p>
-						)}
-					
+					{deleteError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{deleteError}</p>}
+					{confirmDelete && !deleteError && (
+						<p role="alert" className="text-sm text-red-600 dark:text-red-400">Click again to confirm. Your account will be deleted.</p>
+					)}
+
 					<div className="flex justify-end gap-2 [&_button]:rounded-xl">
 						{confirmDelete && (
 							<Button variant="outline" onClick={() => setConfirmDelete(false)} disabled={deleting}>Cancel</Button>
@@ -441,8 +441,8 @@ export default function SettingsProfile() {
 				</div>
 			</section>
 			{
-                user && <ApiKey orgId={user.org_id}/>
-            }
+				user && <ApiKey orgId={user.org_id} />
+			}
 		</div>
 	);
 }

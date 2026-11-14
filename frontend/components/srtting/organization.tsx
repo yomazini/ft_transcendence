@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -101,10 +102,10 @@ export default function Organization({ orgId, isAdmin }: { orgId: string; isAdmi
 	return (
 		<section className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-white/10 dark:bg-zinc-900/60">
 			<div className="flex items-start gap-3 p-6">
-				<Building2 className="mt-1 h-5 w-5 text-violet-600 dark:text-violet-400" />
+				<Building2 className="mt-1 h-5 w-5 text-orange-600 dark:text-orange-400" />
 				<div>
 					<h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Organization</h2>
-					<p className="text-sm text-muted-foreground">
+					<p className="text-sm text-zinc-600 dark:text-zinc-300">
 						{isAdmin ? "Your workspace name and what it does." : "Only an Admin can change these details."}
 					</p>
 				</div>
@@ -124,7 +125,7 @@ export default function Organization({ orgId, isAdmin }: { orgId: string; isAdmi
 							onChange={(e) => { setName(e.target.value); setNotice(""); }}
 							disabled={!org || !isAdmin || saving}
 							placeholder={org ? "" : "Loading..."}
-							className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
+							className="h-10 rounded-xl border-orange-200 bg-orange-50/30 text-zinc-900 focus-visible:border-orange-400 focus-visible:ring-orange-500/20 dark:border-orange-500/20 dark:bg-zinc-800/50 dark:text-zinc-100"
 						/>
 					</div>
 
@@ -133,7 +134,7 @@ export default function Organization({ orgId, isAdmin }: { orgId: string; isAdmi
 							<Label htmlFor="org-description">Description</Label>
 							<span
 								aria-live="polite"
-								className={`text-xs font-medium ${trimmedDescription.length < MIN_DESCRIPTION ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}
+								className={`text-xs font-medium ${trimmedDescription.length < MIN_DESCRIPTION ? "text-red-600 dark:text-red-400" : "text-zinc-600 dark:text-zinc-300"}`}
 							>
 								{trimmedDescription.length}/{MAX_DESCRIPTION}
 							</span>
@@ -145,10 +146,10 @@ export default function Organization({ orgId, isAdmin }: { orgId: string; isAdmi
 							value={description}
 							onChange={(e) => { setDescription(e.target.value); setNotice(""); }}
 							disabled={!org || !isAdmin || saving}
-							className="rounded-xl border-zinc-200 bg-zinc-50/50 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50"
+							className="rounded-xl border-orange-200 bg-orange-50/30 text-zinc-900 focus-visible:border-orange-400 focus-visible:ring-orange-500/20 dark:border-orange-500/20 dark:bg-zinc-800/50 dark:text-zinc-100"
 						/>
 						{isAdmin && (
-							<p className="text-xs text-muted-foreground">
+							<p className="text-xs text-zinc-600 dark:text-zinc-300">
 								Between {MIN_DESCRIPTION} and {MAX_DESCRIPTION} characters. Used as context for new analyses. Existing reports don&apos;t change.
 							</p>
 						)}
@@ -158,7 +159,7 @@ export default function Organization({ orgId, isAdmin }: { orgId: string; isAdmi
 					{notice && <p role="status" className="text-sm text-emerald-600 dark:text-emerald-400">{notice}</p>}
 
 					{isAdmin && (
-						<div className="flex justify-end pt-2 [&_button]:rounded-xl [&_button]:bg-violet-600 [&_button]:text-white [&_button]:hover:bg-violet-700">
+						<div className="flex justify-end pt-2 [&_button]:rounded-xl [&_button]:bg-linear-to-r [&_button]:from-orange-500 [&_button]:via-orange-400 [&_button]:to-amber-500 [&_button]:text-white [&_button]:hover:from-orange-600 [&_button]:hover:via-orange-500 [&_button]:hover:to-amber-600">
 							<Button onClick={handleSave} disabled={!changed || saving}>
 								{saving ? "Saving..." : "Save changes"}
 							</Button>
@@ -173,7 +174,7 @@ export default function Organization({ orgId, isAdmin }: { orgId: string; isAdmi
 					<div className="space-y-4 p-6">
 						<div>
 							<Label className="text-red-600 dark:text-red-400">Delete organization</Label>
-							<p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+							<p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
 								This permanently deletes the organization, <strong>every member&apos;s account</strong>, its jobs and reports. This cannot be undone.
 							</p>
 						</div>
