@@ -97,14 +97,14 @@ function StatusBadge({ status }: { status: string }) {
     pending: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400",
     failed: "bg-red-500/10 text-red-600 dark:text-red-400",
     canceled: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
-    expired: "bg-muted text-muted-foreground",
-    free: "bg-muted text-muted-foreground",
+    expired: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+    free: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
   };
 
   return (
     <span
       className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium capitalize ${
-        styles[status] ?? "bg-muted text-muted-foreground"
+        styles[status] ?? "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
       }`}
     >
       {status}
@@ -115,14 +115,14 @@ function StatusBadge({ status }: { status: string }) {
 function BillingHeader() {
   return (
     <header>
-      <div className="mb-2 flex items-center gap-2 text-violet-600 dark:text-violet-400">
+      <div className="mb-2 flex items-center gap-2 text-orange-600 dark:text-orange-400">
         <CreditCard className="size-5" />
         <span className="text-sm font-medium">Organization billing</span>
       </div>
       <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white sm:text-3xl">
         Billing & Subscription
       </h1>
-      <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
         Manage your organization plan, team capacity, and payments.
       </p>
     </header>
@@ -136,8 +136,8 @@ function PaymentVerification({ verifying, needsRetry, onRetry }: {
 }) {
   if (verifying) {
     return (
-      <div className="flex items-center gap-3 rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm dark:border-violet-500/20 dark:bg-violet-500/10">
-        <Loader2 className="size-5 animate-spin text-violet-600 dark:text-violet-400" />
+      <div className="flex items-center gap-3 rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm dark:border-orange-500/20 dark:bg-orange-500/10">
+        <Loader2 className="size-5 animate-spin text-orange-600 dark:text-orange-400" />
         Verifying your simulated payment...
       </div>
     );
@@ -146,7 +146,7 @@ function PaymentVerification({ verifying, needsRetry, onRetry }: {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-white/10 dark:bg-zinc-900">
       <p className="text-sm">Payment confirmation is not complete yet.</p>
-      <button type="button" onClick={onRetry} className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700">
+      <button type="button" onClick={onRetry} className="rounded-lg bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 px-4 py-2 text-sm font-medium text-white hover:from-orange-600 hover:to-amber-600">
         Check payment again
       </button>
     </div>
@@ -167,16 +167,16 @@ function CurrentPlanCard({ billing, isAdmin, canceling, verifying, onCancel }: {
         <StatusBadge status={billing.status} />
       </div>
       <div className="mt-6 flex items-center gap-4">
-        <div className="flex size-12 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400">
+        <div className="flex size-12 items-center justify-center rounded-xl bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400">
           <Crown className="size-6" />
         </div>
         <div>
           <p className="text-2xl font-semibold capitalize text-zinc-900 dark:text-white">{billing.plan}</p>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">{formatAmount(billing.price_cents, "USD")} / month</p>
+          <p className="text-sm text-zinc-700 dark:text-zinc-300">{formatAmount(billing.price_cents, "USD")} / month</p>
         </div>
       </div>
       {billing.subscription_end && (
-        <div className="mt-6 flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
+        <div className="mt-6 flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
           <CalendarDays className="size-4" />
           Access until {formatDate(billing.subscription_end)}
         </div>
@@ -198,17 +198,17 @@ function TeamUsageCard({ billing, usagePercentage }: { billing: Billing; usagePe
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-900/60">
       <div className="flex items-center gap-2">
-        <Users className="size-5 text-violet-600 dark:text-violet-400" />
+        <Users className="size-5 text-orange-600 dark:text-orange-400" />
         <h2 className="font-semibold text-zinc-900 dark:text-white">Team usage</h2>
       </div>
       <p className="mt-7 text-3xl font-semibold text-zinc-900 dark:text-white">
         {billing.member_count}
-        <span className="text-base font-normal text-zinc-500 dark:text-zinc-400"> / {billing.max_users} members</span>
+        <span className="text-base font-normal text-zinc-700 dark:text-zinc-300"> / {billing.max_users} members</span>
       </p>
       <div className="mt-5 h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-        <div className="h-full rounded-full bg-violet-600 transition-all" style={{ width: `${usagePercentage}%` }} />
+        <div className="h-full rounded-full bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 transition-all" style={{ width: `${usagePercentage}%` }} />
       </div>
-      <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mt-3 text-sm text-zinc-700 dark:text-zinc-300">
         {Math.max(0, billing.max_users - billing.member_count)} seats available on your current plan.
       </p>
     </div>
@@ -227,22 +227,22 @@ function PlanCard({ plan, current, canCheckout, processingPlan, onCheckout }: {
   const paid = plan.id !== "free";
   return (
     <div className={`relative flex flex-col rounded-2xl border bg-white p-6 shadow-sm dark:bg-zinc-900/60 ${
-      current ? "border-violet-500 ring-1 ring-violet-500" : "border-zinc-200 dark:border-white/10"
+      current ? "border-orange-500 ring-1 ring-orange-500" : "border-zinc-200 dark:border-white/10"
     }`}>
       {current && (
-        <span className="absolute -top-3 right-4 rounded-full bg-violet-600 px-3 py-1 text-xs font-medium text-white">Current plan</span>
+        <span className="absolute -top-3 right-4 rounded-full bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 px-3 py-1 text-xs font-medium text-white">Current plan</span>
       )}
       <h3 className="text-xl font-semibold text-zinc-900 dark:text-white">{plan.name}</h3>
-      <p className="mt-2 min-h-10 text-sm text-zinc-500 dark:text-zinc-400">{plan.description}</p>
+      <p className="mt-2 min-h-10 text-sm text-zinc-700 dark:text-zinc-300">{plan.description}</p>
       <div className="mt-5">
         <span className="text-4xl font-bold text-zinc-900 dark:text-white">${plan.price}</span>
-        <span className="text-sm text-zinc-500 dark:text-zinc-400"> / month</span>
+        <span className="text-sm text-zinc-700 dark:text-zinc-300"> / month</span>
       </div>
       <div className="my-6 border-t border-zinc-100 dark:border-white/10" />
       <ul className="mb-8 flex-1 space-y-3">
         {plan.features.map((feature) => (
-          <li key={feature} className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-            <Check className="mt-0.5 size-4 shrink-0 text-violet-600 dark:text-violet-400" />
+          <li key={feature} className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+            <Check className="mt-0.5 size-4 shrink-0 text-orange-600 dark:text-orange-400" />
             {feature}
           </li>
         ))}
@@ -254,7 +254,7 @@ function PlanCard({ plan, current, canCheckout, processingPlan, onCheckout }: {
       ) : (
         <button type="button" disabled={!canCheckout || processingPlan !== null}
           onClick={() => onCheckout(plan.id as PaidPlan)}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50">
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 px-4 py-2.5 text-sm font-semibold text-white hover:from-orange-600 hover:to-amber-600 disabled:cursor-not-allowed disabled:opacity-50">
           {processingPlan === plan.id ? (
             <><Loader2 className="size-4 animate-spin" />Redirecting...</>
           ) : (
@@ -277,7 +277,7 @@ function AvailablePlans({ billing, isAdmin, verifying, needsRetry, processingPla
   return (
     <section>
       <h2 className="text-xl font-semibold text-zinc-900 dark:text-white">Available plans</h2>
-      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Choose the right capacity for your organization.</p>
+      <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">Choose the right capacity for your organization.</p>
       <div className="mt-5 grid gap-4 md:grid-cols-3">
         {PLANS.map((plan) => {
           const current = billing.plan === plan.id;
@@ -290,7 +290,7 @@ function AvailablePlans({ billing, isAdmin, verifying, needsRetry, processingPla
         })}
       </div>
       {!isAdmin && (
-        <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">Only organization administrators can change subscription plans.</p>
+        <p className="mt-4 text-sm text-zinc-700 dark:text-zinc-300">Only organization administrators can change subscription plans.</p>
       )}
     </section>
   );
@@ -300,15 +300,15 @@ function PaymentHistory({ payments }: { payments: Payment[] }) {
   return (
     <section>
       <h2 className="text-xl font-semibold text-zinc-900 dark:text-white">Payment history</h2>
-      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Recent simulated payments processed using Stripe Mock.</p>
+      <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">Recent simulated payments processed using Stripe Mock.</p>
       <div className="mt-5 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-white/10 dark:bg-zinc-900/60">
         {payments.length === 0 ? (
           <div className="flex flex-col items-center p-12 text-center">
-            <div className="mb-3 rounded-xl bg-violet-50 p-3 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400">
+            <div className="mb-3 rounded-xl bg-orange-50 p-3 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400">
               <CreditCard className="size-7" />
             </div>
             <p className="font-medium">No payments yet</p>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Your payment history will appear here.</p>
+            <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">Your payment history will appear here.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -325,7 +325,7 @@ function PaymentHistory({ payments }: { payments: Payment[] }) {
                 {payments.map((payment) => (
                   <tr key={payment.id} className="border-b border-zinc-100 last:border-0 dark:border-white/10">
                     <td className="px-5 py-4 font-medium capitalize">{payment.plan}</td>
-                    <td className="px-5 py-4 text-zinc-500 dark:text-zinc-400">{formatDate(payment.created_at)}</td>
+                    <td className="px-5 py-4 text-zinc-700 dark:text-zinc-300">{formatDate(payment.created_at)}</td>
                     <td className="px-5 py-4">{formatAmount(payment.amount_cents, payment.currency)}</td>
                     <td className="px-5 py-4">
                       <StatusBadge status={payment.status} />
@@ -573,7 +573,7 @@ export default function BillingPage() {
   if (loading) {
     return (
       <div className="flex min-h-[65vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
       </div>
     );
   }
@@ -593,7 +593,7 @@ export default function BillingPage() {
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground"
+            className="mt-4 rounded-lg bg-orange-500 px-4 py-2 text-sm text-white"
           >
             Retry
           </button>
