@@ -65,6 +65,8 @@ services:
     build: ./gateway-svc
     expose: ["3001"]
     env_file: .env
+    environment:
+      NODE_ENV: production
     depends_on:
       postgres: { condition: service_healthy }
       vault: { condition: service_healthy }
