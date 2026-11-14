@@ -45,7 +45,7 @@ const DATA_ROWS: { data: string; why: string; source: string }[] = [
 function Mail() {
   return (
     <a
-      className="font-medium text-orange-300 underline decoration-orange-400/40 underline-offset-4 transition hover:text-orange-200 hover:decoration-orange-300"
+     
       href={`mailto:${CONTACT_EMAIL}`}
     >
       {CONTACT_EMAIL}
@@ -54,7 +54,7 @@ function Mail() {
 }
 
 function Strong({ children }: { children: ReactNode }) {
-  return <strong className="font-semibold text-orange-200">{children}</strong>;
+  return <strong>{children}</strong>;
 }
 
 function Section({
@@ -69,15 +69,15 @@ function Section({
   return (
     <section
       id={`section-${n}`}
-      className="group rounded-2xl border border-white/10 bg-white/[0.04] p-6 shadow-lg shadow-black/20 backdrop-blur-md transition hover:border-orange-400/40 hover:bg-white/[0.07]"
+     
     >
-      <h2 className="mb-3 flex items-center gap-3 text-lg font-semibold text-white">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 text-sm font-bold text-white shadow-md shadow-orange-500/30">
+      <h2>
+        <span>
           {n}
         </span>
         {title}
       </h2>
-      <div className="space-y-3 text-[15px] leading-relaxed text-white/75">
+      <div>
         {children}
       </div>
     </section>
@@ -86,7 +86,7 @@ function Section({
 
 function List({ children }: { children: ReactNode }) {
   return (
-    <ul className="list-disc space-y-2 pl-5 marker:text-orange-400 [&>li]:pl-1">
+    <ul>
       {children}
     </ul>
   );
@@ -94,37 +94,23 @@ function List({ children }: { children: ReactNode }) {
 
 export default function PrivacyPage() {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-neutral-950 text-white">
-      {/* Background glow blobs */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -left-32 -top-32 h-[28rem] w-[28rem] rounded-full bg-orange-500/30 blur-[120px]"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute right-[-8rem] top-1/3 h-[26rem] w-[26rem] rounded-full bg-amber-500/20 blur-[130px]"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute bottom-[-10rem] left-1/4 h-[30rem] w-[30rem] rounded-full bg-orange-600/20 blur-[140px]"
-      />
-
-      <main className="relative mx-auto max-w-3xl px-6 py-14">
+    <div>
+<main>
         {/* Header */}
-        <header className="mb-10 rounded-3xl border border-white/15 bg-white/[0.06] p-8 shadow-2xl shadow-orange-500/10 backdrop-blur-xl">
-          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-400/30 bg-orange-500/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-orange-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
+        <header>
+          <span>
+            <span />
             Legal
           </span>
-          <h1 className="bg-gradient-to-r from-orange-300 via-orange-400 to-amber-500 bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl">
+          <h1>
             Privacy Policy
           </h1>
-          <p className="mt-3 text-sm text-white/60">
+          <p>
             InsightFlow · Version 1.0 · Last updated: 24 October 2026
           </p>
         </header>
 
-        <div className="space-y-5">
+        <div>
           <Section n={1} title="Who is responsible">
             <p>
               InsightFlow is a student project built by a team of five students
@@ -135,13 +121,13 @@ export default function PrivacyPage() {
           </Section>
 
           <Section n={2} title="Data we collect about you">
-            <div className="-mx-2 overflow-x-auto">
-              <table className="w-full min-w-[34rem] border-separate border-spacing-0 overflow-hidden rounded-xl border border-white/10 text-left text-sm">
+            <div>
+              <table>
                 <thead>
-                  <tr className="bg-orange-500/15 text-orange-200">
-                    <th className="px-4 py-3 font-semibold">Data</th>
-                    <th className="px-4 py-3 font-semibold">Why</th>
-                    <th className="px-4 py-3 font-semibold">
+                  <tr>
+                    <th>Data</th>
+                    <th>Why</th>
+                    <th>
                       Where it comes from
                     </th>
                   </tr>
@@ -150,15 +136,15 @@ export default function PrivacyPage() {
                   {DATA_ROWS.map((row) => (
                     <tr
                       key={row.data}
-                      className="align-top transition hover:bg-white/[0.05]"
+                     
                     >
-                      <td className="border-t border-white/10 px-4 py-3 font-medium text-white">
+                      <td>
                         {row.data}
                       </td>
-                      <td className="border-t border-white/10 px-4 py-3">
+                      <td>
                         {row.why}
                       </td>
-                      <td className="border-t border-white/10 px-4 py-3">
+                      <td>
                         {row.source}
                       </td>
                     </tr>
