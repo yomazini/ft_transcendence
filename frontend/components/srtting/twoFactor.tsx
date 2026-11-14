@@ -180,7 +180,8 @@ export default function TwoFactor({ enabled }: { enabled: boolean }) {
 							<Button
 								onClick={handleEnable}
 								disabled={loading || code.length !== 6}
-								className="bg-gradient-to-r from-orange-500 text-white via-orange-400 to-amber-500 font-medium text-white shadow-sm shadow-orange-500/20 hover:from-orange-600 hover:via-orange-500 hover:to-amber-600 "
+								className="bg-gradient-to-r from-orange-500 text-white via-orange-400 
+								to-amber-500 font-medium text-white shadow-sm shadow-orange-500/20 hover:from-orange-600 hover:via-orange-500 hover:to-amber-600 "
 							>
 								<span className="text-white">
 									{loading ? "Checking..." : "Confirm and turn on"}
