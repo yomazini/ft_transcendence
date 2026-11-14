@@ -1,5 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
+
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { loadVaultSecrets } from './vault';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
@@ -11,7 +13,11 @@ async function bootstrap() {
     Logger.warn(`Vault unavailable; using .env: ${e}`);
   }
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Trust one hop: nginx sets X-Forwarded-For.
+  app.set('trust proxy', 1);
+
   // The browser reaches the gateway through nginx on the frontend's own origin,
   // so only that origin may call it cross-site  (FRONTEND_URL, e.g. https://localhost).
   // btw thi s browser only restriction that will auto send origin header ;

@@ -21,7 +21,7 @@ from .database import (
 )
 from .embeddings import generate_embedding
 from .events import close_redis
-from .llm import call_openrouter_text
+from .llm import LLMError, call_openrouter_text
 from .metrics import http_duration, http_requests
 from .ranking import rerank_for_rag
 from .sentiment import compute_sentiment_summary, score_comments
@@ -164,6 +164,9 @@ async def trigger_analysis(job_id: str):
             ),
             None,
         )
+    except LLMError as exc:
+        logger.error("Manual analysis failed for job %s: %s", job_id, exc)
+        raise HTTPException(status_code=exc.status_code, detail=str(exc))
     except Exception:
         logger.exception("Manual analysis failed for job %s", job_id)
         raise HTTPException(status_code=500, detail="Analysis failed")
@@ -226,12 +229,13 @@ async def query_rag(payload: RagQueryRequest):
 
     reranked = rerank_for_rag(candidates, top_k=settings.rag_top_k)
     prompt = build_rag_prompt(payload.query, reranked, job)
-    llm_answer = await call_openrouter_text(prompt, max_tokens=768, temperature=0.2)
-    if not llm_answer or not llm_answer.strip():
-        logger.error("RAG LLM failed for job %s", payload.job_id)
-        raise HTTPException(status_code=502, detail="LLM unavailable")
-
-    answer = llm_answer.strip()
+    try:
+        answer = await call_openrouter_text(
+            prompt, max_tokens=768, temperature=0.2
+        )
+    except LLMError as exc:
+        logger.error("RAG LLM failed for job %s: %s", payload.job_id, exc)
+        raise HTTPException(status_code=exc.status_code, detail=str(exc))
 
     citations = [
         CommentCitation(

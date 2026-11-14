@@ -22,6 +22,8 @@ function isAuthWrite(req: Request): boolean {
     req.method === 'POST' &&
     (req.originalUrl.startsWith('/api/auth/login') ||
       req.originalUrl.startsWith('/api/auth/signup') ||
+      // Rate-limit 2FA code verification too.
+      req.originalUrl.startsWith('/api/auth/2fa/verify') ||
       req.originalUrl.startsWith('/api/auth/forgot-password'))
   );
 }
@@ -40,7 +42,8 @@ export class ProxyModule implements NestModule {
           req.originalUrl.startsWith('/api/auth') ||
           req.originalUrl.startsWith('/api/orgs')
         ) {
-          const ip = req.socket.remoteAddress || 'unknown';
+          // nginx sends X-Forwarded-For; req.ip uses it.
+          const ip = req.ip || 'unknown';
           if (isAuthWrite(req) && isLimited(ip)) {
             res.status(429).json({
               statusCode: 429,

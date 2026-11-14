@@ -8,7 +8,6 @@ import {
   HttpException,
   ServiceUnavailableException,
   GatewayTimeoutException,
-  ForbiddenException,
 } from '@nestjs/common';
 import { Queue } from 'bullmq';
 
@@ -75,11 +74,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async createJob(
-    dto: CreateJobDto,
-    user: AuthenticatedUser,
-    authorization?: string,
-  ) {
+  async createJob(dto: CreateJobDto, user: AuthenticatedUser) {
     const target = dto.target.trim();
     const name = dto.name?.trim() || target;
     const jobId = randomUUID();
@@ -92,7 +87,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     const jobRecord: JobRecord = {
       id: jobId,
       org_id: user.org_id,
-      created_by: user.id,
+      created_by: null,
       name,
       target,
       mode: JOB_MODES[dto.mode.toLowerCase()],
@@ -107,22 +102,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       },
       created_at: now,
     };
-
-    const nowDate = new Date(now);
-    const since = new Date(
-      Date.UTC(nowDate.getUTCFullYear(), nowDate.getUTCMonth(), 1),
-    );
-    const { plan, maxJobs } = await this.getPlanLimit(authorization);
-
-    if (
-      !(await this.databaseService.saveJobWithLimit(jobRecord, maxJobs, since))
-    ) {
-      throw new ForbiddenException(
-        `Job limit reached for the ${plan} plan (${maxJobs} per month)`,
-      );
-    }
-
-    // Persisted atomically with the limit check above.
+    await this.databaseService.saveJob(jobRecord);
     jobCreated.inc();
 
     // 2. Push task to Redis BullMQ queue (consumed by Madani's scraper-svc)
@@ -317,25 +297,6 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       throw new NotFoundException(`No job found with ID ${id}`);
     }
     return job;
-  }
-
-  private async getPlanLimit(authorization?: string) {
-    const base = process.env.AUTH_SVC_URL || 'http://auth-svc:3002';
-    try {
-      const res = await fetch(`${base}/orgs/billing`, {
-        headers: { authorization: authorization ?? '' },
-        signal: AbortSignal.timeout(2000),
-      });
-      if (!res.ok) throw new Error(`billing ${res.status}`);
-      const data = await res.json();
-      const maxJobs = Number(data.max_jobs);
-      if (!Number.isFinite(maxJobs) || maxJobs <= 0) {
-        throw new Error('billing response has no max_jobs');
-      }
-      return { plan: data.plan as string, maxJobs };
-    } catch {
-      throw new ServiceUnavailableException('auth-svc billing unavailable');
-    }
   }
 
   async getReportByJobId(

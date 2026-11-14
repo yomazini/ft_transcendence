@@ -119,54 +119,23 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     }));
   }
 
-  async saveJobWithLimit(
-    job: JobRecord,
-    maxJobs: number,
-    since: Date,
-  ): Promise<boolean> {
-    // Serialize count + insert per org so parallel creates cannot exceed the plan.
-    const client = await this.db.connect();
-    try {
-      await client.query('BEGIN');
-      await client.query('SELECT pg_advisory_xact_lock(hashtext($1::text))', [
+  async saveJob(job: JobRecord): Promise<void> {
+    await this.db.query(
+      `INSERT INTO "Job"
+      (id, org_id, target, name, mode, status, customer_persona, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+     ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status`,
+      [
+        job.id,
         job.org_id,
-      ]);
-
-      const countRes = await client.query(
-        `SELECT count(*)::int AS count
-         FROM "Job"
-        WHERE org_id = $1 AND created_at >= $2`,
-        [job.org_id, since],
-      );
-      if ((countRes.rows[0]?.count ?? 0) >= maxJobs) {
-        await client.query('ROLLBACK');
-        return false;
-      }
-
-      await client.query(
-        `INSERT INTO "Job"
-        (id, org_id, target, name, mode, status, customer_persona, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status`,
-        [
-          job.id,
-          job.org_id,
-          job.target,
-          job.name,
-          this.normalizeJobMode(job.mode),
-          this.normalizeJobStatus(job.status),
-          JSON.stringify(job.customer_persona),
-          new Date(job.created_at),
-        ],
-      );
-      await client.query('COMMIT');
-      return true;
-    } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
-    }
+        job.target,
+        job.name,
+        this.normalizeJobMode(job.mode),
+        this.normalizeJobStatus(job.status),
+        JSON.stringify(job.customer_persona),
+        new Date(job.created_at),
+      ],
+    );
   }
 
   async updateJob(id: string, orgId: string, name: string): Promise<void> {

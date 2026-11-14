@@ -1,8 +1,10 @@
 import { Controller, Get, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { Public } from '../auth/public.decorator';
+import { ApiExcludeController } from '@nestjs/swagger';
 import { register } from './metrics';
 
+@ApiExcludeController()
 @Controller('metrics')
 export class MetricsController {
   @Public()
