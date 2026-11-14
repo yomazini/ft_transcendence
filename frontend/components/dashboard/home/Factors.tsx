@@ -12,8 +12,8 @@ export function FactorsCard({ report } : { report: ReportDetails | null}) {
 						Satisfaction by Factor
 					</span>
 
-					<div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-violet-100 bg-violet-50 dark:border-violet-500/20 dark:bg-violet-500/10">
-						<ChartNoAxesColumnIncreasing className="size-5 text-violet-600 dark:text-violet-400" />
+					<div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-orange-100 bg-orange-50 dark:border-orange-500/20 dark:bg-orange-500/10">
+						<ChartNoAxesColumnIncreasing className="size-5 text-orange-600 dark:text-orange-400" />
 					</div>
 				</div>
 
@@ -41,7 +41,7 @@ export function FactorsCard({ report } : { report: ReportDetails | null}) {
 										</span>
 									</div>
 
-									<span className="shrink-0 rounded-lg bg-violet-50 px-2.5 py-1 text-sm font-semibold text-violet-700 dark:bg-violet-500/10 dark:text-violet-300">
+									<span className="shrink-0 rounded-lg bg-orange-50 px-2.5 py-1 text-sm font-semibold text-orange-700 dark:bg-orange-500/10 dark:text-orange-300">
 										{hasData ? `${percentage}%` : "N/A"}
 									</span>
 								</div>
@@ -49,7 +49,7 @@ export function FactorsCard({ report } : { report: ReportDetails | null}) {
 								<Progress
 									value={percentage}
 									trackColor="bg-zinc-100 dark:bg-zinc-800"
-									indicatorColor="bg-violet-500 dark:bg-violet-400"
+									indicatorColor="bg-orange-500 dark:bg-orange-400"
 								/>
 							</div>
 						);

@@ -22,7 +22,7 @@ export function FeaturesCard({ report } : { report : ReportDetails | null}) {
 
 					return (
 						<div key={feature.name} className="flex gap-4 py-5 first:pt-0 last:pb-0">
-							<div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-violet-100 bg-violet-50 text-sm font-semibold text-violet-600 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-400">
+							<div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-orange-100 bg-orange-50 text-sm font-semibold text-orange-600 dark:border-orange-500/20 dark:bg-orange-500/10 dark:text-orange-400">
 								{index + 1}
 							</div>
 
@@ -33,7 +33,7 @@ export function FeaturesCard({ report } : { report : ReportDetails | null}) {
 									</h4>
 
 									<span
-										className={`rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-medium capitalize text-violet-700 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-300`}
+										className={`rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-xs font-medium capitalize text-orange-700 dark:border-orange-500/20 dark:bg-orange-500/10 dark:text-orange-300`}
 									>
 										{feature.priority}
 									</span>

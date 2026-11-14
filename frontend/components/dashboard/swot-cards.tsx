@@ -65,13 +65,14 @@ export function Cards({
     >
       <CardHeader className="shrink-0 min-w-0">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="min-w-0 truncate text-base font-semibold text-slate-800">
+          <h3 className="min-w-0 truncate text-base font-semibold  text-zinc-900 dark:text-white">
             {title}
           </h3>
 
-          <div className="stat-card-icon-box shrink-0">
+          <div className="
+          flex size-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-500/15 dark:text-orange-300">
             <Icon
-              className={`size-5 ${iconColor}`}
+              className={`size-5 ${iconColor} size-4 text-amber-500 dark:text-amber-400`}
             />
           </div>
         </div>
