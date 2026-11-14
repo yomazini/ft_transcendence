@@ -5,7 +5,7 @@ import JobsList from "./JobsList"
 export default function NewJob()
 {
 	return (
-		<main>
+		<main className="page-d">
 			<NewJobCard />
 
 			<JobsList />

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
@@ -23,19 +24,19 @@ export default function JobsList() {
 	if (jobs.length === 0) {
 		return (
 			<div>
-				<h1>There is no report</h1>
+				<h1 className="text-zinc-700 dark:text-zinc-200">There is no report</h1>
 			</div>
 		)
 	}
 	return (
-		<section className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-4 py-3">
+		<section className="mx-auto flex w-full flex-col gap-5 px-4 py-3">
 			<div>
-				<h1>Jobs</h1>
+				<h1 className="text-zinc-900 dark:text-zinc-100">Jobs</h1>
 			</div>
 			<div>
 				{
 					loading ?
-					<p>Loading jobs...</p> :
+					<p className="text-zinc-600 dark:text-zinc-300">Loading jobs...</p> :
 					jobs.map((job) => (
 						<JobCard key={job.id} jobs={job} />
 					))
