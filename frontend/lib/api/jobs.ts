@@ -4,6 +4,7 @@ export type JobStatus = "queued" | "running" | "scraping" | "done" | "failed";
 
 export interface JobItem {
 	id: string;
+	name: string;
 	target: string;
 	mode: string;
 	status: JobStatus;
