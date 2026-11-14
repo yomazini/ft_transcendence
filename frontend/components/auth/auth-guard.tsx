@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useQueryClient } from "@tanstack/react-query";
-import { clearToken } from "@/lib/auth";
+import { clearToken, getToken } from "@/lib/auth";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
 	const router = useRouter();
@@ -13,7 +13,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 	const { user, loading, error } = useCurrentUser();
 
 	useEffect(() => {
-		if (error) {
+		if (error || !getToken()) { // no token: go to /login without asking /me
 			clearToken();
 			queryClient.clear();
 			router.replace("/login");
