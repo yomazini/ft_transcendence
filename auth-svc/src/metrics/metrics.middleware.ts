@@ -1,6 +1,5 @@
 import { Injectable, NestMiddleware } from "@nestjs/common";
 import { MetricsService } from "./metrics.service";
-
 /** Middleware = a function that runs on every request before NestJS routes it to a guard or controller.
  * request → [✅ middleware] → guard → interceptor → pipe → controller → response
 
