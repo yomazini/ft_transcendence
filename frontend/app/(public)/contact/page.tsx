@@ -12,26 +12,6 @@ import { FooterSection } from "@/components/footer";
 
 export default function ContactPage() {
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <Navbar />
-
       <HeroSection />
-
-      {/* <ContactOptionsSection /> */}
-
-      {/* <ContactFormSection /> */}
-
-      {/* <OfficeSection /> */}
-
-      {/* <WhyContactSection /> */}
-
-      {/* <FAQSection /> */}
-
-      {/* <CommunitySection /> */}
-
-      {/* <FinalCTASection /> */}
-
-      <FooterSection />
-    </main>
   );
 }

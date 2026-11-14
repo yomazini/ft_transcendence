@@ -77,6 +77,15 @@ export default function ApiKey({ orgId }: { orgId: string }) {
 
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
                 Your key is copied when you generate it and can't be shown again later.
+                {" "}
+                <a
+                    href="/api/docs"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-orange-500 hover:text-orange-600 hover:underline dark:text-orange-400 dark:hover:text-orange-300"
+                >
+                    View API Documentation
+                </a>
             </p>
 
             <Separator className="my-6" />

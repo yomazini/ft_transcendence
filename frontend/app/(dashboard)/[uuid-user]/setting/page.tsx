@@ -204,7 +204,10 @@ export default function SettingsProfile() {
 							value={newEmail}
 							onChange={(e) => setNewEmail(e.target.value)}
 							disabled={savingEmail}
-							className="h-10 rounded-xl border-orange-200 bg-orange-50/30 text-zinc-900 focus-visible:border-orange-400 focus-visible:ring-orange-500/20 dark:border-orange-500/20 dark:bg-zinc-800/50 dark:text-zinc-100"
+							className="h-10 rounded-xl border-orange-200 pl-9 pr-10 
+							 bg-orange-50/30 text-zinc-900 focus-visible:border-orange-400
+							  focus-visible:ring-orange-500/20 dark:border-orange-500/20
+							   dark:bg-zinc-800/50 dark:text-zinc-100"
 						/>
 					</div>
 
@@ -222,7 +225,10 @@ export default function SettingsProfile() {
 								value={emailPassword}
 								onChange={(e) => setEmailPassword(e.target.value)}
 								disabled={savingEmail}
-								className="h-10 rounded-xl border-orange-200 bg-orange-50/30 text-zinc-900 focus-visible:border-orange-400 focus-visible:ring-orange-500/20 dark:border-orange-500/20 dark:bg-zinc-800/50 dark:text-zinc-100"
+								className="h-10 rounded-xl border-orange-200 pl-9 pr-10 
+								 bg-orange-50/30 text-zinc-900 focus-visible:border-orange-400
+								  focus-visible:ring-orange-500/20 dark:border-orange-500/20
+								   dark:bg-zinc-800/50 dark:text-zinc-100 pl-9 pr-10"
 							/>
 
 							<button
@@ -301,7 +307,7 @@ export default function SettingsProfile() {
 								type={showNew ? "text" : "password"}
 								value={newPassword}
 								onChange={(e) => setNewPassword(e.target.value)}
-								className="h-10 rounded-xl border-orange-200 bg-orange-50/30 text-zinc-900 focus-visible:border-orange-400 focus-visible:ring-orange-500/20 dark:border-orange-500/20 dark:bg-zinc-800/50 dark:text-zinc-100"
+								className="h-10 rounded-xl border-orange-200 pl-9 pr-10  bg-orange-50/30 text-zinc-900 focus-visible:border-orange-400 focus-visible:ring-orange-500/20 dark:border-orange-500/20 dark:bg-zinc-800/50 dark:text-zinc-100"
 							/>
 
 							<button
@@ -330,7 +336,7 @@ export default function SettingsProfile() {
 								type={showConfirm ? "text" : "password"}
 								value={confirmPassword}
 								onChange={(e) => setConfirmPassword(e.target.value)}
-								className="h-10 rounded-xl border-orange-200 bg-orange-50/30 text-zinc-900 focus-visible:border-orange-400 focus-visible:ring-orange-500/20 dark:border-orange-500/20 dark:bg-zinc-800/50 dark:text-zinc-100"
+								className="h-10 rounded-xl border-orange-200 pl-9 pr-10  bg-orange-50/30 text-zinc-900 focus-visible:border-orange-400 focus-visible:ring-orange-500/20 dark:border-orange-500/20 dark:bg-zinc-800/50 dark:text-zinc-100"
 							/>
 
 							<button
@@ -412,7 +418,7 @@ export default function SettingsProfile() {
 							value={deletePassword}
 							onChange={(e) => { setDeletePassword(e.target.value); setConfirmDelete(false); }}
 							disabled={deleting}
-							className="h-10 rounded-xl border-orange-200 bg-orange-50/30 text-zinc-900 focus-visible:border-orange-400 focus-visible:ring-orange-500/20 dark:border-orange-500/20 dark:bg-zinc-800/50 dark:text-zinc-100"
+							className="h-10 rounded-xl border-orange-200 pl-9 pr-10  bg-orange-50/30 text-zinc-900 focus-visible:border-orange-400 focus-visible:ring-orange-500/20 dark:border-orange-500/20 dark:bg-zinc-800/50 dark:text-zinc-100"
 						/>
 
 						<button
