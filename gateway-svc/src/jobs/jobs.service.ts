@@ -87,7 +87,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     const jobRecord: JobRecord = {
       id: jobId,
       org_id: user.org_id,
-      created_by: user.id,
+      created_by: null,
       name,
       target,
       mode: JOB_MODES[dto.mode.toLowerCase()],
