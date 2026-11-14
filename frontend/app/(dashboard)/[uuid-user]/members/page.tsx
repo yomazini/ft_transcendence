@@ -72,7 +72,7 @@ export default function MembersPage() {
 				<h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-white">
 					Members
 				</h1>
-				<p className="mt-1.5 text-sm text-zinc-500 dark:text-zinc-400">
+				<p className="mt-1.5 text-sm text-zinc-600 dark:text-zinc-300">
 					People in your organization and their role.
 					{!isAdmin && " Only an Admin can invite or change members."}
 				</p>
@@ -86,11 +86,11 @@ export default function MembersPage() {
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
 							disabled={invite.isPending}
-							className="h-10 rounded-xl border-zinc-200 bg-zinc-50/50 text-zinc-900 placeholder:text-zinc-400 focus-visible:border-violet-400 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-zinc-800/50 dark:text-zinc-100 sm:flex-1"
+							className="h-10 rounded-xl border-orange-200 bg-orange-50/30 text-zinc-900 placeholder:text-zinc-500 focus-visible:border-orange-400 focus-visible:ring-orange-500/20 dark:border-orange-500/20 dark:bg-zinc-800/50 dark:text-zinc-100 sm:flex-1"
 						/>
 						<select
 							aria-label="Role of the invited member"
-							className="h-10 rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-700 outline-none focus:border-violet-400 dark:border-white/10 dark:bg-zinc-800 dark:text-zinc-200"
+							className="h-10 rounded-xl border border-orange-200 bg-white px-3 text-sm text-zinc-800 outline-none focus:border-orange-400 dark:border-orange-500/20 dark:bg-zinc-800 dark:text-zinc-100"
 							value={role}
 							onChange={(e) => setRole(e.target.value as Role)}
 							disabled={invite.isPending}
@@ -104,7 +104,7 @@ export default function MembersPage() {
 						<Button
 							type="submit"
 							disabled={invite.isPending}
-							className="h-10 gap-2 rounded-xl bg-violet-600 px-5 text-white hover:bg-violet-700 dark:bg-violet-600 dark:hover:bg-violet-500"
+							className="h-10 gap-2 rounded-xl bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 px-5 text-white hover:from-orange-600 hover:via-orange-500 hover:to-amber-600 dark:text-zinc-950"
 						>
 							<UserPlus className="size-4" />
 							{invite.isPending ? "Sending..." : "Invite"}
@@ -126,7 +126,7 @@ export default function MembersPage() {
 
 			<section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-zinc-900/60 sm:p-6">
 				{loading ? (
-					<p className="text-sm text-zinc-500 dark:text-zinc-400">Loading members...</p>
+					<p className="text-sm text-zinc-600 dark:text-zinc-300">Loading members...</p>
 				) : error ? (
 					<p className="text-sm text-red-600 dark:text-red-400">{error.message}</p>
 				) : (
@@ -135,17 +135,17 @@ export default function MembersPage() {
 							const isMe = member.id === me?.id;
 							return (
 								<li key={member.id} className="flex items-center gap-3 py-4 text-sm">
-									<span className="min-w-0 flex-1 truncate font-medium text-zinc-800 dark:text-zinc-200">
+									<span className="min-w-0 flex-1 truncate font-medium text-zinc-900 dark:text-zinc-100">
 										{member.email}
-										{isMe && <span className="ml-2 text-xs font-normal text-violet-600 dark:text-violet-400">(you)</span>}
+										{isMe && <span className="ml-2 text-xs font-normal text-orange-600 dark:text-orange-400">(you)</span>}
 									</span>
-									<span className="hidden text-xs text-zinc-500 dark:text-zinc-400 sm:inline">
+									<span className="hidden text-xs text-zinc-600 dark:text-zinc-300 sm:inline">
 										joined {new Date(member.created_at).toLocaleDateString()}
 									</span>
 									{isAdmin ? (
 										<select
 											aria-label={`Role of ${member.email}`}
-											className="h-9 rounded-lg border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-700 outline-none focus:border-violet-400 dark:border-white/10 dark:bg-zinc-800 dark:text-zinc-200"
+											className="h-9 rounded-lg border border-orange-200 bg-orange-50/30 px-3 text-sm text-zinc-800 outline-none focus:border-orange-400 dark:border-orange-500/20 dark:bg-zinc-800 dark:text-zinc-100"
 											value={member.role}
 											onChange={(e) => updateRole.mutate({ userId: member.id, role: e.target.value as Role })}
 											disabled={updateRole.isPending}
@@ -157,7 +157,7 @@ export default function MembersPage() {
 											))}
 										</select>
 									) : (
-										<span className="w-20 text-right text-xs font-medium text-zinc-600 dark:text-zinc-300">{member.role}</span>
+										<span className="w-20 text-right text-xs font-medium text-zinc-700 dark:text-zinc-200">{member.role}</span>
 									)}
 									{isAdmin && !isMe && (
 										<Button
@@ -170,7 +170,7 @@ export default function MembersPage() {
 												}
 											}}
 											disabled={remove.isPending}
-											className="rounded-lg text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+											className="rounded-lg text-zinc-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
 										>
 											<Trash2 className="size-4 text-destructive" />
 										</Button>
