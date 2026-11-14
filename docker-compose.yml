@@ -338,7 +338,7 @@ services:
   # --- Mocked payment ------------------------------------------------------
   stripe-mock:
     container_name: stripe-mock
-    image: stripe/stripe-mock:latest
+    image: stripe/stripe-mock:v0.206.0
     ports: ["12111:12111", "12112:12112"]
     networks: [ft_network]
     restart: unless-stopped
