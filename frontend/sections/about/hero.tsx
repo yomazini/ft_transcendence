@@ -42,22 +42,6 @@ export function HeroSection() {
 
         {/* Image */}
 
-        <div className="mt-20 w-full">
-
-          <div className="overflow-hidden rounded-3xl border shadow-2xl">
-
-            <Image
-              src="/images/team/team-photo.jpg"
-              alt="InsightFlow Team"
-              width={1600}
-              height={900}
-              className="h-[550px] w-full object-cover"
-              priority
-            />
-
-          </div>
-
-        </div>
 
       </div>
     </section>
