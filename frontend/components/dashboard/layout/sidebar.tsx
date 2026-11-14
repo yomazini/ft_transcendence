@@ -111,17 +111,18 @@ export function AppSidebar() {
 							{visibleItems.map((item) => {
 								const href = `/${userId}/${item.page}`;
 								return (
-									<SidebarMenuItem key={item.title}>
-										{/* The whole row is the link (a link inside a button is invalid HTML). */}
-										<SidebarMenuButton
-											tooltip={item.title}
-											isActive={pathname === href}
-											render={<Link href={href} />}
-										>
-											<item.icon />
-											<span className="font-medium">{item.title}</span>
-										</SidebarMenuButton>
-									</SidebarMenuItem>
+									<SidebarMenuButton
+										tooltip={item.title}
+										isActive={pathname === href}
+										render={<Link href={href} />}
+										className=" rounded-xl transition-colors duration-200
+											hover:bg-orange-500
+											data-[active=true]:bg-orange-500
+											data-[active=true]:hover:bg-orange-600 "
+									>
+										<item.icon />
+										<span className="font-medium">{item.title}</span>
+									</SidebarMenuButton>
 								);
 							})}
 						</SidebarMenu>
