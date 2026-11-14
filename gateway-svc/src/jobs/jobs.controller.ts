@@ -60,11 +60,7 @@ export class JobsController {
     description: 'Too Many Requests — Rate limit exceeded',
   })
   createJob(@Body() body: CreateJobDto, @Req() req: any) {
-    return this.jobsService.createJob(
-      body,
-      req.user,
-      req.headers?.authorization,
-    );
+    return this.jobsService.createJob(body, req.user);
   }
 
   @Post('jobs/requeue')
