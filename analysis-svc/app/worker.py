@@ -16,6 +16,7 @@ from .database import (
 )
 from .embeddings import generate_embeddings
 from .events import publish_job_event
+from .llm import LLMError
 from .metrics import analysis_jobs
 from .sentiment import compute_sentiment_summary, score_comments
 from .synthesis import synthesize_full_report
@@ -32,7 +33,7 @@ async def process_job(job, token):
         raise ValueError(f"Job missing id: {job.data}")
 
     attempts_made = int(job.attemptsMade or 0)
-    total_attempts = int(job.opts.get("attempts", 1))
+    total_attempts = max(1, int(job.opts.get("attempts") or 1))
     is_final = attempts_made + 1 >= total_attempts
 
     logger.info(
@@ -120,12 +121,21 @@ async def process_job(job, token):
         }
 
     except Exception as exc:
-        logger.exception(
-            "Job %s failed on attempt %d/%d",
-            job_id,
-            attempts_made + 1,
-            total_attempts,
-        )
+        if isinstance(exc, LLMError):
+            logger.error(
+                "Job %s failed on attempt %d/%d: %s",
+                job_id,
+                attempts_made + 1,
+                total_attempts,
+                exc,
+            )
+        else:
+            logger.exception(
+                "Job %s failed on attempt %d/%d",
+                job_id,
+                attempts_made + 1,
+                total_attempts,
+            )
 
         if is_final:
             analysis_jobs.labels("failed").inc()

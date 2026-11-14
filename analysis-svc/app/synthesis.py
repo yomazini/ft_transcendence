@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 from .canvas import build_synthesis_prompt
-from .llm import call_openrouter_json
+from .llm import LLMError, call_openrouter_json
 
 logger = logging.getLogger("analysis-synthesis")
 
@@ -252,5 +252,5 @@ async def synthesize_full_report(
             "conclusion": conclusion,
         }
 
-    logger.error("LLM synthesis failed; no report generated")
-    raise RuntimeError("LLM synthesis failed")
+    logger.error("LLM synthesis returned an unusable report")
+    raise LLMError("LLM returned an unusable report", 502)

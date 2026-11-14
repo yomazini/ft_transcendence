@@ -12,13 +12,28 @@ from .metrics import analysis_llm_duration, analysis_llm_requests
 logger = logging.getLogger("analysis-llm")
 
 
+class LLMError(Exception):
+    """A safe LLM failure that the API can return to the caller."""
+
+    def __init__(self, message: str, status_code: int = 502):
+        super().__init__(message)
+        self.status_code = status_code
+
+
 class EmptyCompletionError(Exception):
     """OpenRouter returned no usable message; this can be transient."""
 
 
-# Primary model plus optional paid fallbacks from OPENROUTER_FALLBACK_MODELS.
-# Do not hardcode free-tier IDs here: they are removed without notice.
-FREE_MODEL = "openrouter/free"
+def _http_error(status: int) -> LLMError:
+    if status == 401:
+        return LLMError("OpenRouter API key is invalid", 503)
+    if status == 402:
+        return LLMError("OpenRouter account has no credit", 503)
+    if status == 403:
+        return LLMError("OpenRouter key cannot use this model", 503)
+    if status == 429:
+        return LLMError("OpenRouter rate limit reached", 503)
+    return LLMError("OpenRouter request failed", 502)
 
 
 def _record_llm(model: str, status: str, started: float) -> None:
@@ -27,11 +42,6 @@ def _record_llm(model: str, status: str, started: float) -> None:
 
 
 def _get_model_chain() -> list[str]:
-    if not settings.paid_api:
-        # The free router falls back only to free models. Do not add paid
-        # fallbacks here: OpenRouter would bill them.
-        return [FREE_MODEL]
-
     chain = [settings.openrouter_model]
     for m in settings.openrouter_fallback_models.split(","):
         m = m.strip()
@@ -77,8 +87,7 @@ async def _post_completion(
         "temperature": temperature,
         "max_tokens": max_tokens,
     }
-    # Free models do not advertise response_format.
-    if json_mode and not (model.endswith(":free") or model == FREE_MODEL):
+    if json_mode:
         body["response_format"] = {"type": "json_object"}
 
     response = await client.post(url, headers=headers, json=body)
@@ -88,7 +97,7 @@ async def _post_completion(
     if not choices:
         raise EmptyCompletionError("Empty choices from OpenRouter")
     message = choices[0].get("message", {})
-    # Some free reasoning models put the answer in `reasoning`, not `content`.
+    # Some reasoning models put the answer in `reasoning`, not `content`.
     content = (
         message.get("content")
         or message.get("reasoning")
@@ -104,12 +113,13 @@ async def call_openrouter_json(
     prompt: str,
     max_tokens: int = 3072,
     temperature: float = 0.3,
-) -> dict[str, Any] | None:
+) -> dict[str, Any]:
     if not settings.openrouter_api_key:
-        logger.info("No OPENROUTER_API_KEY configured; skipping LLM call")
-        return None
+        raise LLMError("OpenRouter API key is not configured", 503)
 
     models = _get_model_chain()
+    error_message = "LLM unavailable"
+    error_status = 503
     async with httpx.AsyncClient(timeout=settings.openrouter_timeout) as client:
         for model in models:
             # Empty content can be transient; malformed JSON is not.
@@ -131,12 +141,17 @@ async def call_openrouter_json(
                     return parsed
                 except httpx.HTTPStatusError as e:
                     _record_llm(model, "error", started)
+                    status = e.response.status_code
                     logger.warning(
                         "OpenRouter HTTP %s on %s (attempt %d)",
-                        e.response.status_code,
+                        status,
                         model,
                         attempt + 1,
                     )
+                    if status in (401, 402, 403, 429):
+                        raise _http_error(status) from e
+                    error_message = "OpenRouter request failed"
+                    error_status = 502
                     break
                 except (httpx.TimeoutException, httpx.NetworkError, EmptyCompletionError) as e:
                     _record_llm(model, "error", started)
@@ -158,20 +173,23 @@ async def call_openrouter_json(
                         attempt + 1,
                         e,
                     )
+                    error_message = "LLM returned invalid JSON"
+                    error_status = 502
                     break
-    return None
+    raise LLMError(error_message, error_status)
 
 
 async def call_openrouter_text(
     prompt: str,
     max_tokens: int = 768,
     temperature: float = 0.2,
-) -> str | None:
+) -> str:
     if not settings.openrouter_api_key:
-        logger.info("No OPENROUTER_API_KEY configured; skipping LLM text call")
-        return None
+        raise LLMError("OpenRouter API key is not configured", 503)
 
     models = _get_model_chain()
+    error_message = "LLM unavailable"
+    error_status = 503
     async with httpx.AsyncClient(timeout=settings.openrouter_timeout) as client:
         for model in models:
             started = time.perf_counter()
@@ -184,9 +202,20 @@ async def call_openrouter_text(
                     temperature=temperature,
                     json_mode=False,
                 )
+                answer = strip_thinking(raw)
+                if not answer:
+                    raise EmptyCompletionError("Empty text after cleaning")
                 _record_llm(model, "success", started)
-                return strip_thinking(raw)
-            except Exception as e:  # noqa: BLE001 - try the next model
+                return answer
+            except httpx.HTTPStatusError as e:
+                _record_llm(model, "error", started)
+                status = e.response.status_code
+                logger.warning("OpenRouter HTTP %s on %s", status, model)
+                if status in (401, 402, 403, 429):
+                    raise _http_error(status) from e
+                error_message = "OpenRouter request failed"
+                error_status = 502
+            except (httpx.TimeoutException, httpx.NetworkError, EmptyCompletionError) as e:
                 _record_llm(model, "error", started)
                 logger.warning("OpenRouter text call failed on %s: %s", model, e)
-    return None
+    raise LLMError(error_message, error_status)
