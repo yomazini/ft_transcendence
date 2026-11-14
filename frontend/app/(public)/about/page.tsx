@@ -18,38 +18,16 @@ import { FooterSection } from "@/components/footer";
 
 export default function AboutPage() {
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <Navbar />
+    <>
 
       <HeroSection />
 
       <MissionSection />
 
-      {/* <StorySection /> */}
-
-      {/* <TeamSection /> */}
 
       <CultureSection />
 
-      {/* <GallerySection /> */}
-
-      {/* <DevelopmentProcessSection /> */}
-
-      {/* <TechnologiesSection /> */}
-
       <ValuesSection />
-
-      {/* <StatisticsSection /> */}
-
-      {/* <RoadmapSection /> */}
-
-      {/* <CommunitySection /> */}
-
-      {/* <FAQSection /> */}
-
-      {/* <FinalCTASection /> */}
-
-      <FooterSection />
-    </main>
+    </>
   );
 }
