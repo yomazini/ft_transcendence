@@ -601,6 +601,7 @@ export default function BillingPage() {
       </div>
     );
   }
+  
 
   const usagePercentage = Math.min(
     100,
