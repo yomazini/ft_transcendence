@@ -63,7 +63,6 @@ services:
     container_name: gateway-svc
     image: gateway-svc
     build: ./gateway-svc
-    ports: ["127.0.0.1:3001:3001"]
     expose: ["3001"]
     env_file: .env
     depends_on:
@@ -112,7 +111,6 @@ services:
     container_name: analysis-svc
     image: analysis-svc
     build: ./analysis-svc
-    ports: ["127.0.0.1:8001:8001"]
     expose: ["8001"]
     env_file: .env
     environment:
