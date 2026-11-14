@@ -53,7 +53,7 @@ type ChartPoint = {
 const chartConfig = {
 	sentiment: {
 		label: "VADER Sentiment",
-		color: "#64748b",
+		color: "#F97316",
 	},
 };
 
@@ -231,7 +231,7 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 				? "text-green-500"
 				: isNegative
 					? "text-red-500"
-					: "text-orange-400";
+					: "text-amber-500";
 
 	const arrow = isPositive ? "↗" : isNegative ? "↘" : "→";
 
@@ -305,8 +305,10 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 				<div className="flex flex-wrap items-start justify-between gap-4">
 					<div>
 						<CardTitle className="flex items-center gap-2 text-base text-gray-800">
-							<TrendingUp className="size-5 text-gray-500" />
-							VADER Sentiment Trend
+							<TrendingUp className="size-5 text-orange-500" />
+							<span className=" text-zinc-900 dark:text-white">
+								VADER Sentiment Trend
+							</span>
 						</CardTitle>
 
 						<p className="mt-1 text-xs text-gray-400">
@@ -453,7 +455,8 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 			<CardContent className="min-w-0 overflow-hidden pt-6">
 				{!hasPoints ? (
 					<div className="flex h-[350px] flex-col items-center justify-center gap-2">
-						<div className="flex size-12 items-center justify-center rounded-full bg-gray-100">
+						<div className="flex size-12 items-center justify-center rounded-full 
+						bg-orange-100 text-orange-600 dark:bg-orange-500/15 dark:text-orange-300">
 							<TrendingUp className="size-6 text-gray-400" />
 						</div>
 
@@ -491,12 +494,12 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 									>
 										<stop
 											offset="0%"
-											stopColor="#64748b"
+											stopColor="#F97316"
 											stopOpacity={0.5}
 										/>
 										<stop
 											offset="100%"
-											stopColor="#64748b"
+											stopColor="#F59E0B"
 											stopOpacity={0.05}
 										/>
 									</linearGradient>
@@ -507,7 +510,7 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 								<Area
 									type="monotone"
 									dataKey="sentiment"
-									stroke="#64748b"
+									stroke="#F97316"
 									strokeWidth={2}
 									fill="url(#sentiment-area)"
 									dot={{ r: 3 }}
@@ -531,12 +534,12 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 								<Line
 									type="linear"
 									dataKey="sentiment"
-									stroke="#64748b"
+									stroke="#F97316"
 									strokeWidth={2.5}
 									strokeDasharray="5 3"
 									dot={{
 										r: 4,
-										fill: "#64748b",
+										fill: "#F97316",
 										strokeWidth: 0,
 									}}
 									activeDot={{ r: 7 }}
@@ -558,7 +561,7 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 
 								<Bar
 									dataKey="sentiment"
-									fill="#64748b"
+									fill="#F97316"
 									radius={3}
 									maxBarSize={40}
 								/>

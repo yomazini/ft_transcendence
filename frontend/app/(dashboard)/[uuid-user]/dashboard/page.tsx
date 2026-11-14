@@ -18,7 +18,7 @@ export default function DashboardPage() {
 		<main className="page-d">
 			<Welcome />
 
-			<SummaryMetrics />
+			{/* <SummaryMetrics /> */}
 
 			{/* <NewJobCard /> */}
 

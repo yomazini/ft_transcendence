@@ -81,28 +81,28 @@ export default function Strategic({ report, loading } : {report : ReportDetails 
 			icon: ShieldCheck,
 			title: "STRENGTHS",
 			description: "Internal advantages",
-			iconColor: "text-violet-500",
+			iconColor: "text-orange-600 dark:text-orange-400",
 		},
 		{
 			items: asItems(report?.swot?.weaknesses),
 			icon: Link,
 			title: "WEAKNESSES",
 			description: "Internal limitations",
-			iconColor: "text-violet-500",
+			iconColor: "text-orange-600 dark:text-orange-400",
 		},
 		{
 			items: asItems(report?.swot?.opportunities),
 			icon: TrendingUp,
 			title: "OPPORTUNITIES",
 			description: "External possibilities",
-			iconColor: "text-violet-500",
+			iconColor: "text-orange-600 dark:text-orange-400",
 		},
 		{
 			items: asItems(report?.swot?.threats),
 			icon: ShieldCheck,
 			title: "THREATS",
 			description: "Potential external risks",
-			iconColor: "text-violet-500",
+			iconColor: "text-orange-600 dark:text-orange-400",
 		},
 	];
 
@@ -112,28 +112,28 @@ export default function Strategic({ report, loading } : {report : ReportDetails 
 			icon: Trash2,
 			title: "ELIMINATE",
 			description: "Remove unnecessary factors",
-			iconColor: "text-violet-500",
+			iconColor: "text-orange-600 dark:text-orange-400",
 		},
 		{
 			items: asItems(strategy?.reduce),
 			icon: MinusCircle,
 			title: "REDUCE",
 			description: "Lower factors below the standard",
-			iconColor: "text-violet-500",
+			iconColor: "text-orange-600 dark:text-orange-400",
 		},
 		{
 			items: asItems(strategy?.raise),
 			icon: TrendingUp,
 			title: "RAISE",
 			description: "Improve factors above the standard",
-			iconColor: "text-violet-500",
+			iconColor: "text-orange-600 dark:text-orange-400",
 		},
 		{
 			items: asItems(strategy?.create),
 			icon: PlusCircle,
 			title: "CREATE",
 			description: "Introduce new factors",
-			iconColor: "text-violet-500",
+			iconColor: "text-orange-600 dark:text-orange-400",
 		},
 	];
 
@@ -144,7 +144,7 @@ export default function Strategic({ report, loading } : {report : ReportDetails 
 					Strategic Analysis
 				</SectionTitle>
 
-				<div className="py-6 text-sm text-zinc-500 dark:text-zinc-400">
+				<div className="py-6 text-sm text-zinc-700 dark:text-zinc-200">
 					{loading
 						? "Loading strategic analysis..."
 						: "Failed to load strategic analysis."}
@@ -166,7 +166,7 @@ export default function Strategic({ report, loading } : {report : ReportDetails 
 
 				<div className="mt-5 w-full min-w-0">
 					<div
-						className={`grid w-full min-w-0 rounded-xl border border-zinc-200 bg-zinc-100 p-1.5 dark:border-white/10 dark:bg-zinc-800/70 ${
+						className={`grid w-full min-w-0 rounded-xl border border-orange-200 bg-orange-50/70 p-1.5 dark:border-orange-500/20 dark:bg-zinc-800/90 ${
 							hasConclusion
 								? "grid-cols-3 gap-1.5"
 								: "grid-cols-2 gap-1.5"
@@ -178,8 +178,8 @@ export default function Strategic({ report, loading } : {report : ReportDetails 
 							aria-pressed={selectedCard === 1}
 							className={`flex min-w-0 items-center justify-center gap-1 rounded-lg px-2 py-2.5 text-xs font-medium transition-all duration-200 sm:gap-2 sm:text-sm ${
 								selectedCard === 1
-									? "bg-white text-violet-700 shadow-sm ring-1 ring-violet-200 dark:bg-violet-500/15 dark:text-violet-300 dark:ring-violet-500/20"
-									: "text-zinc-500 hover:bg-white/60 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white"
+									? "bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 text-white shadow-md shadow-orange-500/20 ring-1 ring-orange-500 dark:from-orange-500 dark:via-orange-400 dark:to-amber-500 dark:text-zinc-950 dark:ring-orange-400"
+									: "text-zinc-800 hover:bg-white hover:text-orange-700 dark:text-zinc-200 dark:hover:bg-zinc-700 dark:hover:text-orange-300"
 							}`}
 						>
 							<Target className="size-4 shrink-0" />
@@ -192,8 +192,8 @@ export default function Strategic({ report, loading } : {report : ReportDetails 
 							aria-pressed={selectedCard === 2}
 							className={`flex min-w-0 items-center justify-center gap-1 rounded-lg px-2 py-2.5 text-xs font-medium transition-all duration-200 sm:gap-2 sm:text-sm ${
 								selectedCard === 2
-									? "bg-white text-violet-700 shadow-sm ring-1 ring-violet-200 dark:bg-violet-500/15 dark:text-violet-300 dark:ring-violet-500/20"
-									: "text-zinc-500 hover:bg-white/60 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white"
+									? "bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 text-white shadow-md shadow-orange-500/20 ring-1 ring-orange-500 dark:from-orange-500 dark:via-orange-400 dark:to-amber-500 dark:text-zinc-950 dark:ring-orange-400"
+									: "text-zinc-800 hover:bg-white hover:text-orange-700 dark:text-zinc-200 dark:hover:bg-zinc-700 dark:hover:text-orange-300"
 							}`}
 						>
 							<Waves className="size-4 shrink-0" />
@@ -207,8 +207,8 @@ export default function Strategic({ report, loading } : {report : ReportDetails 
 								aria-pressed={selectedCard === 3}
 								className={`flex min-w-0 items-center justify-center gap-1 rounded-lg px-2 py-2.5 text-xs font-medium transition-all duration-200 sm:gap-2 sm:text-sm ${
 									selectedCard === 3
-										? "bg-white text-violet-700 shadow-sm ring-1 ring-violet-200 dark:bg-violet-500/15 dark:text-violet-300 dark:ring-violet-500/20"
-										: "text-zinc-500 hover:bg-white/60 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white"
+										? "bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 text-white shadow-md shadow-orange-500/20 ring-1 ring-orange-500 dark:from-orange-500 dark:via-orange-400 dark:to-amber-500 dark:text-zinc-950 dark:ring-orange-400"
+										: "text-zinc-800 hover:bg-white hover:text-orange-700 dark:text-zinc-200 dark:hover:bg-zinc-700 dark:hover:text-orange-300"
 								}`}
 							>
 								<Lightbulb className="size-4 shrink-0" />
@@ -240,7 +240,7 @@ export default function Strategic({ report, loading } : {report : ReportDetails 
 							icon={Lightbulb}
 							title="CONCLUSION"
 							description="Key insights and final takeaways from the analysis."
-							iconColor="text-violet-500"
+							iconColor="text-orange-600 dark:text-orange-400"
 						/>
 					</div>
 				)}

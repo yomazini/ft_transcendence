@@ -39,16 +39,16 @@ export default function Welcome() {
   };
 
   return (
-    <section className="relative grid min-w-0 grid-cols-1 overflow-hidden rounded-2xl border border-violet-100 bg-gradient-to-br from-white via-violet-50/50 to-purple-100/70 shadow-sm dark:border-white/10 dark:from-zinc-950 dark:via-zinc-900 dark:to-violet-950/60 lg:grid-cols-3">
+    <section className="relative grid min-w-0 grid-cols-1 overflow-hidden rounded-2xl border border-orange-100 bg-gradient-to-br from-white via-orange-50/50 to-amber-100/70 shadow-sm dark:border-white/10 dark:from-zinc-950 dark:via-zinc-900 dark:to-orange-950/60 lg:grid-cols-3">
 
       {/* Decorative gradient */}
-      <div className="pointer-events-none absolute -right-20 -top-32 h-80 w-[65%] rounded-full bg-violet-200/40 blur-3xl dark:bg-violet-600/10" />
+      <div className="pointer-events-none absolute -right-20 -top-32 h-80 w-[65%] rounded-full bg-orange-200/40 blur-3xl dark:bg-orange-600/10" />
 
       {/* Welcome content */}
       <div className="relative z-10 flex min-h-[220px] min-w-0 flex-col justify-center gap-4 p-6 sm:p-8 lg:col-span-2">
 
         <div className="flex items-center gap-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-500/15 dark:text-orange-300">
             <Moon className="size-5" />
           </div>
 
@@ -68,7 +68,7 @@ export default function Welcome() {
               render={
                 <Button
                   disabled={expLoading}
-                  className="h-10 gap-2 rounded-xl bg-violet-600 px-5 font-medium text-white shadow-sm shadow-violet-500/20 transition-all hover:bg-violet-700 hover:shadow-md hover:shadow-violet-500/20 dark:bg-violet-600 dark:hover:bg-violet-500"
+                  className="h-10 gap-2 rounded-xl bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 px-5 font-medium text-white shadow-sm shadow-orange-500/20 transition-all hover:from-orange-600 hover:via-orange-500 hover:to-amber-600 hover:shadow-md hover:shadow-orange-500/20 dark:from-orange-500 dark:via-orange-400 dark:to-amber-500 dark:hover:from-orange-600 dark:hover:via-orange-500 dark:hover:to-amber-600"
                 >
                   <Download className="size-4" />
                   {expLoading ? "Exporting..." : "Export data"}
@@ -101,7 +101,7 @@ export default function Welcome() {
           </DropdownMenu>
 
           <div className="hidden items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 sm:flex">
-            <Sparkles className="size-3.5 text-violet-500" />
+            <Sparkles className="size-3.5 text-orange-500" />
             Your analytics workspace
           </div>
         </div>
@@ -109,7 +109,7 @@ export default function Welcome() {
 
       {/* Illustration */}
       <div className="relative hidden min-h-[220px] items-end justify-end lg:flex">
-        <div className="absolute bottom-0 right-0 h-44 w-72 rounded-tl-[100px] bg-violet-200/30 dark:bg-violet-500/10" />
+        <div className="absolute bottom-0 right-0 h-44 w-72 rounded-tl-[100px] bg-orange-200/30 dark:bg-orange-500/10" />
 
         <Image
           src="/analytic-user.svg"
