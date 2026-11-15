@@ -3,7 +3,6 @@
 
 import Welcome from "@/components/dashboard/home/welcome";
 import RevenueOverview from "@/components/dashboard/home/RevenueOverview";
-import SummaryMetrics from "@/components/dashboard/home/SummaryMetrics";
 import { FactorsCard } from "@/components/dashboard/home/Factors";
 import { FeaturesCard } from "@/components/dashboard/home/Features";
 import { useSelectedJobId } from "@/hooks/useSelectedJob";
@@ -17,12 +16,6 @@ export default function DashboardPage() {
 	return (
 		<main className="page-d">
 			<Welcome />
-
-			{/* <SummaryMetrics /> */}
-
-			{/* <NewJobCard /> */}
-
-			{/* <JobsPanel /> */}
 
 			<RevenueOverview report={report} />
 

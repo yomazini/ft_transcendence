@@ -26,7 +26,7 @@ const PLANS = {
   extra: { name: "Extra", maxUsers: 20 },
 } as const;
 
-// Test-only card numbers. Never accept real card data.
+
 const TEST_CARDS: Record<string, SimulationOutcome> = {
   "4242424242424242": "succeeded",
   "4000000000000002": "failed",
