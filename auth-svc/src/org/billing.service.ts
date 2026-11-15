@@ -14,7 +14,7 @@ import {
 } from '../../generated/prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
-import { CheckoutDto } from './dto/checkout.dto';
+import { CheckoutDto, PaidPlan as p } from './dto/checkout.dto';
 
 /* @MEHDIJAD:note who is calling billing, read from the verified JWT (sub, org_id, role).
 	- We trust the token instead of querying memberships by user_id: team rule "org_id from the token",
@@ -30,7 +30,10 @@ type ApiPlan = 'free' | 'premium' | 'extra';
 type PaidPlan = 'premium' | 'extra';
 type SimulatedOutcome = 'succeeded' | 'failed';
 
-const PLANS: Record<ApiPlan, { price: number; maxUsers: number; maxJobs: number }> = {
+const PLANS: Record<
+	ApiPlan,
+	{ price: number; maxUsers: number; maxJobs: number }
+> = {
 	free: { price: 0, maxUsers: 1, maxJobs: 5 },
 	premium: { price: 2900, maxUsers: 5, maxJobs: 10 },
 	extra: { price: 5900, maxUsers: 20, maxJobs: 20 },
@@ -96,7 +99,7 @@ export class BillingService {
 		}
 
 		return organization;
-}
+	}
 
 	async assertCanAddMember(orgId: string): Promise<void> {
 		const organization = await this.prisma.organization.findUnique({
@@ -168,10 +171,13 @@ export class BillingService {
 	async checkout(identity: BillingIdentity, dto: CheckoutDto) {
 		const org = await this.getOrganization(identity, true);
 
-		if (dto.plan !== 'premium' && dto.plan !== 'extra') {
+		// if (dto.plan !== 'premium' && dto.plan !== 'extra') {
+		// 	throw new BadRequestException('Invalid paid plan');
+		// }
+
+		if (dto.plan !== p.premium && dto.plan !== p.extra) {
 			throw new BadRequestException('Invalid paid plan');
 		}
-
 		const plan: PaidPlan = dto.plan;
 		const prismaPlan = toPrismaPlan(plan);
 
