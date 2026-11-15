@@ -153,15 +153,20 @@ services:
     image: reporting-svc
     build: ./reporting-svc
     expose: ["3003"]
-    env_file: .env
     volumes:
       # i shod separate them later thy overwrite them selfs
       - "./vault/creds/database:/run/vault:ro"
       - "./vault/creds/minio:/run/vault:ro"
     environment:
-      # The MinIO keys come from the root .env, so they match the minio service.
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_BROWSER: ${MINIO_BROWSER:-on}
+      MINIO: ${MINIO:-minio}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-min-io-st}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio}
+      MINIO_PORT: ${MINIO_PORT:-9000}
+      MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      BACKUP_PATH: ${BACKUP_PATH:-postgres}
+      POSTGRES_HOST: ${POSTGRES_HOST:-/tmp/backups}
     depends_on:
       postgres: { condition: service_healthy }
       minio: { condition: service_healthy }
@@ -176,20 +181,24 @@ services:
     build:
       context: ./restore-svc
       dockerfile: Dockerfile.minio
-
+    environment:
+      MINIO_BROWSER: ${MINIO_BROWSER:-on}
+      MINIO: ${MINIO:-minio}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-min-io-st}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio}
+      MINIO_PORT: ${MINIO_PORT:-9000}
+      MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
     volumes:
       - minio_data:/bitnami/minio/data
       - minio_certs:/certs
       - ./vault/creds/minio:/run/vault
-
     depends_on:
       vault:
         condition: service_healthy
     expose:
       - "9000"
       - "9001"
-
-    env_file: .env
     ports:
       - "9001:9001"
     healthcheck:
@@ -383,7 +392,18 @@ services:
     build:
       context: ./restore-svc
       dockerfile: Dockerfile
-    env_file: .env
+    environment:
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      BACKUP_PATH: ${BACKUP_PATH:-postgres}
+      POSTGRES_HOST: ${POSTGRES_HOST:-/tmp/backups}
+      VAULT_ADDR: ${VAULT_ADDR:-http://vault:8200}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio}
+      MINIO_PORT: ${MINIO_PORT:-9000}
+      LOGIN_FILE: ${LOGIN_FILE:-/run/vault/login.json}
+      MINIO_BROWSER: ${MINIO_BROWSER:-on}
+      MINIO: ${MINIO:-minio}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-min-io-st}
+      MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
     volumes:
       - ./vault/creds/minio:/run/vault
 
