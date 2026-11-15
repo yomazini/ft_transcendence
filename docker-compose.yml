@@ -98,6 +98,10 @@ services:
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_mock}
       STRIPE_MOCK_HOST: ${STRIPE_MOCK_HOST:-stripe-mock}
       FRONTEND_URL: ${FRONTEND_URL:-https://localhost:8080}
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_FROM: ${MAIL_FROM}
+      FORTYTWO_CALLBACK_URL: ${FORTYTWO_CALLBACK_URL}
     depends_on:
       postgres: { condition: service_healthy }
       vault: { condition: service_healthy }
