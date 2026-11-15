@@ -23,7 +23,11 @@ docs {
 
   Connect and wait for the Engine.IO packet `0{...}`.
   Send `connect` to authenticate. A valid token returns `40{"sid":"..."}`.
-  Then run `02-Create-Job`. The server sends `42["job:queued",...]` and
-  `42["job:update",...]`.
-  Send `pong` when the server sends `2`.
+  Send `pong` when the server sends `2`, or the connection closes.
+  Then run `02-Create-Job`.
+
+  The raw event frames start with `42`. The status order is `queued`,
+  `scraping`, `running`, then `done` or `failed`. `scraping` comes from the
+  scraper. `running` starts when analysis begins. A missing LLM key ends in
+  `failed`, not `done`. The `job:update` frame repeats every status.
 }
