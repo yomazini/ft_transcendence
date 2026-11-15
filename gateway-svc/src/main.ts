@@ -11,21 +11,15 @@ async function bootstrap() {
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Trust one hop: nginx sets X-Forwarded-For.
+  // nginx sets X-Forwarded-For
   app.set('trust proxy', 1);
 
-  // The browser reaches the gateway through nginx on the frontend's own origin,
-  // so only that origin may call it cross-site  (FRONTEND_URL, e.g. https://localhost).
-  // btw thi s browser only restriction that will auto send origin header ;
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'https://localhost',
     methods: 'GET,HEAD,PATCH,POST,PUT,DELETE,OPTIONS',
-
-    // let secturity headers pass like cookies authen and etc...
     credentials: true,
   });
 
-  // Validate every request body, query, and route parameter before controllers.
   app.useGlobalPipes(
     new ValidationPipe({
       // Convert plain JSON to DTO instances and apply type conversions.
@@ -37,7 +31,6 @@ async function bootstrap() {
     }),
   );
 
-  // Swagger metadata only. This documents the API; it does not validate requests.
   const config = new DocumentBuilder()
     .setTitle('InsightFlow Gateway Service')
     .setDescription(

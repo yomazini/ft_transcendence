@@ -8,7 +8,10 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CustomerPersonaDto {
-  @ApiPropertyOptional({ example: 'budget-conscious college students' })
+  @ApiPropertyOptional({
+    example:
+      'info about your organazation will be beneficial for Analsis Pipeline',
+  })
   @IsOptional()
   @IsString()
   description?: string;
