@@ -4,9 +4,12 @@ import { RefreshCw, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link";
-import { useDeleteRepById } from "@/hooks/useDeleteRepById";
+import { useDeleteJobById } from "./deleteJob";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
+import { notifyUser } from "./submitJob";
+import { useUpdateJobById } from "./useUpdateJobById";
+import { stat } from "fs";
 
 interface JobCardProps {
 	jobs: JobItem
@@ -21,20 +24,27 @@ export const STATUS_STYLE: Record<JobStatus, string> = {
 };
 
 export function JobCard({ jobs } : JobCardProps) {
-	const deleteReport = useDeleteRepById()
-	const router = useRouter();
-	const userId = useParams<{ "uuid-user": string }>()["uuid-user"];
-	const { status, mode, created_at, id, org_id, target } = jobs;
+	const deleteJob = useDeleteJobById()
+	const updateJob = useUpdateJobById()
+	// const router = useRouter();
+	// const userId = useParams<{ "uuid-user": string }>()["uuid-user"];
+	const { status, mode, created_at, id, org_id, name } = jobs;
 	async function deleteButton() {
 		// await deleteJob(id)
 		try {
-			await deleteReport.mutateAsync(id);
-			router.push(`/${userId}/new_job`)
+			await deleteJob.mutateAsync(id);
+			// router.push(`/${userId}/new_job`)
 		} catch (err) {
-			toast.error("Failed to Delet report", {
-				description: "Failed to Delet report",
-				duration: 4000,
-			});
+			notifyUser("Something went wrong", false)
+		}
+	}
+	async function updateButton() {
+		// await deleteJob(id)
+		try {
+			await updateJob.mutateAsync(id);
+			// router.push(`/${userId}/new_job`)
+		} catch (err) {
+			notifyUser("Something went wrong", false)
 		}
 	}
 
@@ -42,7 +52,7 @@ export function JobCard({ jobs } : JobCardProps) {
 		<Card className="w-full rounded-md p-0">
 			<CardContent className="flex flex-col gap-2 py-3 px-4">
 				<Link href={`/${org_id}/dashboard?job=${id}`} className="flex items-center justify-between">
-					<h3 className="font-medium truncate">{target}</h3>
+					<h3 className="font-medium truncate">{name}</h3>
 					<Badge className={STATUS_STYLE[status]}>{status}</Badge>
 				</Link>
 				<div className="flex x items-center justify-between">
@@ -53,14 +63,16 @@ export function JobCard({ jobs } : JobCardProps) {
 							}
 						</time>
 					</p>
-					<div className="flex justify-end gap-1">
-						<Button variant="ghost" size="icon">
-							<RefreshCw />
-						</Button>
-						<Button onClick={deleteButton} variant="ghost" size="icon" className="hover:text-destructive">
-							<Trash2 />
-						</Button>
-					</div>
+					{status === "failed" || status === "done" ? (
+						<div className="flex justify-end gap-1">
+							<Button onClick={updateButton} variant="ghost" size="icon" className="hover:text-orange-500">
+								<RefreshCw />
+							</Button>
+							<Button onClick={deleteButton} variant="ghost" size="icon" className="hover:text-destructive">
+								<Trash2 />
+							</Button>
+						</div>
+					): <></>}
 				</div>
 			</CardContent>
 		</Card>

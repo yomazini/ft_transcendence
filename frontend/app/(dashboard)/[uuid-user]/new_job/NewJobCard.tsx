@@ -108,9 +108,6 @@ function checkInput(target: string, mode: JobMode): string | null
 export default function NewJobCard()
 {
 	const [mode, setMode] = useState<JobMode>(MODES[0].value);
-	// const router = useRouter();
-	// const userId = useParams<{ "uuid-user": string }>()["uuid-user"];
-	// const [sending, setSending] = useState<boolean>(false);
 	const placeholder = MODES.find((m) => m.value == mode)?.placeholder;
 	const createJobMutation = useCreateJob();
 	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -121,18 +118,14 @@ export default function NewJobCard()
 		if (result === null)
 			return;
 		
-		// setSending(true)
-		// await submitJob(mode, target)
 		try {
 			await createJobMutation.mutateAsync({
 				mode,
 				target: result
 			})
-			// router.push(`/dashboard?job=`)
 		} catch (err) {
-			console.error(`!!!!!!!!!!!!!!${err}`)
+			notifyUser("Something went wrong while sendeng the job request", false)
 		}
-		// setSending(false)
 	}
 
 
