@@ -310,9 +310,8 @@ services:
       - "./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
       - "./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro"
       - "prometheus_data:/prometheus"
-    # Prometheus has no login: published on this machine only. Grafana reaches it
+    # Prometheus has no login: no published port. Only Grafana reaches it,
     # inside ft_network at http://prometheus:9090.
-    ports: ["127.0.0.1:9090:9090"]
     networks: [ft_network]
     restart: unless-stopped
     # Owner: Mehdi

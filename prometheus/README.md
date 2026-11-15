@@ -2,10 +2,9 @@
 
 | What | URL | Login |
 |---|---|---|
-| Prometheus | http://localhost:9090 (this machine only) | none |
-| Targets | http://localhost:9090/targets | |
-| Alerts | http://localhost:9090/alerts | |
-| Grafana | http://localhost:3030 | `admin` / `GRAFANA_ADMIN_PASSWORD` from `.env` |
+| Grafana | https://grafana.localhost:8080 | `admin` / `GRAFANA_ADMIN_PASSWORD` from `.env` |
+| Alerts | https://grafana.localhost:8080/alerting/list (and the *Alerts* panel on *Monitoring health*) | same |
+| Prometheus | not published: only Grafana reaches it inside `ft_network` | none |
 
 - **Scraped every 15 s** (`prometheus.yml`): the 5 services (`/metrics`), postgres-exporter,
   redis-exporter, node-exporter, and Prometheus itself.
@@ -14,12 +13,12 @@
 - **Alert rules**: `alerts.yml` — ServiceDown, HighErrorRate, ManyFailedLogins,
   HighMemoryUsage, PostgresTooManyConnections.
 - **Grafana access**: login required, no anonymous access, no sign-up, password from `.env`.
-  Prometheus has no login, so it is published on `127.0.0.1` only.
+  Prometheus has no login, so it has no published port.
 
 ## Demo an alert
 
 1. `docker stop auth-svc`
-2. ~1 minute later, `ServiceDown` is `firing` on http://localhost:9090/alerts
+2. ~1 minute later, `ServiceDown` is `firing` in Grafana → Alerting → Alert rules (or the *Alerts* panel)
 3. `docker start auth-svc` → it clears
 
 Or: 11 wrong logins → `ManyFailedLogins` fires ~1 minute later.
