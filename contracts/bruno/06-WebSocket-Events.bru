@@ -6,48 +6,20 @@ meta {
 
 ws {
   url: {{ws_url}}
+  body: ws
 }
 
 body:ws {
-  message connect [text] {
+  message 1 [text] {
     40{"token":"{{token}}"}
   }
 
-  message pong [text] {
+  message 2 [text] {
     3
   }
 }
 
 docs {
-  # Socket.IO events
-
-  Connect and wait for the Engine.IO packet `0{...}`.
-  Send `connect` to authenticate. A valid token returns `40{"sid":"..."}`.
-  Send `pong` when the server sends `2`, or the connection closes.
-  Then run `02-Create-Job`.
-
-  The raw event frames start with `42`. The status order is `queued`,
-  `scraping`, `running`, then `done` or `failed`. `scraping` comes from the
-  scraper. `running` starts when analysis begins. A missing LLM key ends in
-  `failed`, not `done`. The `job:update` frame repeats every status.
-
-  # Independent socket demo
-
-  Keep `auth-svc`, `redis`, `gateway-svc`, and `nginx` running.
-  The scraper and analysis can stay stopped.
-
-  Use a job id from the same organization as the token. Publish the same
-  channel that the workers use:
-
-  ```bash
-  docker compose exec -T redis redis-cli PUBLISH job-events \
-    '{"job_id":"JOB_ID","status":"running"}'
-
-  docker compose exec -T redis redis-cli PUBLISH job-events \
-    '{"job_id":"JOB_ID","status":"done"}'
-  ```
-
-  Bruno shows `job:running`, `job:update`, `job:done`, and `job:update`.
-  This is a transport demo with a synthetic event. The gateway still
-  validates the token and sends only to the organization room.
+  Connect first. Wait for the open packet. Send message 1 to authenticate.
+  Send message 2 when the server sends a ping. Then run 02-Create-Job.
 }
