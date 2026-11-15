@@ -10,16 +10,8 @@ ws {
 }
 
 body:ws {
-  message 1 [text] {
+  name: message 1
+  content: '''
     40{"token":"{{token}}"}
-  }
-
-  message 2 [text] {
-    3
-  }
-}
-
-docs {
-  Connect first. Wait for the open packet. Send message 1 to authenticate.
-  Send message 2 when the server sends a ping. Then run 02-Create-Job.
+  '''
 }
