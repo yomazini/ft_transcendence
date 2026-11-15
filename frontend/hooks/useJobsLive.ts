@@ -31,10 +31,15 @@ export function useJobsLive() {
       },
     );
 
+    socket.io.on("reconnect", () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+    });
+
     socket.on("job:update", (event: JobEvent) => {
       const jobs = queryClient.getQueryData<JobItem[]>(["jobs"]);
       if (!jobs?.some((job) => job.id === event.job_id)) {
-        return; // not one of this organization's jobs
+        queryClient.invalidateQueries({ queryKey: ["jobs"] });
+        return;
       }
       queryClient.setQueryData<JobItem[]>(["jobs"], (old) =>
         old?.map((job) =>

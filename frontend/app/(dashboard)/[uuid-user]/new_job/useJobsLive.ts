@@ -24,7 +24,15 @@ export function useJobsLive()
 				token: getToken()
 			}
 		});
+		socket.io.on("reconnect", () => {
+			client.invalidateQueries({queryKey: ["jobs"]})
+		});
 		socket.on("job:update",(event: JobEvent) => {
+			const known = client.getQueryData<JobItem[]>(["jobs"])?.some((job) => job.id === event.job_id)
+			if (!known) {
+				client.invalidateQueries({queryKey: ["jobs"]})
+				return
+			}
 			client.setQueryData(["jobs"], (oldjobs: JobItem[]) => {
 				let jobname: string = "uknown"
 				const newjobs =  oldjobs.map((job) => {
