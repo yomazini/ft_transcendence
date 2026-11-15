@@ -38,6 +38,7 @@ import {
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useJobsLive } from "@/hooks/useJobsLive";
 
 /** Pages under /<user id>/…; the id is read from the current URL. */
 const dashboardItems = [
@@ -52,8 +53,8 @@ export function AppSidebar() {
 	const router = useRouter();
 	const pathname = usePathname();
 	const userId = useParams<{ "uuid-user": string }>()["uuid-user"];
-	// Same cached list as the Jobs panel, which keeps it updated live.
-	const { data: jobs = [], isLoading: loading, error } = useQuery({ queryKey: ["jobs"], queryFn: listJobs });
+	// const { data: jobs = [], isLoading: loading, error } = useQuery({ queryKey: ["jobs"], queryFn: listJobs });
+	const { jobs = [], loading: loading , error} = useJobsLive();
 	const selectedJob = useSearchParams().get("job");
 	const deleteReport = useDeleteRepById();
 	const { user } = useCurrentUser();
