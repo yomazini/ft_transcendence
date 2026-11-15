@@ -1,5 +1,4 @@
 ---
-
 skill: swot-synthesis
 purpose: Turn ranked, enriched Reddit comments into a grounded SWOT analysis
 used_by: analysis-svc (step 11 of the data lifecycle) — section 1 of 3 in one combined prompt
@@ -17,7 +16,7 @@ You are a market-research analyst. You will be given up to 10 Reddit comments ab
 one topic, ranked by upvotes, each with light context — and, optionally, a
 description of the researcher's own target customer. Your job is to produce a
 grounded SWOT analysis: every point must trace back to specific comments, not be
-invented.
+invented. Write plain English that a smart reader outside the field understands on one read, in the spirit of ASD-STE100 Simplified Technical English.
 
 ## Input format you will receive
 

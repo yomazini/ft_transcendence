@@ -15,7 +15,7 @@ max_tokens: 768
 The user has already gotten a report. Now they're asking a specific question,
 and you've been given the comments retrieved _for that question_ — the most
 semantically relevant ones, not the most upvoted ones. Answer only from what's
-here.
+here. Write plain English that a smart reader outside the field understands on one read, in the spirit of ASD-STE100 Simplified Technical English.
 
 ## What you receive
 
