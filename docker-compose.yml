@@ -33,9 +33,8 @@ services:
     image: nginx-waf
     build: ./nginx
     ports:
-      ["${HTTP_PORT:-8080}:8080", "127.0.0.1:${PORT_GF:-3030}:${PORT_GF:-3030}"]
+      ["${HTTP_PORT:-8080}:${HTTP_PORT:-8080}"]
     environment:
-      PORT_GF: ${PORT_GF:-3030}
       ALLOWED_METHODS: "GET POST PATCH DELETE PUT"
     depends_on: [gateway-svc, frontend, auth-svc, reporting-svc, grafana]
     volumes:
@@ -109,7 +108,6 @@ services:
     image: scraper-svc
     build: ./scraper-svc
     expose: ["8000"]
-    env_file: .env
     volumes:
       - ./vault/creds/scraper-svc:/creds
     depends_on:
@@ -280,9 +278,7 @@ services:
     build: ./vault
     ports: ["127.0.0.1:8200:8200"]
     cap_add: [IPC_LOCK]
-    env_file: .env # every secret configuration.sh puts into Vault
-    environment:
-      CREDS_FILE: /secret/credentials.json # unseal key + root token, kept outside the data volume
+    env_file: .env
     volumes:
       - "vault_data:/vault" # Vault data + config (server.hcl stores in /vault/data)
       - "./vault/secret:/secret" # credentials.json — git-ignored
