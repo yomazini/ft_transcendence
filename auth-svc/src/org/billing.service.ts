@@ -11,6 +11,8 @@ import {
 	PlanTier,
 	PaymentStatus,
 	SubscriptionStatus,
+	Prisma,
+	Payment,
 } from '../../generated/prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
@@ -38,6 +40,8 @@ const PLANS: Record<
 	premium: { price: 2900, maxUsers: 5, maxJobs: 10 },
 	extra: { price: 5900, maxUsers: 20, maxJobs: 20 },
 };
+
+const PENDING_CHECKOUT_MS = 30 * 60 * 1000;
 
 function toPrismaPlan(plan: PaidPlan): PlanTier {
 	return plan === 'premium' ? PlanTier.Premium : PlanTier.Extra;
@@ -101,8 +105,8 @@ export class BillingService {
 		return organization;
 	}
 
-	async assertCanAddMember(orgId: string): Promise<void> {
-		const organization = await this.prisma.organization.findUnique({
+	async assertCanAddMember(orgId: string, db: Prisma.TransactionClient = this.prisma): Promise<void> {
+		const organization = await db.organization.findUnique({
 			where: { id: orgId },
 			select: { id: true },
 		});
@@ -111,7 +115,7 @@ export class BillingService {
 			throw new NotFoundException('Organization not found');
 		}
 
-		const subscription = await this.prisma.subscription.findFirst({
+		const subscription = await db.subscription.findFirst({
 			where: {
 				org_id: orgId,
 				status: SubscriptionStatus.Active,
@@ -122,7 +126,7 @@ export class BillingService {
 
 		const plan = toApiPlan(subscription?.plan ?? PlanTier.Free);
 
-		const memberCount = await this.prisma.role_and_organization.count({
+		const memberCount = await db.role_and_organization.count({
 			where: { org_id: orgId },
 		});
 
@@ -181,44 +185,68 @@ export class BillingService {
 		const plan: PaidPlan = dto.plan;
 		const prismaPlan = toPrismaPlan(plan);
 
-		const existing = await this.prisma.payment.findUnique({
-			where: {
-				idempotency_key: dto.idempotency_key,
-			},
-		});
-
-		if (existing) {
-			if (existing.org_id !== org.id || existing.plan !== prismaPlan) {
-				throw new ConflictException('Idempotency key already used');
-			}
-
-			throw new ConflictException('Checkout already exists for this request');
-		}
-
-		const active = await this.prisma.subscription.findFirst({
-			where: {
-				org_id: org.id,
-				status: SubscriptionStatus.Active,
-				ends_at: { gt: new Date() },
-			},
-		});
-
-		if (active) {
-			throw new ConflictException('An active subscription already exists');
-		}
-
 		const amountCents = PLANS[plan].price;
 
-		const payment = await this.prisma.payment.create({
-			data: {
-				org_id: org.id,
-				plan: prismaPlan,
-				amount_cents: amountCents,
-				currency: 'USD',
-				status: PaymentStatus.Pending,
-				idempotency_key: dto.idempotency_key,
-			},
-		});
+		let payment: Payment;
+		try {
+			payment = await this.prisma.$transaction(async (tx) => {
+				await this.prisma.lock_organization(tx, org.id);
+
+				const existing = await tx.payment.findUnique({
+					where: {
+						idempotency_key: dto.idempotency_key,
+					},
+				});
+
+				if (existing) {
+					if (existing.org_id !== org.id || existing.plan !== prismaPlan) {
+						throw new ConflictException('Idempotency key already used');
+					}
+
+					throw new ConflictException('Checkout already exists for this request');
+				}
+
+				const active = await tx.subscription.findFirst({
+					where: {
+						org_id: org.id,
+						status: SubscriptionStatus.Active,
+						ends_at: { gt: new Date() },
+					},
+				});
+
+				if (active) {
+					throw new ConflictException('An active subscription already exists');
+				}
+
+				const pending = await tx.payment.findFirst({
+					where: {
+						org_id: org.id,
+						status: PaymentStatus.Pending,
+						created_at: { gt: new Date(Date.now() - PENDING_CHECKOUT_MS) },
+					},
+				});
+
+				if (pending) {
+					throw new ConflictException('A checkout is already in progress');
+				}
+
+				return tx.payment.create({
+					data: {
+						org_id: org.id,
+						plan: prismaPlan,
+						amount_cents: amountCents,
+						currency: 'USD',
+						status: PaymentStatus.Pending,
+						idempotency_key: dto.idempotency_key,
+					},
+				});
+			});
+		} catch (error: any) {
+			if (error?.code === 'P2002') {
+				throw new ConflictException('Checkout already exists for this request');
+			}
+			throw error;
+		}
 
 		const checkoutUrl = new URL(
 			`${identity.userId}/billing/checkout`,
@@ -388,6 +416,8 @@ export class BillingService {
 		}
 
 		await this.prisma.$transaction(async (tx) => {
+			await this.prisma.lock_organization(tx, org.id);
+
 			const claimed = await tx.payment.updateMany({
 				where: {
 					id: payment.id,

@@ -110,28 +110,30 @@ export class OrgService {
 		if (id !== userOrgId) { throw new NotFoundException();  /** 404 */}
 		if (role !== 'Admin') { throw new ForbiddenException();  /** 403 */}
 
-		const membership = await this.prisma.role_and_organization.findFirst({
-				where: {
-					user_id: userId,
-					org_id: id,
+		await this.prisma.$transaction(async (tx) => {	
+			await this.prisma.lock_organization(tx, id);
+			const membership = await tx.role_and_organization.findFirst({
+					where: {
+						user_id: userId,
+						org_id: id,
+					}
+				})
+			if (!membership) { throw new NotFoundException() }
+			
+			if (membership.role === 'Admin' && dto.role !== 'Admin') {
+				const admines = await tx.role_and_organization.count({
+					where: { org_id: id, role: 'Admin'},
+				});
+				if (admines === 1) {
+					throw new BadRequestException('An organization must keep at least one Admin');
 				}
-			})
-		if (!membership) { throw new NotFoundException() }
-		
-		if (membership.role === 'Admin' && dto.role !== 'Admin') {
-			const admines = await this.prisma.role_and_organization.count({
-				where: { org_id: id, role: 'Admin'},
-			});
-			if (admines === 1) {
-				throw new BadRequestException('An organization must keep at least one Admin');
 			}
-		}
-
-		await this.prisma.role_and_organization.update({
-			where: { id: membership.id },
-			data: { role: dto.role }
-		});
-
+	
+			await tx.role_and_organization.update({
+				where: { id: membership.id },
+				data: { role: dto.role }
+			});
+		})
 		await this.denylist.revokeUser(userId);
 		
 		return {
@@ -144,24 +146,27 @@ export class OrgService {
 		if (id !== userOrgId) { throw new NotFoundException();  /** 404 */}
 		if (role !== 'Admin') { throw new ForbiddenException();  /** 403 */}
 
-		const membership = await this.prisma.role_and_organization.findFirst({
-			where: {
-				user_id: userId,
-				org_id: id,
+		await this.prisma.$transaction(async (tx) => {
+			await this.prisma.lock_organization(tx, id);
+			const membership = await tx.role_and_organization.findFirst({
+				where: {
+					user_id: userId,
+					org_id: id,
+				}
+			})
+			if (!membership) { throw new NotFoundException() }
+	
+			if (membership.role === 'Admin') {
+				const admins = await tx.role_and_organization.count({
+					where: { org_id: id, role: 'Admin' },
+				});
+				if (admins === 1) {
+					throw new BadRequestException('An organization must keep at least one Admin');
+				}
 			}
+	
+			await tx.user.delete({ where: { id: userId } });
 		})
-		if (!membership) { throw new NotFoundException() }
-
-		if (membership.role === 'Admin') {
-			const admins = await this.prisma.role_and_organization.count({
-				where: { org_id: id, role: 'Admin' },
-			});
-			if (admins === 1) {
-				throw new BadRequestException('An organization must keep at least one Admin');
-			}
-		}
-
-		await this.prisma.user.delete({ where: { id: userId } });
 
 		await this.denylist.revokeUser(userId);
 	}
