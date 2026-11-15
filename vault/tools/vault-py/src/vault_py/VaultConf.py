@@ -130,8 +130,11 @@ class VaultConf(StrictModel):
 		return (self.setting.settings_path)
 
 	def save_role_credentials(self, name:str, role_id:str, secret_id:str):
-		os.makedirs(f"{self.setting.role_credentials_path}/{name}/", exist_ok=True)
-		with open(f"{self.setting.role_credentials_path}/{name}/{self.setting.role_file}.json", "w") as f:
+		folder_path = f"{self.setting.role_credentials_path}/{name}"
+		file_path = f"{folder_path}/{self.setting.role_file}.json"
+		os.makedirs(folder_path, exist_ok=True)
+		os.chmod(folder_path, 0o755)
+		with open(file_path, "w") as f:
 			json.dump(
 				{
 					"role_id": role_id,
@@ -140,6 +143,7 @@ class VaultConf(StrictModel):
 				f,
 				indent=4
 			)
+		os.chmod(file_path, 0o644)
 
 	@classmethod
 	def load_config(cls, path: str) -> "VaultConf":
