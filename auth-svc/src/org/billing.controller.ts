@@ -29,7 +29,7 @@ interface AuthenticatedRequest {
 @Controller('orgs/billing')
 @UseGuards(JwtGuard)
 export class BillingController {
-	constructor(private readonly billingService: BillingService) {}
+	constructor(private readonly billingService: BillingService) { }
 
 	private getIdentity(req: AuthenticatedRequest): BillingIdentity {
 		const userId = req.user?.sub ?? req.user?.id;
@@ -144,5 +144,16 @@ export class BillingController {
 			paymentId,
 			outcome,
 		);
+	}
+
+	// GET /orgs/billing/access
+	@Get('access')
+	@ApiResponse({
+		status: 200,
+		description: 'Check whether the current user can access organization features',
+	})
+	@ApiResponse({ status: 401, description: 'Missing or invalid token' })
+	async checkAccess(@Req() req: AuthenticatedRequest) {
+		return this.billingService.checkAccess(this.getIdentity(req));
 	}
 }

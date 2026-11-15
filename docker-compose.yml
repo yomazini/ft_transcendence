@@ -92,7 +92,12 @@ services:
     build: ./auth-svc
     expose: ["3002"]
     ports: ["127.0.0.1:3002:3002"]
-    env_file: .env
+    # env_file: .env
+    environment:
+      NODE_ENV: ${NODE_ENV:-prod}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_mock}
+      STRIPE_MOCK_HOST: ${STRIPE_MOCK_HOST:-stripe-mock}
+      FRONTEND_URL: ${FRONTEND_URL:-https://localhost:8080}
     depends_on:
       postgres: { condition: service_healthy }
       vault: { condition: service_healthy }

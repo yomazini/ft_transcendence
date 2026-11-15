@@ -34,11 +34,11 @@ type SimulatedOutcome = 'succeeded' | 'failed';
 
 const PLANS: Record<
 	ApiPlan,
-	{ price: number; maxUsers: number; maxJobs: number }
+	{ price: number; maxUsers: number; }
 > = {
-	free: { price: 0, maxUsers: 1, maxJobs: 5 },
-	premium: { price: 2900, maxUsers: 5, maxJobs: 10 },
-	extra: { price: 5900, maxUsers: 20, maxJobs: 20 },
+	free: { price: 0, maxUsers: 1 },
+	premium: { price: 2900, maxUsers: 5 },
+	extra: { price: 5900, maxUsers: 20 },
 };
 
 const PENDING_CHECKOUT_MS = 30 * 60 * 1000;
@@ -165,7 +165,6 @@ export class BillingService {
 			status: subscription ? 'active' : 'free',
 			member_count: memberCount,
 			max_users: PLANS[plan].maxUsers,
-			max_jobs: PLANS[plan].maxJobs,
 			price_cents: PLANS[plan].price,
 			subscription_end: subscription?.ends_at ?? null,
 			cancel_at_period_end: subscription?.cancel_at_period_end ?? false,
@@ -535,6 +534,60 @@ export class BillingService {
 		return {
 			message: 'Subscription will expire at the end of the paid period',
 			ends_at: subscription.ends_at,
+		};
+	}
+
+	async checkAccess(identity: BillingIdentity) {
+		const org = await this.getOrganization(identity);
+
+		const subscription = await this.prisma.subscription.findFirst({
+			where: {
+				org_id: org.id,
+				status: SubscriptionStatus.Active,
+				ends_at: { gt: new Date() },
+			},
+			orderBy: {
+				ends_at: 'desc',
+			},
+		});
+
+		const plan = toApiPlan(subscription?.plan ?? PlanTier.Free);
+		const maxUsers = PLANS[plan].maxUsers;
+
+		const members = await this.prisma.role_and_organization.findMany({
+			where: {
+				org_id: org.id,
+			},
+			orderBy: [
+				{ user_id: 'asc' },
+			],
+			select: {
+				user_id: true,
+			},
+		});
+
+		const position = members.findIndex(
+			(member) => member.user_id === identity.userId,
+		);
+
+		if (position === -1) {
+			return {
+				allowed: false,
+				message: 'You are not a member of this organization.',
+			};
+		}
+
+		const withinLimit = position < maxUsers;
+
+		const allowed =
+			withinLimit &&
+			(plan !== 'free' || identity.role === 'Admin');
+
+		return {
+			allowed,
+			message: allowed
+				? 'You are allowed to access this feature.'
+				: 'Your organization exceeds its plan limit. Ask your Admin to remove excess members or upgrade the subscription.',
 		};
 	}
 }
