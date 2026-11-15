@@ -293,6 +293,18 @@ export function clearToken(): void {
 	sessionStorage.removeItem(TOKEN_KEY);
 }
 
+export function getTokenExp(): number | null {
+	const token = getToken();
+	if (!token) return null;
+	try {
+		const payload = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+		const exp = JSON.parse(atob(payload)).exp;
+		return typeof exp === "number" ? exp : null;
+	} catch {
+		return null;
+	}
+}
+
 
 
 

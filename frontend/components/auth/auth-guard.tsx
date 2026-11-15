@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useQueryClient } from "@tanstack/react-query";
-import { clearToken, getToken } from "@/lib/auth";
+import { clearToken, getToken, getTokenExp } from "@/lib/auth";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
 	const router = useRouter();
@@ -21,6 +21,24 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 			router.replace(`/${user.id}/dashboard`);
 		}
 	}, [error, user, urlUserId, router]);
+
+	useEffect(() => {
+		if (!user) return;
+		const exp = getTokenExp();
+		if (!exp) return;
+		const logout = () => {
+			clearToken();
+			queryClient.clear();
+			router.replace("/login");
+		};
+		const delay = exp * 1000 - Date.now();
+		if (delay <= 0) {
+			logout();
+			return;
+		}
+		const timer = setTimeout(logout, delay);
+		return () => clearTimeout(timer);
+	}, [user, queryClient, router]);
 
 	if (loading || error || !user || user.id !== urlUserId) {
 		return null;
