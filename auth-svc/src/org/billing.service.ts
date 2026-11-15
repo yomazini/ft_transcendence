@@ -559,7 +559,6 @@ export class BillingService {
 				org_id: org.id,
 			},
 			orderBy: [
-				{ created_at: 'asc' },
 				{ user_id: 'asc' },
 			],
 			select: {
