@@ -7,3 +7,12 @@ meta {
 ws {
   url: {{ws_url}}
 }
+
+docs {
+  # Socket.IO events
+
+  This Socket.IO endpoint reads the JWT from the handshake `auth.token`.
+  Bruno WebSocket cannot set that handshake field, so use the Node test:
+
+  `TOKEN=... NODE_TLS_REJECT_UNAUTHORIZED=0 node contracts/bruno/06-websocket-test.mjs`
+}
