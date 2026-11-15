@@ -1,9 +1,8 @@
-import { CreatedJob, JobMode } from "@/lib/api/createJob";
+import { JobMode } from "@/lib/api/createJob";
+import { JobItem } from "@/lib/api/jobs";
 import { authHeaders } from "@/lib/auth";
-import { QueryClient } from "@tanstack/react-query";
-import { ok } from "assert";
+
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
 
 export function notifyUser(message: string, success: boolean){
 	const data =  {description: message, duration: 4000}
@@ -14,20 +13,20 @@ export function notifyUser(message: string, success: boolean){
 }
 
 export async function submitJob(mode:JobMode, target: string) {
-	try {
-		const response = await fetch("/api/jobs",
-			{
-				method: "POST",
-				headers: {
-					"Content-type": "application/json",
-					...authHeaders()
-				},
-				body: JSON.stringify({"mode": mode, "target": target, "name": target})
-			}
-		)
-		notifyUser(`${response.statusText} ${response.status}`, response.ok)
-		return response.json();
-	} catch (error) {
-		notifyUser("Something went wrong while sendeng the job request", false)
-	}
+	const response = await fetch("/api/jobs",
+		{
+			method: "POST",
+			headers: {
+				"Content-type": "application/json",
+				...authHeaders()
+			},
+			body: JSON.stringify({"mode": mode, "target": target, "name": target})
+		}
+	)
+	if (!response.ok) {
+        throw new Error(`Failed to submit job: ${response.status}`);
+    }
+	const data: JobItem = await response.json()
+	console.log(data)
+	return data;
 }

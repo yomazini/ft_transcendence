@@ -1,23 +1,39 @@
 import { authHeaders } from "@/lib/auth";
 import { notifyUser } from "./submitJob";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { JobItem } from "@/lib/api/jobs";
 
-export async function deleteJob(id: string)
+async function deleteJob(id: string)
 {
-	try {
-		const response = await fetch(`/api/jobs/${id}`,
-			{
-				method: "DELETE",
-				headers: {
-					"Content-type": "application/json",
-					...authHeaders()
-				}
+	const response = await fetch(`/api/jobs/${id}`,
+		{
+			method: "DELETE",
+			headers: {
+				"Content-type": "application/json",
+				...authHeaders()
 			}
-		)
-		if (response.ok)
-			notifyUser("Job deleted successfully", response.ok)
-		else
-			notifyUser(`${response.statusText} ${response.status}`, response.ok)
-	} catch (error) {
-		notifyUser(`Failed to delete job: ${id}`, false)
+		}
+	)
+	if (!response.ok) {
+		throw new Error(`Failed to delete job: ${response.status}`);
 	}
+	return id
+}
+
+export function useDeleteJobById()
+{
+	const queryClient = useQueryClient();
+	return (
+		useMutation({
+			mutationFn: (id : string) => deleteJob(id),
+			onSuccess: (id :string ) => {
+				queryClient.setQueryData(["jobs"],(oldjobs: JobItem[])=> {
+					return oldjobs ? oldjobs.filter(job => job.id !== id) : oldjobs
+				})
+			},
+			onError: () => {
+				notifyUser("Something went wrong", false)
+			}
+		})
+	)
 }

@@ -2,25 +2,17 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { getJobs, Job } from "./getJobs";
 import { JobCard } from "./JobCard";
 import { useEffect, useState } from "react";
 import { listJobs } from "@/lib/api/jobs";
+import { useJobsLive } from "./useJobsLive";
 // import { CheckCircle, Clock, LoaderCircle, LoaderIcon, XCircle } from "lucide-react";
 
 // const JOBSUMMERIES = {""}
 
 export default function JobsList() {
-	// const [loading, setLoading] = useState(true)
-	// const [jobs, setJobs] = useState<Job[]>([])
-	const { data: jobs = [], isLoading: loading, error } = useQuery({ queryKey: ["jobs"], queryFn: listJobs });
+	const { jobs = [], isLoading: loading } = useJobsLive();
 
-	// useEffect(() => {
-	// 	getJobs().then((data) => {
-	// 		setJobs(data)
-	// 		setLoading(false)
-	// 	})
-	// }, [])
 	if (jobs.length === 0) {
 		return (
 			<div>
