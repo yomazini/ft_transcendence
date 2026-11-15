@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { loadVaultSecrets } from './vault';
@@ -7,11 +7,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  try {
-    await loadVaultSecrets();
-  } catch (e) {
-    Logger.warn(`Vault unavailable; using .env: ${e}`);
-  }
+  await loadVaultSecrets();
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 

@@ -32,7 +32,8 @@ services:
     container_name: nginx
     image: nginx-waf
     build: ./nginx
-    ports: ["${HTTP_PORT:-8080}:8080", "127.0.0.1:${PORT_GF:-3030}:${PORT_GF:-3030}"]
+    ports:
+      ["${HTTP_PORT:-8080}:8080", "127.0.0.1:${PORT_GF:-3030}:${PORT_GF:-3030}"]
     environment:
       PORT_GF: ${PORT_GF:-3030}
       ALLOWED_METHODS: "GET POST PATCH DELETE PUT"
@@ -64,9 +65,19 @@ services:
     image: gateway-svc
     build: ./gateway-svc
     expose: ["3001"]
-    env_file: .env
     environment:
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: "3001"
+      FRONTEND_URL: ${FRONTEND_URL:-https://localhost:8080}
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_USER: ${POSTGRES_USER:-ft_transcendence}
+      POSTGRES_DB: ${POSTGRES_DB:-ft_transcendence}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      AUTH_SVC_URL: http://auth-svc:3002
+      ANALYSIS_SVC_URL: http://analysis-svc:8001
+      VAULT_ADDR: ${VAULT_ADDR:-http://vault:8200}
     depends_on:
       postgres: { condition: service_healthy }
       vault: { condition: service_healthy }
@@ -114,10 +125,19 @@ services:
     image: analysis-svc
     build: ./analysis-svc
     expose: ["8001"]
-    env_file: .env
     environment:
       # scraper-svc reads scrape-job and forwards the comments here.
       QUEUE_NAME: analyze-job
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_USER: ${POSTGRES_USER:-ft_transcendence}
+      POSTGRES_DB: ${POSTGRES_DB:-ft_transcendence}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      EVENTS_CHANNEL: job-events
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-nvidia/nemotron-3-super-120b-a12b:free}
+      OPENROUTER_FALLBACK_MODELS: ${OPENROUTER_FALLBACK_MODELS:-google/gemma-4-26b-a4b-it}
+      VAULT_ADDR: ${VAULT_ADDR:-http://vault:8200}
     depends_on:
       redis: { condition: service_healthy }
       postgres: { condition: service_healthy }
@@ -135,7 +155,7 @@ services:
     expose: ["3003"]
     env_file: .env
     volumes:
-      # i shod separate them later thy overwrite them selfs 
+      # i shod separate them later thy overwrite them selfs
       - "./vault/creds/database:/run/vault:ro"
       - "./vault/creds/minio:/run/vault:ro"
     environment:

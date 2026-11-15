@@ -9,6 +9,7 @@ umask 077
 
 export CREDS_FILE="${CREDS_FILE:-/secret/credentials.json}"
 chmod 777 /audit
+[ -d /credentials ] && chmod 755 /credentials && chmod -R 755 /credentials 2>/dev/null || true
 
 if [ ! -f "$CREDS_FILE" ]; then
 	jq -n '{unseal_key: null, token: null, roles: {}, ready: false}' >"$CREDS_FILE.tmp"

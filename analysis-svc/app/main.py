@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import os
 import time
 from contextlib import asynccontextmanager
 from types import SimpleNamespace
@@ -38,23 +39,23 @@ def _read_vault_login() -> dict:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    try:
-        creds = await asyncio.to_thread(_read_vault_login)
-        client = hvac.Client(url="http://vault:8200")
-        client.auth.approle.login(
-            role_id=creds["role_id"], secret_id=creds["secret_id"]
-        )
-        db = client.secrets.kv.v2.read_secret_version(
-            path="database", mount_point="secret"
-        )["data"]["data"]
-        ai = client.secrets.kv.v2.read_secret_version(
-            path="analysis-svc", mount_point="secret"
-        )["data"]["data"]
-        settings.postgres_password = db["password"]
-        settings.openrouter_api_key = ai["openrouter_api_key"]
-        logger.info("Loaded secrets from Vault")
-    except Exception as e:  # noqa: BLE001 - Vault is optional at startup
-        logger.warning("Vault unavailable; using .env: %s", e)
+    creds = await asyncio.to_thread(_read_vault_login)
+    vault_url = os.getenv("VAULT_ADDR", "http://vault:8200")
+    client = hvac.Client(url=vault_url)
+    client.auth.approle.login(
+        role_id=creds["role_id"], secret_id=creds["secret_id"]
+    )
+    db = client.secrets.kv.v2.read_secret_version(
+        path="database", mount_point="secret"
+    )["data"]["data"]
+    ai = client.secrets.kv.v2.read_secret_version(
+        path="analysis-svc", mount_point="secret"
+    )["data"]["data"]
+    if not db.get("password") or not ai.get("openrouter_api_key"):
+        raise RuntimeError("Missing database.password or analysis-svc.openrouter_api_key in Vault")
+    settings.postgres_password = db["password"]
+    settings.openrouter_api_key = ai["openrouter_api_key"]
+    logger.info("Loaded secrets from Vault")
 
     try:
         await start_worker()
