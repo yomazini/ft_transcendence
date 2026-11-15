@@ -195,13 +195,14 @@ export class AuthController {
 		const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
 		if (token) {
 			await this.denylist.add(token, req.user.exp);
+			await this.denylist.revokeUser(req.user.sub);
 		}
 		this.metrics.logouts.inc();
 	}
-
+	
 	@ApiBearerAuth()
 	/** TODO: Uderstand MORE */
-	@Get('verify') /** GET /auth/verify 
+	@Get('verify') /** GET /auth/verify
 	— called by nginx (auth_request) before it forwards a request
 	 *  to a service that has no auth of its own (reporting-svc). */
 	@UseGuards(JwtGuard)
