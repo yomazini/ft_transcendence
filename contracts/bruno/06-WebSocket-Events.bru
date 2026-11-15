@@ -8,11 +8,22 @@ ws {
   url: {{ws_url}}
 }
 
+body:ws {
+  message connect [text] {
+    40{"token":"{{token}}"}
+  }
+
+  message pong [text] {
+    3
+  }
+}
+
 docs {
   # Socket.IO events
 
-  This Socket.IO endpoint reads the JWT from the handshake `auth.token`.
-  Bruno WebSocket cannot set that handshake field, so use the Node test:
-
-  `TOKEN=... NODE_TLS_REJECT_UNAUTHORIZED=0 node contracts/bruno/06-websocket-test.mjs`
+  Connect and wait for the Engine.IO packet `0{...}`.
+  Send `connect` to authenticate. A valid token returns `40{"sid":"..."}`.
+  Then run `02-Create-Job`. The server sends `42["job:queued",...]` and
+  `42["job:update",...]`.
+  Send `pong` when the server sends `2`.
 }
