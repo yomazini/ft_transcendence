@@ -102,7 +102,6 @@ model User {
     user_roles_organization role_and_organization[]
     two_factor_secret       String?
     is_2fa_enabled          Boolean                 @default(false)
-    email_verified          Boolean                 @default(false)
     created_at              DateTime                @default(now())
     apiKeys                 ApiKey?
 }

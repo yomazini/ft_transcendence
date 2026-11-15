@@ -58,25 +58,30 @@ export type ReportDetails = {
 
 function getSow(data: ReportDetails): CSVRow[] {
 	const rouws = Object.entries(data.swot).flatMap(([title, items]) =>
-		items.map((item) => {
-			const description = (item: ReportItem) => {
-				if (typeof item === "string") return item;
-				return String(
-					item.point ??
-						item.text ??
-						item.action ??
-						item.description ??
-						JSON.stringify(item),
-				);
-			};
-			return {
-				section: "SWOT",
-				category: title,
-				name: "",
-				value: "",
-				description: description(item),
-			};
-		}),
+		{
+			if (!Array.isArray(items)) {
+				return [];
+			}
+			return items.map((item) => {
+				const description = (item: ReportItem) => {
+					if (typeof item === "string") return item;
+					return String(
+						item.point ??
+							item.text ??
+							item.action ??
+							item.description ??
+							JSON.stringify(item),
+					);
+				};
+				return {
+					section: "SWOT",
+					category: title,
+					name: "",
+					value: "",
+					description: description(item),
+				};
+			})
+		}
 	);
 	return rouws;
 }
@@ -128,6 +133,9 @@ function getBlueOcean(data: ReportDetails): CSVRow[] {
 	};
 
 	return Object.entries(strategy).flatMap(([title, items]) => {
+		if (!Array.isArray(items)){
+			return [];
+		}
 		const description = (item: ReportItem) => {
 			if (typeof item === "string") return item;
 			return String(
@@ -352,7 +360,7 @@ export class ReportingService {
 
 	async findOne(id: string, header: ReportingHeadersDto) {
 		if (!header["org-id"]) {
-			throw new NotFoundException(
+			throw new BadRequestException(
 				"there is no organization with this id",
 			);
 		}
