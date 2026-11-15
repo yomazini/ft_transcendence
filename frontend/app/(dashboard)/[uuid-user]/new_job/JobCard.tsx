@@ -10,8 +10,12 @@ import { toast } from "sonner";
 import { notifyUser } from "./submitJob";
 import { useUpdateJobById } from "./useUpdateJobById";
 import { stat } from "fs";
+import { Role } from "@/lib/auth";
+import { RoleButton } from "./RoleButton";
 
 interface JobCardProps {
+	key: string,
+	role: Role | null
 	jobs: JobItem
 }
 
@@ -23,7 +27,7 @@ export const STATUS_STYLE: Record<JobStatus, string> = {
     failed: "bg-destructive/15 text-destructive",
 };
 
-export function JobCard({ jobs } : JobCardProps) {
+export function JobCard( {key,  role, jobs } : JobCardProps) {
 	const deleteJob = useDeleteJobById()
 	const updateJob = useUpdateJobById()
 	// const router = useRouter();
@@ -49,7 +53,7 @@ export function JobCard({ jobs } : JobCardProps) {
 	}
 
 	return (
-		<Card className="w-full rounded-md p-0">
+		<Card key={key} className="w-full rounded-md p-0">
 			<CardContent className="flex flex-col gap-2 py-3 px-4">
 				<Link href={`/${org_id}/dashboard?job=${id}`} className="flex items-center justify-between">
 					<h3 className="font-medium truncate">{name}</h3>
@@ -65,12 +69,12 @@ export function JobCard({ jobs } : JobCardProps) {
 					</p>
 					{status === "failed" || status === "done" ? (
 						<div className="flex justify-end gap-1">
-							<Button onClick={updateButton} variant="ghost" size="icon" className="hover:text-orange-500">
+							<RoleButton roles={["Analyst", "Admin"]} userRole={role} onClick={updateButton} className="hover:text-orange-500">
 								<RefreshCw />
-							</Button>
-							<Button onClick={deleteButton} variant="ghost" size="icon" className="hover:text-destructive">
+							</RoleButton>
+							<RoleButton roles={["Admin"]} userRole={role} onClick={deleteButton} className="hover:text-destructive">
 								<Trash2 />
-							</Button>
+							</RoleButton>
 						</div>
 					): <></>}
 				</div>
