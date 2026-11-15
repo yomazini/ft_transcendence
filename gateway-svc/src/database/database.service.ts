@@ -53,8 +53,8 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       connectionTimeoutMillis: 3000,
     });
 
+    const client = await this.pool.connect();
     try {
-      const client = await this.pool.connect();
       client.release();
       this.logger.log(`Connected to PostgreSQL at ${host}:${port}/${database}`);
     } catch (err: any) {

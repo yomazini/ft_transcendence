@@ -55,10 +55,12 @@ export class EventsGateway
         const data = JSON.parse(message);
         const { job_id, status, ...extra } = data;
         if (job_id && status) {
-          // scraper-svc has no database access: record its failures here.
+          // Scraper failures also update the database.
           if (status === 'failed') {
+            // Persist Failed without blocking Redis.
             void this.databaseService.updateJobStatus(job_id, 'failed');
           }
+          // Push live event, do not wait.
           void this.broadcastJobStatus(job_id, status, extra);
         }
       } catch {
@@ -86,7 +88,6 @@ export class EventsGateway
   afterInit() {
     this.logger.log('WebSocket Gateway initialized');
   }
-
   async handleConnection(client: Socket) {
     const token = client.handshake.auth?.token;
     if (!token) {

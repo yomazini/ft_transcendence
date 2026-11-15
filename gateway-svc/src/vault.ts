@@ -28,7 +28,9 @@ export async function loadVaultSecrets() {
   const db = await read('database', token);
   const gw = await read('gateway-svc', token);
   if (!db?.password || !gw?.jwt_secret) {
-    throw new Error('Missing database.password or gateway-svc.jwt_secret in Vault');
+    throw new Error(
+      'Missing database.password or gateway-svc.jwt_secret in Vault',
+    );
   }
   process.env.POSTGRES_PASSWORD = db.password;
   process.env.JWT_SECRET = gw.jwt_secret;
