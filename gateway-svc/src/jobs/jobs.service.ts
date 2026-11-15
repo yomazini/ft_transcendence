@@ -128,7 +128,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
             jobId,
             attempts: UNLIMITED_ATTEMPTS,
             backoff: {
-              type: 'exponential',
+              type: 'fixed',
               delay: 2000,
             },
           },
@@ -218,7 +218,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
         {
           jobId: `${job.id}-${Date.now()}`,
           attempts: UNLIMITED_ATTEMPTS,
-          backoff: { type: 'exponential', delay: 2000 },
+          backoff: { type: 'fixed', delay: 2000 },
         },
       );
     } catch (err: any) {

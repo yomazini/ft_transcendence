@@ -7,6 +7,7 @@ meta {
 ws {
   url: {{ws_url}}
   body: ws
+  auth: none
 }
 
 body:ws {
@@ -14,4 +15,8 @@ body:ws {
   content: '''
     40{"token":"{{token}}"}
   '''
+}
+
+vars:pre-request {
+  ws_url: wss://localhost:8080/socket.io/?EIO=4&transport=websocket
 }
