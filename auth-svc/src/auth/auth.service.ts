@@ -273,6 +273,9 @@ export class AuthService {
 			 *  Without a transaction the user would be created, the membership would fail,
 			 *  and a user with no org (who can never log in) would stay in the database. */
 			const { user, role } = await this.prisma.$transaction(async (tx) => {
+				await this.prisma.lock_organization(tx, payload.org_id);
+				await this.billing.assertCanAddMember(payload.org_id, tx);
+
 				const user = await tx.user.create({
 					data: {
 						email: payload.email,
@@ -460,34 +463,41 @@ export class AuthService {
 		const passwordMatches = await argon.verify(user.password, dto.password);
 		if (!passwordMatches) { throw new UnauthorizedException('Invalid credentials'); }
 
-		const membership = user.user_roles_organization[0];
-		const orgId = membership.org_id;
-		const members = await this.prisma.role_and_organization.count({
-			where: { org_id: orgId },
+		const orgId = user.user_roles_organization[0].org_id;
+
+		await this.prisma.$transaction(async (tx) => {
+			await this.prisma.lock_organization(tx, orgId);
+
+			const membership = await tx.role_and_organization.findFirst({
+				where: { user_id: userId, org_id: orgId },
+			});
+			if (!membership) { throw new UnauthorizedException(); }
+
+			const members = await tx.role_and_organization.count({
+				where: { org_id: orgId },
+			});
+
+			/** ⚠️ only member: the organization goes with them (an org with nobody in it must not stay). */
+			if (members === 1) {
+				await tx.organization.delete({ where: { id: orgId } });
+				await tx.user.delete({ where: { id: userId } });
+				return;
+			}
+
+			/** ❗⚠️ Other members exist: the last Admin cannot leave them without an Admin. */
+
+			if (membership.role === 'Admin') {
+				const admins = await tx.role_and_organization.count({
+					where: { org_id: orgId, role: 'Admin' },
+				});
+				if (admins === 1) {
+					throw new BadRequestException('An organization must keep at least one Admin');
+				}
+			}
+
+			await tx.user.delete({ where: { id: userId } });
 		});
 
-		/** ⚠️ only member: the organization goes with them (an org with nobody in it must not stay). */
-		if (members === 1) {
-			await this.prisma.$transaction(async (tx) => {
-				await tx.organization.delete({ where: { id: orgId } });
-				await tx.user.delete({ where: { id:userId } });
-			});
-			await this.mail.sendDeletionReceipt(user.email);
-			return;
-		}
-
-		/** ❗⚠️ Other members exist: the last Admin cannot leave them without an Admin. */
-
-		if (membership.role === 'Admin') {
-			const admins = await this.prisma.role_and_organization.count({
-				where: { org_id: orgId, role: 'Admin'},
-			});
-			if (admins === 1) {
-				throw new BadRequestException('An organization must keep at least one Admin');
-			}
-		}
-
-		await this.prisma.user.delete({ where: { id: userId } });
 		await this.mail.sendDeletionReceipt(user.email);
 	}
 }
