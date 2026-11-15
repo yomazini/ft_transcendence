@@ -1,4 +1,4 @@
-# Alert rules — visible on http://localhost:9090/alerts (inactive → pending → firing).
+# Alert rules — visible in Grafana: https://grafana.localhost:8080/alerting/list (inactive → pending → firing).
 # Checked every evaluation_interval (15 s). `for:` = how long the condition must stay
 # true before the alert fires, so a 1-second blip does not fire anything.
 groups:
