@@ -30,4 +30,24 @@ docs {
   `scraping`, `running`, then `done` or `failed`. `scraping` comes from the
   scraper. `running` starts when analysis begins. A missing LLM key ends in
   `failed`, not `done`. The `job:update` frame repeats every status.
+
+  # Independent socket demo
+
+  Keep `auth-svc`, `redis`, `gateway-svc`, and `nginx` running.
+  The scraper and analysis can stay stopped.
+
+  Use a job id from the same organization as the token. Publish the same
+  channel that the workers use:
+
+  ```bash
+  docker compose exec -T redis redis-cli PUBLISH job-events \
+    '{"job_id":"JOB_ID","status":"running"}'
+
+  docker compose exec -T redis redis-cli PUBLISH job-events \
+    '{"job_id":"JOB_ID","status":"done"}'
+  ```
+
+  Bruno shows `job:running`, `job:update`, `job:done`, and `job:update`.
+  This is a transport demo with a synthetic event. The gateway still
+  validates the token and sends only to the organization room.
 }
