@@ -2,8 +2,6 @@ import { Navbar } from "@/components/navbar";
 import { HeroSection } from "@/sections/hero";
 import { ProblemSection } from "@/sections/problem";
 import { FeaturesSection } from "@/sections/features";
-import { ProductPreviewSection } from "@/sections/product-preview";
-import { TestimonialsSection } from "@/sections/testimonials";
 import { PricingSection } from "@/sections/pricing";
 import { FAQSection } from "@/sections/faq";
 import { FinalCTASection } from "@/sections/final-cta";
@@ -16,8 +14,6 @@ export default function Home() {
       <HeroSection />
       <ProblemSection />
       <FeaturesSection />
-      {/* <ProductPreviewSection /> */}
-      {/* <TestimonialsSection /> */}
       <PricingSection />
       <FAQSection />
       <FinalCTASection />
