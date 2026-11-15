@@ -1,12 +1,13 @@
 import NewJobCard from "./NewJobCard"
-import SummaryMetrics from "@/components/dashboard/home/SummaryMetrics"
 import JobsList from "./JobsList"
+import { useUserRole } from "./useUserRole"
+import { Role } from "@/lib/auth"
 
 export default function NewJob()
 {
 	return (
 		<main className="page-d">
-			<NewJobCard /> 
+			<NewJobCard />
 
 			<JobsList />
 		</main>

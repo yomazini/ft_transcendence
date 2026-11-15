@@ -10,6 +10,7 @@ import { notifyUser, submitJob } from "./submitJob";
 import { useCreateJob } from "./useCreateJob";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter, useParams } from "next/navigation";
+import { useUserRole } from "./useUserRole";
 
 const MODES: { value: JobMode; label: string; placeholder: string }[] = [
 	{ value: "post", label: "Post URL", placeholder: "https://www.reddit.com/r/.../comments/..." },
@@ -108,8 +109,10 @@ function checkInput(target: string, mode: JobMode): string | null
 export default function NewJobCard()
 {
 	const [mode, setMode] = useState<JobMode>(MODES[0].value);
-	const placeholder = MODES.find((m) => m.value == mode)?.placeholder;
+	const placeholder = MODES.find((m) => m.value === mode)?.placeholder;
 	const createJobMutation = useCreateJob();
+	const role = useUserRole()
+
 	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 		const formData = new FormData(event.currentTarget)
@@ -128,7 +131,8 @@ export default function NewJobCard()
 		}
 	}
 
-
+	if (role !== "Admin" && role !== "Analyst")
+		return <></>
 	return (
 		<section className="relative mx-auto flex w-full flex-col gap-7 overflow-hidden rounded-3xl border border-orange-500/10 bg-white px-6 py-12 shadow-xl shadow-orange-500/5 dark:border-orange-500/15 dark:bg-zinc-950/80 dark:shadow-orange-950/20 sm:px-10">
 

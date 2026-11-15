@@ -6,12 +6,14 @@ import { JobCard } from "./JobCard";
 import { useEffect, useState } from "react";
 import { listJobs } from "@/lib/api/jobs";
 import { useJobsLive } from "./useJobsLive";
+import { useUserRole } from "./useUserRole";
 // import { CheckCircle, Clock, LoaderCircle, LoaderIcon, XCircle } from "lucide-react";
 
 // const JOBSUMMERIES = {""}
 
 export default function JobsList() {
 	const { jobs = [], isLoading: loading } = useJobsLive();
+	const role = useUserRole()
 
 	if (jobs.length === 0) {
 		return (
@@ -30,7 +32,7 @@ export default function JobsList() {
 					loading ?
 					<p className="text-zinc-600 dark:text-zinc-300">Loading jobs...</p> :
 					jobs.map((job) => (
-						<JobCard key={job.id} jobs={job} />
+						<JobCard key={job.id} role={role} jobs={job} />
 					))
 				}
 			</div>
