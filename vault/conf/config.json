@@ -60,6 +60,10 @@
 				{
 					"name": "mail_pass",
 					"env": "MAIL_PASS"
+				},
+				{
+					"name": "stripe_secret_key",
+					"env": "STRIPE_SECRET_KEY"
 				}
 			]
 		},

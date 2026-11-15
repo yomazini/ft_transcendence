@@ -34,11 +34,11 @@ type SimulatedOutcome = 'succeeded' | 'failed';
 
 const PLANS: Record<
 	ApiPlan,
-	{ price: number; maxUsers: number; maxJobs: number }
+	{ price: number; maxUsers: number;}
 > = {
-	free: { price: 0, maxUsers: 1, maxJobs: 5 },
-	premium: { price: 2900, maxUsers: 5, maxJobs: 10 },
-	extra: { price: 5900, maxUsers: 20, maxJobs: 20 },
+	free: { price: 0, maxUsers: 1},
+	premium: { price: 2900, maxUsers: 5},
+	extra: { price: 5900, maxUsers: 20},
 };
 
 const PENDING_CHECKOUT_MS = 30 * 60 * 1000;
@@ -165,7 +165,6 @@ export class BillingService {
 			status: subscription ? 'active' : 'free',
 			member_count: memberCount,
 			max_users: PLANS[plan].maxUsers,
-			max_jobs: PLANS[plan].maxJobs,
 			price_cents: PLANS[plan].price,
 			subscription_end: subscription?.ends_at ?? null,
 			cancel_at_period_end: subscription?.cancel_at_period_end ?? false,

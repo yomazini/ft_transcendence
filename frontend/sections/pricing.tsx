@@ -16,7 +16,6 @@ const plans = [
     highlighted: false,
     features: [
       "1 organization member",
-      "Up to 5 analysis jobs",
       "Basic workspace access",
       "Community support",
     ],
@@ -29,7 +28,6 @@ const plans = [
     highlighted: true,
     features: [
       "Up to 5 organization members",
-      "Up to 10 analysis jobs",
       "Team collaboration",
       "Advanced insights",
       "Priority support",
@@ -43,7 +41,6 @@ const plans = [
     highlighted: false,
     features: [
       "Up to 20 organization members",
-      "Up to 20 analysis jobs",
       "Team collaboration",
       "Advanced insights",
       "Priority support",

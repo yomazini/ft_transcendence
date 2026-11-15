@@ -36,7 +36,6 @@ const PLANS = [
     description: "For individuals getting started.",
     features: [
       "1 organization member",
-      "Up to 5 analysis jobs",
       "Basic workspace access",
       "Community support",
     ],
@@ -50,7 +49,6 @@ const PLANS = [
     description: "For growing teams.",
     features: [
       "Up to 5 organization members",
-      "Up to 10 analysis jobs",
       "Team collaboration",
       "Advanced insights",
       "Priority support",
@@ -65,7 +63,6 @@ const PLANS = [
     description: "For larger organizations.",
     features: [
       "Up to 20 organization members",
-      "Up to 20 analysis jobs",
       "Team collaboration",
       "Advanced insights",
       "Priority support",
