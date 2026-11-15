@@ -12,7 +12,7 @@ export function notifyUser(message: string, success: boolean){
 		toast.error("Failed", data)
 }
 
-export async function submitJob(mode:JobMode, target: string) {
+export async function submitJob(mode:JobMode, target: string) : Promise<JobItem> {
 	const response = await fetch("/api/jobs",
 		{
 			method: "POST",
@@ -26,7 +26,5 @@ export async function submitJob(mode:JobMode, target: string) {
 	if (!response.ok) {
         throw new Error(`Failed to submit job: ${response.status}`);
     }
-	const data: JobItem = await response.json()
-	console.log(data)
-	return data;
+	return await response.json();
 }
