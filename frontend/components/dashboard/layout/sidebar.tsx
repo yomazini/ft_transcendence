@@ -1,18 +1,11 @@
 "use client";
 import Link from "next/link"
 import {
-	ShoppingCart,
 	House,
-	Sparkles,
 	CreditCard,
 	Settings,
 	Users,
-	FileText,
-	MoreHorizontal,
-	Trash2,
 	ChevronRight,
-	HelicopterIcon,
-	HospitalIcon,
 } from "lucide-react"
 
 import {
@@ -26,11 +19,7 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { useQuery } from "@tanstack/react-query"
-import { listJobs } from "@/lib/api/jobs"
-import { useDeleteRepById } from "@/hooks/useDeleteRepById"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 import {
 	Collapsible,
@@ -56,18 +45,8 @@ export function AppSidebar() {
 	// const { data: jobs = [], isLoading: loading, error } = useQuery({ queryKey: ["jobs"], queryFn: listJobs });
 	const { jobs = [], loading: loading , error} = useJobsLive();
 	const selectedJob = useSearchParams().get("job");
-	const deleteReport = useDeleteRepById();
 	const { user } = useCurrentUser();
 	const visibleItems = dashboardItems.filter((item) => !item.adminOnly || user?.role === "Admin");
-
-	const handleDelete = async (id: string) => {
-		try {
-			await deleteReport.mutateAsync(id);
-			router.push(`/${userId}/dashboard`);
-		} catch (err) {
-			console.log("error", err);
-		}
-	};
 
 	return (
 		<Sidebar
@@ -167,32 +146,6 @@ export function AppSidebar() {
 													<span className="truncate">{report.target}</span>
 													<span className="ml-auto text-[10px] text-muted-foreground">{report.status}</span>
 												</SidebarMenuButton>
-
-												<DropdownMenu>
-													<DropdownMenuTrigger
-														render={
-															<button
-																type="button"
-																className="absolute right-1 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg bg-transparent text-gray-400 opacity-0 transition-all hover:bg-gray-200/70 hover:text-gray-900 group-hover:opacity-100"
-															>
-																<MoreHorizontal className="h-4 w-4" />
-															</button>
-														}
-													/>
-
-													<DropdownMenuContent
-														align="end"
-														className="w-40"
-													>
-														<DropdownMenuItem
-															className="text-red-500 focus:text-red-500"
-															onClick={() => handleDelete(report.id)}
-														>
-															<Trash2 className="mr-2 h-4 w-4" />
-															Delete
-														</DropdownMenuItem>
-													</DropdownMenuContent>
-												</DropdownMenu>
 											</SidebarMenuItem>
 										))
 									)}
