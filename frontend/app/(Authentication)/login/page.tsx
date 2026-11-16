@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { login, saveToken, homePath } from "@/lib/auth";
+import { login, saveToken, homePath, isValidEmail } from "@/lib/auth";
 
 import { RedirectIfLoggedIn } from "@/components/auth/redirect-if-logged-in";
 
@@ -39,6 +39,10 @@ export default function LoginPage() {
 		setError("");
 		if (!email.trim() || !password) {
 			setError("Enter your email and password.");
+			return;
+		}
+		if (!isValidEmail(email.trim())) {
+			setError("Enter a valid email address.");
 			return;
 		}
 		setLoading(true);
