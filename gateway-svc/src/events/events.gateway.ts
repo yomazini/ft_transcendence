@@ -136,7 +136,9 @@ export class EventsGateway
       return;
     }
 
-    this.server.to(job.org_id).emit(`job:${status}`, payload);
+    // removed this for the new card already removed alos from front
+    // this.server.to(job.org_id).emit(`job:${status}`, payload);
+
     this.server.to(job.org_id).emit('job:update', payload);
   }
 }
