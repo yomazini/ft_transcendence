@@ -159,7 +159,7 @@ export class BackupsService {
 			this.logger.error("Scheduled backup failed", err);
 		} finally {
 			this.metrics.backupDuration.observe(
-				Math.floor(Date.now() / 1000) - currentTime,
+				(performance.now() - currentTime) / 1000,
 			);
 		}
 	}
