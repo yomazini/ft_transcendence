@@ -39,10 +39,8 @@ const dashboardItems = [
 
 
 export function AppSidebar() {
-	const router = useRouter();
 	const pathname = usePathname();
 	const userId = useParams<{ "uuid-user": string }>()["uuid-user"];
-	// const { data: jobs = [], isLoading: loading, error } = useQuery({ queryKey: ["jobs"], queryFn: listJobs });
 	const { jobs = [], loading: loading , error} = useJobsLive();
 	const selectedJob = useSearchParams().get("job");
 	const { user } = useCurrentUser();
@@ -143,7 +141,7 @@ export function AppSidebar() {
 													render={<Link href={`/${userId}/dashboard?job=${report.id}`} />}
 												>
 													<span className="report-dot" />
-													<span className="truncate">{report.target}</span>
+													<span className="truncate">{report.name}</span>
 													<span className="ml-auto text-[10px] text-muted-foreground">{report.status}</span>
 												</SidebarMenuButton>
 											</SidebarMenuItem>
