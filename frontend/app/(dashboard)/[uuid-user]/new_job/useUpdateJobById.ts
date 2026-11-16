@@ -1,7 +1,6 @@
 import { authHeaders } from "@/lib/auth";
 import { notifyUser } from "./submitJob";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { JobItem } from "@/lib/api/jobs";
+import { useMutation } from "@tanstack/react-query";
 
 async function updateJob(id: string)
 {

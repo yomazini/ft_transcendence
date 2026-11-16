@@ -1,19 +1,18 @@
 import { Card, CardContent } from "@/components/ui/card"
 import type { JobItem, JobStatus } from "@/lib/api/jobs";
-import { RefreshCw, Trash2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Edit, RefreshCw, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link";
 import { useDeleteJobById } from "./deleteJob";
-import { useRouter, useParams } from "next/navigation";
-import { toast } from "sonner";
 import { notifyUser } from "./submitJob";
 import { useUpdateJobById } from "./useUpdateJobById";
-import { stat } from "fs";
 import { Role } from "@/lib/auth";
 import { RoleButton } from "./RoleButton";
+import { EditNameButton } from "./ConfirmationButton";
+import { useUpdateJobNameById } from "./useUpdateJobName";
 
 interface JobCardProps {
+	userId: string
 	key: string,
 	role: Role | null
 	jobs: JobItem
@@ -27,35 +26,43 @@ export const STATUS_STYLE: Record<JobStatus, string> = {
     failed: "bg-destructive/15 text-destructive",
 };
 
-export function JobCard( {key,  role, jobs } : JobCardProps) {
+export function JobCard( {key, userId,  role, jobs } : JobCardProps) {
 	const deleteJob = useDeleteJobById()
 	const updateJob = useUpdateJobById()
-	// const router = useRouter();
-	// const userId = useParams<{ "uuid-user": string }>()["uuid-user"];
-	const { status, mode, created_at, id, org_id, name } = jobs;
+	const updateJobName = useUpdateJobNameById()
+	const { status, mode, created_at, id, name } = jobs;
+
 	async function deleteButton() {
-		// await deleteJob(id)
 		try {
 			await deleteJob.mutateAsync(id);
-			// router.push(`/${userId}/new_job`)
 		} catch (err) {
-			notifyUser("Something went wrong", false)
+			if (err instanceof Error) notifyUser(err.message, false)
+			else notifyUser("Something went wrong", false)
 		}
 	}
+
 	async function updateButton() {
-		// await deleteJob(id)
 		try {
 			await updateJob.mutateAsync(id);
-			// router.push(`/${userId}/new_job`)
 		} catch (err) {
-			notifyUser("Something went wrong", false)
+			if (err instanceof Error) notifyUser(err.message, false)
+			else notifyUser("Something went wrong", false)
+		}
+	}
+
+	async function editName(name:string) {
+		try {
+			await updateJobName.mutateAsync({id, name});
+		} catch (err) {
+			if (err instanceof Error) notifyUser(err.message, false)
+			else notifyUser("Something went wrong", false)
 		}
 	}
 
 	return (
 		<Card key={key} className="w-full rounded-md p-0">
 			<CardContent className="flex flex-col gap-2 py-3 px-4">
-				<Link href={`/${org_id}/dashboard?job=${id}`} className="flex items-center justify-between">
+				<Link href={`/${userId}/dashboard?job=${id}`} className="flex items-center justify-between">
 					<h3 className="font-medium truncate">{name}</h3>
 					<Badge className={STATUS_STYLE[status]}>{status}</Badge>
 				</Link>
@@ -69,6 +76,9 @@ export function JobCard( {key,  role, jobs } : JobCardProps) {
 					</p>
 					{status === "failed" || status === "done" ? (
 						<div className="flex justify-end gap-1">
+							<EditNameButton confirmFunc={editName} roles={["Analyst", "Admin"]} userRole={role} className="hover:text-yellow-500">
+								<Edit/>
+							</EditNameButton>
 							<RoleButton roles={["Analyst", "Admin"]} userRole={role} onClick={updateButton} className="hover:text-orange-500">
 								<RefreshCw />
 							</RoleButton>

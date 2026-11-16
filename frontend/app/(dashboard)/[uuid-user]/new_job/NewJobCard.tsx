@@ -6,10 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoaderCircle, Send } from "lucide-react";
 import { FormEvent, useState } from "react";
-import { notifyUser, submitJob } from "./submitJob";
+import { notifyUser } from "./submitJob";
 import { useCreateJob } from "./useCreateJob";
-import { useMutation } from "@tanstack/react-query";
-import { useRouter, useParams } from "next/navigation";
 import { useUserRole } from "./useUserRole";
 
 const MODES: { value: JobMode; label: string; placeholder: string }[] = [
@@ -39,7 +37,7 @@ function checkInputUrl(target:string): string | null
 			return null
 		}
 		path = urlpath.join("/")
-	} catch (error) {
+	} catch {
 		notifyUser("Invalid URL", false)
 		return null
 	}
@@ -62,7 +60,7 @@ function checkSubreddit(target: string): string | null
 		if (urlpath.length === 2)
 			urlpath.push("new")
 		path = urlpath.join("/")
-	} catch (error) {
+	} catch {
 		notifyUser("Invalid URL", false)
 		return null
 	}
@@ -82,7 +80,7 @@ function checkUser(target: string): string | null
 			return null
 		}
 		path = urlpath.join("/")
-	} catch (error) {
+	} catch {
 		notifyUser("Invalid URL", false)
 		return null
 	}
@@ -105,7 +103,7 @@ function checkInput(target: string, mode: JobMode): string | null
 	else
 		return (target)
 }
-//send url 
+
 export default function NewJobCard()
 {
 	const [mode, setMode] = useState<JobMode>(MODES[0].value);
@@ -127,7 +125,8 @@ export default function NewJobCard()
 				target: result
 			})
 		} catch (err) {
-			notifyUser("Something went wrong while sendeng the job request", false)
+			if (err instanceof Error) notifyUser(err.message, false)
+			else notifyUser("Something went wrong", false)
 		}
 	}
 
