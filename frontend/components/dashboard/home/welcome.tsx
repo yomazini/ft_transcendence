@@ -41,19 +41,13 @@ export default function Welcome() {
   return (
     <section className="relative grid min-w-0 grid-cols-1 overflow-hidden rounded-2xl border border-orange-100 bg-gradient-to-br from-white via-orange-50/50 to-amber-100/70 shadow-sm dark:border-white/10 dark:from-zinc-950 dark:via-zinc-900 dark:to-orange-950/60 lg:grid-cols-3">
 
-      {/* Decorative gradient */}
       <div className="pointer-events-none absolute -right-20 -top-32 h-80 w-[65%] rounded-full bg-orange-200/40 blur-3xl dark:bg-orange-600/10" />
 
-      {/* Welcome content */}
       <div className="relative z-10 flex min-h-[220px] min-w-0 flex-col justify-center gap-4 p-6 sm:p-8 lg:col-span-2">
 
         <div className="flex items-center gap-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-500/15 dark:text-orange-300">
-            <Moon className="size-5" />
-          </div>
-
           <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-white sm:text-2xl">
-            Good Evening{name ? `, ${name}` : ""} 👋
+            hi{name ? `, ${name}` : ""} 👋
           </h1>
         </div>
 
@@ -107,7 +101,6 @@ export default function Welcome() {
         </div>
       </div>
 
-      {/* Illustration */}
       <div className="relative hidden min-h-[220px] items-end justify-end lg:flex">
         <div className="absolute bottom-0 right-0 h-44 w-72 rounded-tl-[100px] bg-orange-200/30 dark:bg-orange-500/10" />
 

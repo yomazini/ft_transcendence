@@ -85,24 +85,30 @@ async function vaultLogin(filePath: string) {
 }
 
 async function bootstrap() {
-	const token = await vaultLogin("/run/vault/login.json");
-	const result = await getSecrets(token);
-	const secoundresult = await getMinioSecrets(token);
-	process.env.POSTGRES_USER = result.user;
-	process.env.POSTGRES_PASSWORD = result.password;
-	process.env.POSTGRES_DB = result.database;
-	process.env.MINIO_ROOT_USER = secoundresult.user;
-	process.env.MINIO_ROOT_PASSWORD = secoundresult.password;
-	process.env.MINIO_ACCESS_KEY = secoundresult.access_key;
-	process.env.MINIO_SECRET_KEY = secoundresult.secret_key;
-	process.env.BACKUP_HMAC_KEY = secoundresult.backup_hmac_key;
-	const databaseUrl = new URL("postgresql://postgres:5432");
-	databaseUrl.username = result.user;
-	databaseUrl.password = result.password;
-	databaseUrl.pathname = `/${encodeURIComponent(result.database)}`;
+	try {
+		const token = await vaultLogin("/run/vault/login.json");
+		const result = await getSecrets(token);
+		const secoundresult = await getMinioSecrets(token);
+		process.env.POSTGRES_USER = result.user;
+		process.env.POSTGRES_PASSWORD = result.password;
+		process.env.POSTGRES_DB = result.database;
+		process.env.MINIO_ROOT_USER = secoundresult.user;
+		process.env.MINIO_ROOT_PASSWORD = secoundresult.password;
+		process.env.MINIO_ACCESS_KEY = secoundresult.access_key;
+		process.env.MINIO_SECRET_KEY = secoundresult.secret_key;
+		process.env.BACKUP_HMAC_KEY = secoundresult.backup_hmac_key;
+		const databaseUrl = new URL("postgresql://postgres:5432");
+		databaseUrl.username = result.user;
+		databaseUrl.password = result.password;
+		databaseUrl.pathname = `/${encodeURIComponent(result.database)}`;
+		process.env.DATABASE_URL = databaseUrl.toString();
 
-	process.env.DATABASE_URL = databaseUrl.toString();
-	const app = await NestFactory.create(AppModule);
+	} catch (err){
+		console.error("Failed to retrieve Vault secrets:", err);
+		process.exit(1);
+	}
+
+	const app = await NestFactory.create(AppModule, {abortOnError: false});
 	app.enableCors({
 		origin: "http://localhost",
 	});
@@ -124,4 +130,7 @@ async function bootstrap() {
 		`Swagger documentation: http://localhost:${port}/api/reporting/docs`,
 	);
 }
-void bootstrap();
+void bootstrap().catch((err: unknown) => {
+	console.log("Reporting service failed to start:", err);
+	process.exit(1);
+});
