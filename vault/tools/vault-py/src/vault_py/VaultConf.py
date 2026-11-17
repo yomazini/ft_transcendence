@@ -3,6 +3,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from enum import StrEnum
 from typing import cast
 
+CREDS_FILE = os.getenv("CREDS_FILE", "/secret/credentials.json")
+
 class Capability(StrEnum):
     CREATE = "create"
     READ = "read"
@@ -18,7 +20,6 @@ class StrictModel(BaseModel):
 class Setting(StrictModel):
 	audit_path:str = "/audit"
 	role_credentials_path: str = "/credentials/"
-	settings_path:str = "/secret/credentials.json"
 	role_file:str = "login"
 	audit_file:str = "audit"
 	token_ttl:str = "1h"
@@ -33,9 +34,6 @@ class Setting(StrictModel):
 
 		if not os.path.isdir(self.audit_path) or not os.access(self.audit_path, os.W_OK):
 			raise ValueError(f"audit_path {self.audit_path} doesn't exist or permission denied")
-
-		if not os.access(self.settings_path, os.W_OK):
-			raise ValueError(f"settings_path {self.settings_path} doesn't exist or permission denied")
 
 		if "/" in self.audit_file or "." in self.audit_file or self.audit_file == "":
 			raise ValueError(f"audit_file {self.audit_file} shouldn't be empty or have a '/' and/or '.'")
@@ -84,7 +82,7 @@ class Secret(StrictModel):
 		for secret in self.values:
 			val = secret.get_env_value()
 			if val == "":
-				raise RuntimeError("Empty envirement variable(s)")
+				raise RuntimeError(f"Empty envirement variable(s) ({secret.env})")
 			d[secret.name] = val
 		return d
 
@@ -127,7 +125,7 @@ class VaultConf(StrictModel):
 		return self
 
 	def get_secret_path(self):
-		return (self.setting.settings_path)
+		return (CREDS_FILE)
 
 	def save_role_credentials(self, name:str, role_id:str, secret_id:str):
 		folder_path = f"{self.setting.role_credentials_path}/{name}"
