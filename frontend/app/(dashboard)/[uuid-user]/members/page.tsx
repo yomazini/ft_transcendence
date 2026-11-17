@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMembers } from "@/hooks/useMembers";
 import { changeRole, inviteMember, removeMember } from "@/lib/api/members";
-import { isValidEmail, type Role } from "@/lib/auth";
+import { isValidEmail, MAX_EMAIL_LENGTH, type Role } from "@/lib/auth";
 
 const ROLES: Role[] = ["Admin", "Analyst", "Viewer"];
 
@@ -84,6 +84,7 @@ export default function MembersPage() {
 							type="email"
 							placeholder="teammate@example.com"
 							value={email}
+							maxLength={MAX_EMAIL_LENGTH}
 							onChange={(e) => setEmail(e.target.value)}
 							disabled={invite.isPending}
 							className="h-10 rounded-xl border-orange-200 bg-orange-50/30 text-zinc-900 placeholder:text-zinc-500 focus-visible:border-orange-400 focus-visible:ring-orange-500/20 dark:border-orange-500/20 dark:bg-zinc-800/50 dark:text-zinc-100 sm:flex-1"

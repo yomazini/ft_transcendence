@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { changeEmail, changePassword, deleteMyData, exportMyData, isValidEmail, MIN_PASSWORD_LENGTH } from "@/lib/auth";
+import { changeEmail, changePassword, deleteMyData, exportMyData, isValidEmail, MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH, MAX_EMAIL_LENGTH } from "@/lib/auth";
 import ApiKey from "@/components/srtting/apiKey";
 import TwoFactor from "@/components/srtting/twoFactor";
 import Organization from "@/components/srtting/organization";
@@ -79,6 +79,11 @@ export default function SettingsProfile() {
 
 	async function handlePasswordUpdate() {
 		setPasswordNotice("");
+
+		if (!currentPassword) {
+			setPasswordError("Enter your current password.");
+			return;
+		}
 
 		if (newPassword.length < MIN_PASSWORD_LENGTH) {
 			setPasswordError(`New password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
@@ -199,6 +204,7 @@ export default function SettingsProfile() {
 
 						<Input
 							id="email"
+							maxLength={MAX_EMAIL_LENGTH}
 							type="email"
 							placeholder={currentEmail}
 							value={newEmail}
@@ -220,6 +226,7 @@ export default function SettingsProfile() {
 
 							<Input
 								id="email-password"
+								maxLength={MAX_PASSWORD_LENGTH}
 								type={showEmailPassword ? "text" : "password"}
 								autoComplete="current-password"
 								value={emailPassword}
@@ -275,6 +282,7 @@ export default function SettingsProfile() {
 
 							<Input
 								id="current-password"
+								maxLength={MAX_PASSWORD_LENGTH}
 								type={showCurrent ? "text" : "password"}
 								value={currentPassword}
 								onChange={(e) => setCurrentPassword(e.target.value)}
@@ -304,6 +312,7 @@ export default function SettingsProfile() {
 
 							<Input
 								id="new-password"
+								maxLength={MAX_PASSWORD_LENGTH}
 								type={showNew ? "text" : "password"}
 								value={newPassword}
 								onChange={(e) => setNewPassword(e.target.value)}
@@ -333,6 +342,7 @@ export default function SettingsProfile() {
 
 							<Input
 								id="confirm-password"
+								maxLength={MAX_PASSWORD_LENGTH}
 								type={showConfirm ? "text" : "password"}
 								value={confirmPassword}
 								onChange={(e) => setConfirmPassword(e.target.value)}
@@ -412,6 +422,7 @@ export default function SettingsProfile() {
 
 						<Input
 							id="delete-password"
+							maxLength={MAX_PASSWORD_LENGTH}
 							type={showDeletePassword ? "text" : "password"}
 							autoComplete="current-password"
 							placeholder="Current password"
