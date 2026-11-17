@@ -42,9 +42,7 @@ async def lifespan(app: FastAPI):
     creds = await asyncio.to_thread(_read_vault_login)
     vault_url = os.getenv("VAULT_ADDR", "http://vault:8200")
     client = hvac.Client(url=vault_url)
-    client.auth.approle.login(
-        role_id=creds["role_id"], secret_id=creds["secret_id"]
-    )
+    client.auth.approle.login(role_id=creds["role_id"], secret_id=creds["secret_id"])
     db = client.secrets.kv.v2.read_secret_version(
         path="database", mount_point="secret"
     )["data"]["data"]
@@ -52,7 +50,9 @@ async def lifespan(app: FastAPI):
         path="analysis-svc", mount_point="secret"
     )["data"]["data"]
     if not db.get("password") or not ai.get("openrouter_api_key"):
-        raise RuntimeError("Missing database.password or analysis-svc.openrouter_api_key in Vault")
+        raise RuntimeError(
+            "Missing database.password or analysis-svc.openrouter_api_key in Vault"
+        )
     settings.postgres_password = db["password"]
     settings.openrouter_api_key = ai["openrouter_api_key"]
     logger.info("Loaded secrets from Vault")
@@ -157,13 +157,14 @@ async def trigger_analysis(job_id: str):
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
 
     try:
+        # Fake BullMQ job for the manual route.
         result = await process_job(
             SimpleNamespace(
-                data={"id": job_id},
-                attemptsMade=0,
-                opts={"attempts": 1},
+                data={"id": job_id},  # Minimal job payload.
+                attemptsMade=0,  # No attempt on the HTTP route.
+                opts={"attempts": 1},  # One final attempt, no retry.
             ),
-            None,
+            None,  # BullMQ token is unused by process_job.
         )
     except LLMError as exc:
         logger.error("Manual analysis failed for job %s: %s", job_id, exc)
@@ -231,9 +232,7 @@ async def query_rag(payload: RagQueryRequest):
     reranked = rerank_for_rag(candidates, top_k=settings.rag_top_k)
     prompt = build_rag_prompt(payload.query, reranked, job)
     try:
-        answer = await call_openrouter_text(
-            prompt, max_tokens=768, temperature=0.2
-        )
+        answer = await call_openrouter_text(prompt, max_tokens=768, temperature=0.2)
     except LLMError as exc:
         logger.error("RAG LLM failed for job %s: %s", payload.job_id, exc)
         raise HTTPException(status_code=exc.status_code, detail=str(exc))
