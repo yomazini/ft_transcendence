@@ -43,12 +43,12 @@ export class AuthController {
 		status: 400,
 		description: 'Invalid body or user already exists',
 	})
-	@Post('signup') /** POST /auth/signup */
+	@Post('signup')
 	register(@Body() registerDto: RegisterDto) {
 		return this.authService.register(registerDto);
 	}
 
-	@Post('login') /** POST /auth/login */
+	@Post('login')
 	@HttpCode(200)
 	@ApiResponse({ status: 200, description: 'Returns access_token' })
 	@ApiResponse({ status: 401, description: 'Invalid credentials' })
@@ -60,18 +60,17 @@ export class AuthController {
 	@UseGuards(JwtGuard)
 	@ApiResponse({ status: 200, description: 'Current user' })
 	@ApiResponse({ status: 401, description: 'Missing or invalid token' })
-	@Get('me') /** GET /auth/me */
+	@Get('me')
 	GetMe(@Req() req) {
-		return this.authService.me(req.user.sub); /** req.user.sub == user ID */
+		return this.authService.me(req.user.sub);
 	}
 
-	@Get('42') /** GET /auth/42 */
+	@Get('42')
 	@UseGuards(FortyTwoGuard)
 	@ApiResponse({ status: 302, description: 'Redirect (to 42 / to frontend)' })
 	fortyTwoAuth() {}
-	/** stays empty permanently, It exists purely so there's a route for @UseGuards(FortyTwoGuard) to attach to; */
 
-	@Get('42/callback') /** GET /auth/42/callback */
+	@Get('42/callback')
 	@UseGuards(FortyTwoGuard)
 	@ApiResponse({ status: 302, description: 'Redirect (to 42 / to frontend)' })
 	async fortyTwoAuthCallback(@Req() req, @Res() res) {
@@ -96,7 +95,7 @@ export class AuthController {
 		description: 'Account created, returns access_token',
 	})
 	@ApiResponse({ status: 401, description: 'Invalid or expired signup_token' })
-	@Post('42/complete') /** POST /auth/42/complete */
+	@Post('42/complete')
 	complete42Auth(@Body() dto: Complete42Dto) {
 		return this.authService.complete42Login(dto);
 	}
@@ -107,13 +106,13 @@ export class AuthController {
 		description: 'User already exists or organization deleted',
 	})
 	@ApiResponse({ status: 401, description: 'Invalid or expired invite token' })
-	@Post('invite/accept') /** POST /auth/invite/accept */
+	@Post('invite/accept')
 	acceptInvitation(@Body() dto: AcceptInviteDto) {
 		return this.authService.acceptInvite(dto);
 	}
 
 	@ApiBearerAuth()
-	@Post('change-password') /** POST /auth/change-password */
+	@Post('change-password')
 	@UseGuards(JwtGuard)
 	@HttpCode(200)
 	@ApiResponse({ status: 200, description: 'Password changed' })
@@ -123,14 +122,10 @@ export class AuthController {
 	})
 	changePassword(@Body() dto: ChangePasswordDto, @Req() req) {
 		return this.authService.changePassword(req.user.sub, dto);
-		/** ⚠️ id from the token, never from the body
-		 * The token is signed by the server, so the id inside it (req.user.sub) cannot be faked.
-			The body is typed by the user, so anything in it can be a lie.
-		*/
 	}
 
 	@ApiBearerAuth()
-	@Patch('email') /** PATCH /auth/email */
+	@Patch('email')
 	@UseGuards(JwtGuard)
 	@ApiResponse({ status: 200, description: 'Email changed' })
 	@ApiResponse({ status: 401, description: 'Bad token or password' })
@@ -142,14 +137,14 @@ export class AuthController {
 		return this.authService.changeEmail(req.user.sub, dto);
 	}
 
-	@Post('forgot-password') /** POST /auth/forgot-password */
+	@Post('forgot-password')
 	@HttpCode(200)
 	@ApiResponse({ status: 200, description: 'Always 200 (no email leak)' })
 	forgotPassword(@Body() dto: ForgotPasswordDto) {
 		return this.authService.forgotPassword(dto);
 	}
 
-	@Post('reset-password') /** POST /auth/reset-password */
+	@Post('reset-password')
 	@HttpCode(200)
 	@ApiResponse({ status: 200, description: 'Password reset' })
 	@ApiResponse({
@@ -162,7 +157,7 @@ export class AuthController {
 	}
 
 	@ApiBearerAuth()
-	@Post('gdpr/export') /** POST auth/gdpr/export */
+	@Post('gdpr/export')
 	@UseGuards(JwtGuard)
 	@HttpCode(200)
 	@ApiResponse({ status: 200, description: 'User data as JSON' })
@@ -172,7 +167,7 @@ export class AuthController {
 	}
 
 	@ApiBearerAuth()
-	@Delete('gdpr/delete') /** DELETE auth/gdpr/export */
+	@Delete('gdpr/delete')
 	@UseGuards(JwtGuard)
 	@HttpCode(204)
 	@ApiResponse({ status: 204, description: 'Account deleted' })
@@ -186,7 +181,7 @@ export class AuthController {
 	}
 
 	@ApiBearerAuth()
-	@Post('logout') /** POST /auth/logout */
+	@Post('logout')
 	@UseGuards(JwtGuard)
 	@HttpCode(204)
 	@ApiResponse({ status: 204, description: 'Token revoked' })
@@ -201,10 +196,7 @@ export class AuthController {
 	}
 	
 	@ApiBearerAuth()
-	/** TODO: Uderstand MORE */
-	@Get('verify') /** GET /auth/verify
-	— called by nginx (auth_request) before it forwards a request
-	 *  to a service that has no auth of its own (reporting-svc). */
+	@Get('verify')
 	@UseGuards(JwtGuard)
 	@HttpCode(204)
 	@ApiResponse({

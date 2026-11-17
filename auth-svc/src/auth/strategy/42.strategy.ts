@@ -11,7 +11,6 @@ export class FortyTwoStrategy extends PassportStrategy(Strategy, '42') {
 			callbackURL: process.env.FORTYTWO_CALLBACK_URL!,
 		});	
 	}
-	/** @note we did not use this ?: 42 did ➜ Passport calls validate() automatically */
 	async validate(accessToken: string, refreshToken: string, profile: any) {
 		return profile;
 	}
