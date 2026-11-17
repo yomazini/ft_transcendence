@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable,UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable,UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as argon from 'argon2';
 import { AcceptInviteDto, ChangeEmailDto, ChangePasswordDto, Complete42Dto, DeleteAccountDto, ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from './dto';
@@ -64,7 +64,7 @@ export class AuthService {
 			};
 		} catch (error: any) {
 			if (error.code === 'P2002') {
-				throw new BadRequestException('User already exists');
+				throw new ConflictException('User already exists');
 			}
 			throw error;
 		}
@@ -238,7 +238,7 @@ export class AuthService {
 			}
 		} catch(error: any) {
 			if (error.code === 'P2002') {
-				throw new BadRequestException('User already exists');
+				throw new ConflictException('User already exists');
 			}
 			throw error;
 		}
@@ -302,7 +302,7 @@ export class AuthService {
 
 		} catch (error: any) {
 			if (error.code === 'P2002') {
-				throw new BadRequestException('User already exists');
+				throw new ConflictException('User already exists');
 			}
 			if (error.code === 'P2003') {
 				throw new BadRequestException('This organization no longer exists');
@@ -351,7 +351,7 @@ export class AuthService {
 			return { id: update.id, email: update.email };
 		} catch(error: any) {
 			if (error.code === 'P2002') {
-				throw new BadRequestException('Email already in use');
+				throw new ConflictException('Email already in use');
 			}
 			throw error;
 		}
