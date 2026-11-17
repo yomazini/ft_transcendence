@@ -309,9 +309,9 @@ paths:
               type: object
               required: [email, password, org_name, org_description]
               properties:
-                email: { type: string, format: email }
-                password: { type: string, minLength: 8 }
-                org_name: { type: string }
+                email: { type: string, format: email, maxLength: 254 }
+                password: { type: string, minLength: 8, maxLength: 128 }
+                org_name: { type: string, minLength: 1, maxLength: 50, description: "Trimmed; spaces only is rejected" }
                 org_description: { type: string, minLength: 100, maxLength: 200 }
       responses:
         "201":
@@ -337,8 +337,8 @@ paths:
               type: object
               required: [email, password]
               properties:
-                email: { type: string, format: email }
-                password: { type: string }
+                email: { type: string, format: email, maxLength: 254 }
+                password: { type: string, maxLength: 128 }
       responses:
         "200":
           description: >
@@ -409,9 +409,9 @@ paths:
               required: [signup_token, org_name, org_description, password]
               properties:
                 signup_token: { type: string, description: "Short-lived JWT from the /auth/42/callback redirect" }
-                org_name: { type: string }
+                org_name: { type: string, minLength: 1, maxLength: 50, description: "Trimmed; spaces only is rejected" }
                 org_description: { type: string, minLength: 100, maxLength: 200 }
-                password: { type: string, minLength: 8, description: "Lets a 42 user change their password or email later" }
+                password: { type: string, minLength: 8, maxLength: 128, description: "Lets a 42 user change their password or email later" }
       responses:
         "201":
           description: Account created
@@ -439,7 +439,7 @@ paths:
               required: [invite_token, password]
               properties:
                 invite_token: { type: string, description: "JWT from the invite email link, valid 48 hours" }
-                password: { type: string, minLength: 8 }
+                password: { type: string, minLength: 8, maxLength: 128 }
       responses:
         "201":
           description: Account created with the role chosen by the inviting Admin
@@ -468,8 +468,8 @@ paths:
               type: object
               required: [current_password, new_password]
               properties:
-                current_password: { type: string }
-                new_password: { type: string, minLength: 8 }
+                current_password: { type: string, maxLength: 128 }
+                new_password: { type: string, minLength: 8, maxLength: 128 }
       responses:
         "200":
           description: Password changed
@@ -494,8 +494,8 @@ paths:
               type: object
               required: [new_email, password]
               properties:
-                new_email: { type: string, format: email }
-                password: { type: string, description: "Current password" }
+                new_email: { type: string, format: email, maxLength: 254 }
+                password: { type: string, maxLength: 128, description: "Current password" }
       responses:
         "200":
           description: Email changed
@@ -527,7 +527,7 @@ paths:
               type: object
               required: [email]
               properties:
-                email: { type: string, format: email }
+                email: { type: string, format: email, maxLength: 254 }
       responses:
         "200":
           description: >
@@ -554,7 +554,7 @@ paths:
               required: [reset_token, new_password]
               properties:
                 reset_token: { type: string, description: "JWT from the reset email link, valid 15 minutes" }
-                new_password: { type: string, minLength: 8 }
+                new_password: { type: string, minLength: 8, maxLength: 128 }
       responses:
         "200":
           description: Password changed
@@ -595,7 +595,7 @@ paths:
               type: object
               required: [password]
               properties:
-                password: { type: string, description: "The caller's current password, asked again as confirmation" }
+                password: { type: string, maxLength: 128, description: "The caller's current password, asked again as confirmation" }
       responses:
         "204":
           description: >
@@ -730,7 +730,7 @@ paths:
             schema:
               type: object
               properties:
-                name: { type: string, minLength: 1 }
+                name: { type: string, minLength: 1, maxLength: 50, description: "Trimmed; spaces only is rejected" }
                 description: { type: string, minLength: 100, maxLength: 200 }
       responses:
         "200":
@@ -791,7 +791,7 @@ paths:
               type: object
               required: [email, role]
               properties:
-                email: { type: string, format: email }
+                email: { type: string, format: email, maxLength: 254 }
                 role: { $ref: "#/components/schemas/Role" }
       responses:
         "201":

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, MinLength } from "class-validator";
+import { IsNotEmpty, IsString, MaxLength, MinLength } from "class-validator";
 
 export class AcceptInviteDto {
 	@IsString()
@@ -7,5 +7,6 @@ export class AcceptInviteDto {
 
 	@IsString()
 	@MinLength(8)
+	@MaxLength(128)
 	password!: string;
 }

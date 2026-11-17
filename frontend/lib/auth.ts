@@ -20,6 +20,9 @@ export interface AuthResponse {
 export type TwoFactorChallenge = { two_factor_required: true; two_factor_token: string };
 
 export const MIN_PASSWORD_LENGTH = 8;
+export const MAX_PASSWORD_LENGTH = 128;
+export const MAX_EMAIL_LENGTH = 254;
+export const MAX_ORG_NAME_LENGTH = 50;
 export const FORTY_TWO_LOGIN_URL = "/api/auth/42";
 
 export function homePath(userId: string): string {
@@ -130,7 +133,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 	/** — parses the response body as JSON, itself returning a Promise, hence the await. */
 	const data = await response.json().catch(() => null);
 	if (!response.ok) {
-		throw new Error(data?.message ?? "Something went wrong. Please try again.");
+		throw new Error(Array.isArray(data?.message) ? data.message.join(", ") : data?.message ?? "Something went wrong. Please try again.");
 	}
 	return data as T;
 }

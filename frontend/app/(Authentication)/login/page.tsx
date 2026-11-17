@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { login, saveToken, homePath, isValidEmail } from "@/lib/auth";
+import { login, saveToken, homePath, isValidEmail, MAX_EMAIL_LENGTH, MAX_PASSWORD_LENGTH } from "@/lib/auth";
 
 import { RedirectIfLoggedIn } from "@/components/auth/redirect-if-logged-in";
 
@@ -83,6 +83,7 @@ export default function LoginPage() {
 						<Label htmlFor="email">Email Address</Label>
 						<Input
 							id="email"
+							maxLength={MAX_EMAIL_LENGTH}
 							name="email"
 							type="email"
 							placeholder="john@example.com"
@@ -107,6 +108,7 @@ export default function LoginPage() {
 						</div>
 						<PasswordInput
 							id="password"
+							maxLength={MAX_PASSWORD_LENGTH}
 							name="password"
 							placeholder="••••••••"
 							autoComplete="current-password"

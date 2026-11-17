@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { deleteOrg, getOrg, updateOrg, type Organization as Org } from "@/lib/api/members";
-import { clearToken } from "@/lib/auth";
+import { clearToken, MAX_ORG_NAME_LENGTH } from "@/lib/auth";
 
 const MIN_DESCRIPTION = 100;
 const MAX_DESCRIPTION = 200;
@@ -121,6 +121,7 @@ export default function Organization({ orgId, isAdmin }: { orgId: string; isAdmi
 						<Label htmlFor="org-name">Organization name</Label>
 						<Input
 							id="org-name"
+							maxLength={MAX_ORG_NAME_LENGTH}
 							value={name}
 							onChange={(e) => { setName(e.target.value); setNotice(""); }}
 							disabled={!org || !isAdmin || saving}

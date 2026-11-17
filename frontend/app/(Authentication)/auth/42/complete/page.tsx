@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-import { completeFortyTwoSignup, saveToken, MIN_PASSWORD_LENGTH, homePath } from "@/lib/auth";
+import { completeFortyTwoSignup, saveToken, MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH, MAX_ORG_NAME_LENGTH, homePath } from "@/lib/auth";
 import { PasswordInput } from "@/components/auth/password-input";
 
 const MIN_ORG_DESCRIPTION_CHARS = 100;
@@ -99,6 +99,7 @@ export default function FortyTwoCompletePage() {
 
 						<Input
 							id="orgName"
+							maxLength={MAX_ORG_NAME_LENGTH}
 							name="orgName"
 							placeholder="Acme Inc."
 							autoComplete="organization"
@@ -136,6 +137,7 @@ export default function FortyTwoCompletePage() {
 						<Label htmlFor="password">Password</Label>
 						<PasswordInput
 							id="password"
+							maxLength={MAX_PASSWORD_LENGTH}
 							name="password"
 							placeholder="••••••••"
 							autoComplete="new-password"
@@ -150,6 +152,7 @@ export default function FortyTwoCompletePage() {
 						<Label htmlFor="confirmPassword">Confirm Password</Label>
 						<PasswordInput
 							id="confirmPassword"
+							maxLength={MAX_PASSWORD_LENGTH}
 							name="confirmPassword"
 							placeholder="••••••••"
 							autoComplete="new-password"
