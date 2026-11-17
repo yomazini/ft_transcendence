@@ -109,9 +109,6 @@ async function bootstrap() {
 	}
 
 	const app = await NestFactory.create(AppModule, {abortOnError: false});
-	app.enableCors({
-		origin: "http://localhost",
-	});
 	const config = new DocumentBuilder()
 		.setTitle("Reporting service")
 		.setDescription("Reporting API, Prisma, and database backups")
@@ -120,14 +117,14 @@ async function bootstrap() {
 		.build();
 	const document = SwaggerModule.createDocument(app, config);
 	SwaggerModule.setup("api/reporting/docs", app, document);
-	app.useGlobalPipes(new ValidationPipe());
+	app.useGlobalPipes(new ValidationPipe({transform: true, whitelist: true, forbidNonWhitelisted: false,}));
 	app.enableShutdownHooks();
 	app.useGlobalFilters(new PrismaClientExceptionFilte());
 	const port = process.env.PORT ?? 3003;
 	await app.listen(port);
 	console.log(`Reporting service is running on port ${port}`);
 	console.log(
-		`Swagger documentation: http://localhost:${port}/api/reporting/docs`,
+		`Swagger documentation: https://localhost:${port}/api/reporting/docs`,
 	);
 }
 void bootstrap().catch((err: unknown) => {
