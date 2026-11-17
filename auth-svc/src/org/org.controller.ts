@@ -11,46 +11,44 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 export class OrgController {
 	constructor(private readonly orgService: OrgService) {}
 
-	@Get(':id') /** GET /orgs/:id */
+	@Get(':id')
 	@UseGuards(JwtGuard)
 	getOrg(@Param('id') id: string, @Req() req) {
 		return this.orgService.get(id, req.user.org_id);
 	}
 
-	@Patch(':id') /** PATCH /orgs/:id */
+	@Patch(':id')
 	@UseGuards(JwtGuard)
 	updateOrg(@Param('id') id: string, @Body() dto: UpdateOrgDto, @Req() req) {
 		return this.orgService.update(id, dto, req.user.org_id, req.user.role);
 	}
 
-	@Delete(':id') /** DELETE /orgs/:id */
+	@Delete(':id')
 	@HttpCode(204)
 	@UseGuards(JwtGuard)
 	deleteOrg(@Param('id') id:string, @Req() req) {
 		return this.orgService.delete(id, req.user.org_id,req.user.role);
 	}
 
-	/** ✅️ Org/workspace CRUD */
-
-	@Get(':id/members') /** list: GET /orgs/:id/members */
+	@Get(':id/members')
 	@UseGuards(JwtGuard)
 	listMembers(@Param('id') id: string, @Req() req) {
 		return this.orgService.list(id, req.user.org_id);
 	}
 
-	@Post(':id/members') /** invite: POST /orgs/:id/members */
+	@Post(':id/members')
 	@UseGuards(JwtGuard)
 	inviteMember(@Param('id') id:string, @Body() dto: InviteMemberDto, @Req() req) {
 		return this.orgService.invite(id, dto, req.user.org_id, req.user.role);
 	}
 
-	@Patch(':id/members/:userId') /** update: Patch /orgs/:id/members */
+	@Patch(':id/members/:userId')
 	@UseGuards(JwtGuard)
 	updateMember(@Param('id') id:string, @Param('userId') userId: string, @Body() dto: UpdateMemberDto, @Req() req) {
 		return this.orgService.updateMember(id, userId, dto, req.user.org_id, req.user.role);
 	}
 
-	@Delete(':id/members/:userId') /** remove: DELETE /orgs/:id/members/:userId */
+	@Delete(':id/members/:userId')
 	@HttpCode(204)
 	@UseGuards(JwtGuard)
 	removeMember(@Param('id') id: string, @Param('userId') userId: string, @Req() req) {

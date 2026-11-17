@@ -34,11 +34,10 @@ export class OrgService {
 	}
 
 	async update(id: string, dto: UpdateOrgDto, userOrgId: string, role: string) {
-		if (id !== userOrgId) { throw new NotFoundException();  /** 404 */}
-		if (role !== 'Admin') { throw new ForbiddenException();  /** 403 */}
+		if (id !== userOrgId) { throw new NotFoundException();  }
+		if (role !== 'Admin') { throw new ForbiddenException();  }
 		const org = await this.prisma.organization.update({
 			where: { id }, data:  dto })
-		/** @note Prisma skips fields that are undefined, so sending only name changes only the name. */
 		return {
 			id: org.id,
 			name: org.name,
@@ -48,10 +47,9 @@ export class OrgService {
 	}
 
 	async delete(id: string, userOrgId: string, role: string) {
-		if (id !== userOrgId) { throw new NotFoundException();  /** 404 */}
-		if (role !== 'Admin') { throw new ForbiddenException();  /** 403 */}
+		if (id !== userOrgId) { throw new NotFoundException();  }
+		if (role !== 'Admin') { throw new ForbiddenException();  }
 		
-		/** @note Deleting an org also deletes its users: a user with no org cannot log in.*/
 		await this.prisma.$transaction(async (tx) => {
 			const members = await tx.role_and_organization.findMany({
 				where: { org_id: id },
@@ -65,7 +63,7 @@ export class OrgService {
 	}
 
 	async list(id: string, userOrgId: string) {
-		if (id !== userOrgId) { throw new NotFoundException();  /** 404 */}
+		if (id !== userOrgId) { throw new NotFoundException();  }
 
 		const rows = await this.prisma.role_and_organization.findMany({
 			where: { org_id: id },
@@ -82,8 +80,8 @@ export class OrgService {
 	}
 
 	async invite(id: string, dto: InviteMemberDto, userOrgId: string, role: string) {
-		if (id !== userOrgId) { throw new NotFoundException();  /** 404 */}
-		if (role !== 'Admin') { throw new ForbiddenException();  /** 403 */}
+		if (id !== userOrgId) { throw new NotFoundException();  }
+		if (role !== 'Admin') { throw new ForbiddenException();  }
 
 		const user = await this.prisma.user.findUnique({
 			where: { email: dto.email },
@@ -105,10 +103,9 @@ export class OrgService {
 		return { message: 'Invitation sent'}
 	}
 
-	/** change a role */
 	async updateMember(id: string, userId: string, dto: UpdateMemberDto, userOrgId: string, role: string) {
-		if (id !== userOrgId) { throw new NotFoundException();  /** 404 */}
-		if (role !== 'Admin') { throw new ForbiddenException();  /** 403 */}
+		if (id !== userOrgId) { throw new NotFoundException();  }
+		if (role !== 'Admin') { throw new ForbiddenException();  }
 
 		await this.prisma.$transaction(async (tx) => {	
 			await this.prisma.lock_organization(tx, id);
@@ -143,8 +140,8 @@ export class OrgService {
 	}
 
 	async removeMember(id: string, userId: string, userOrgId: string, role: string) {
-		if (id !== userOrgId) { throw new NotFoundException();  /** 404 */}
-		if (role !== 'Admin') { throw new ForbiddenException();  /** 403 */}
+		if (id !== userOrgId) { throw new NotFoundException();  }
+		if (role !== 'Admin') { throw new ForbiddenException();  }
 
 		await this.prisma.$transaction(async (tx) => {
 			await this.prisma.lock_organization(tx, id);

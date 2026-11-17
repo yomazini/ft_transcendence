@@ -1,18 +1,12 @@
-# auth-svc/Dockerfile — NestJS Auth microservice. Owner: Mehdi.
-# Debian slim, not alpine: argon2 ships glibc prebuilt binaries only.
 FROM node:22-slim
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@12.4.2 --activate
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
-# ✎ --frozen-lockfile refuses to install if package.json and the lock file disagree, instead of silently changing versions.
 
-# COPY <src> <dest>: "copy everything in auth-svc/ into /app in the image"
 COPY . .
 
-# The Prisma client is generated at build time (generated/ is git-ignored).
-# No `prisma migrate` here: only reporting-svc runs migrations.
 RUN pnpm exec prisma generate && pnpm exec nest build
 
 EXPOSE 3002

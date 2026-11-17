@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 /**
 	- This tells Prisma "when I run a command, build me a typed JavaScript/TypeScript library based on whatever models I define below, and put that generated code here (output)."
 */
@@ -23,7 +18,7 @@ model Organization {
   created_at        DateTime                @default(now())
   subscriptions     Subscription[]
   payments          Payment[]
-  apiKeys           ApiKey? //  means an org can have zero or one key.
+  apiKeys           ApiKey?
 }
 
 model User {
@@ -103,7 +98,7 @@ model Payment {
 
 model ApiKey {
   id           String       @id @default(uuid())
-  org_id       String       @unique // org_id @unique means no two ApiKey rows can have the same org_id, so one org can't have 2 keys.
+  org_id       String       @unique
   user_id      String       @unique
   key_hash     String       @unique
   prefix       String
@@ -112,8 +107,8 @@ model ApiKey {
   created_at   DateTime     @default(now())
   last_used_at DateTime?
   revoked_at   DateTime?
-  organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade) // when the org is deleted, the key is deleted.
-  user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade) // when the user who created it is deleted the key is deleted too.
+  organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([org_id, active])
 }

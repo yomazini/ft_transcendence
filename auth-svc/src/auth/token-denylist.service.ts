@@ -2,11 +2,6 @@ import { Injectable } from '@nestjs/common';
 import Redis from 'ioredis'
 import { createHash } from 'crypto';
 
-/*
-	* @notes:
-	1.  how many seconds the token still has to live ?
-	time to live (ttl) = ceiling(exp(sec) - now_date / 1000)
-*/
 @Injectable()
 export class TokenDenylist {
 	private readonly redis = new Redis({

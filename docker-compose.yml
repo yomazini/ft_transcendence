@@ -1,9 +1,5 @@
-# ft_transcendence — full stack, one command: docker compose up (or: make up)
-# Internal ports are never exposed to the host except through nginx (HTTP_PORT,
-# default 8080) and the dashboards meant for direct viewing (grafana, prometheus).
 name: ft-transcendence
 
-# Fixed names (name:), so Docker does not add the "ft-transcendence_" prefix.
 networks:
   ft_network:
     name: ft_network
@@ -27,7 +23,6 @@ volumes:
   vault_data:
     name: vault_db
 services:
-  # --- Entry point -----------------------------------------------------
   nginx:
     container_name: nginx
     image: nginx-waf
@@ -40,7 +35,6 @@ services:
     volumes:
       - "./nginx/cert:/etc/nginx/ssl:ro"
     healthcheck:
-      # The image's own check calls https on 8443; this project serves plain http on 8080.
       test: ["CMD-SHELL", "curl -kfs https://localhost:8080/healthz || exit 1"]
       interval: 10s
       timeout: 3s
@@ -56,9 +50,7 @@ services:
     depends_on: [gateway-svc]
     networks: [ft_network]
     restart: unless-stopped
-    # Owner: Hamza
 
-  # --- Application services ---------------------------------------------
   gateway-svc:
     container_name: gateway-svc
     image: gateway-svc
@@ -84,7 +76,6 @@ services:
       - "./vault/creds/gateway-svc:/run/vault:ro"
     networks: [ft_network]
     restart: unless-stopped
-    # Owner: Youssef
 
   auth-svc:
     container_name: auth-svc
@@ -92,7 +83,6 @@ services:
     build: ./auth-svc
     expose: ["3002"]
     ports: ["127.0.0.1:3002:3002"]
-    # env_file: .env
     environment:
       NODE_ENV: ${NODE_ENV:-prod}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_mock}
@@ -107,10 +97,9 @@ services:
       vault: { condition: service_healthy }
       redis: { condition: service_healthy }
     volumes:
-      - "./vault/creds/auth-svc:/run/vault:ro" # [HOST_PATH]:[CONTAIENRT_PATH]:ro(readonly)
+      - "./vault/creds/auth-svc:/run/vault:ro"
     networks: [ft_network]
     restart: unless-stopped
-    # Owner: Mehdi
 
   scraper-svc:
     container_name: scraper-svc
@@ -125,7 +114,6 @@ services:
       vault: { condition: service_healthy }
     networks: [ft_network]
     restart: unless-stopped
-    # Owner: Madani
 
   analysis-svc:
     container_name: analysis-svc
@@ -133,7 +121,6 @@ services:
     build: ./analysis-svc
     expose: ["8001"]
     environment:
-      # scraper-svc reads scrape-job and forwards the comments here.
       QUEUE_NAME: analyze-job
       POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
@@ -153,7 +140,6 @@ services:
       - "./vault/creds/analysis-svc:/run/vault:ro"
     networks: [ft_network]
     restart: unless-stopped
-    # Owner: Youssef
 
   reporting-svc:
     container_name: reporting-svc
@@ -161,7 +147,6 @@ services:
     build: ./reporting-svc
     expose: ["3003"]
     volumes:
-      # i shod separate them later thy overwrite them selfs
       - "./vault/creds/database:/run/vault:ro"
       - "./vault/creds/minio:/run/vault:ro"
     environment:
@@ -179,9 +164,7 @@ services:
       minio: { condition: service_healthy }
     networks: [ft_network]
     restart: unless-stopped
-    # Owner: Oussama
 
-  # Object storage for reporting-svc backups (it fails to start without it).
   minio:
     container_name: minio
     image: minio
@@ -219,9 +202,7 @@ services:
       - ft_network
 
     restart: unless-stopped
-    # Owner: Oussama
 
-  # --- Data stores --------------------------------------------------------
   postgres:
     build:
       context: ./reporting-svc
@@ -256,7 +237,6 @@ services:
       - ft_network
 
     restart: unless-stopped
-    # Owner: Oussama (schema/migrations across all services)
 
   redis:
     container_name: redis
@@ -280,7 +260,6 @@ services:
     networks: [ft_network]
     restart: unless-stopped
 
-  # --- Security & secrets -----------------------------------------------
   vault:
     container_name: vault
     image: vault-prod
@@ -289,12 +268,12 @@ services:
     cap_add: [IPC_LOCK]
     env_file: .env
     volumes:
-      - "vault_data:/vault" # Vault data + config (server.hcl stores in /vault/data)
-      - "./vault/secret:/secret" # credentials.json — git-ignored
-      - "./vault/creds:/credentials" # one <service>.json login per service — git-ignored
+      - "vault_data:/vault"
+      - "./vault/secret:/secret"
+      - "./vault/creds:/credentials"
       - "./vault/audit/:/audit"
     healthcheck:
-      test: ["CMD", "/health_check.sh"] # unsealed AND setup finished
+      test: ["CMD", "/health_check.sh"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -302,11 +281,7 @@ services:
     expose: ["8200"]
     networks: [ft_network]
     restart: unless-stopped
-    # Owner: Madani. Production mode: file storage, auto-unseal, one AppRole + policy per service.
 
-  # --- Observability (Prometheus + Grafana module) --------------------------
-  # Prometheus scrapes /metrics from the services and the exporters every 15 s
-  # (prometheus/prometheus.yml) and checks the alert rules (prometheus/alerts.yml).
   prometheus:
     container_name: prometheus
     image: prom/prometheus:v3.15.0
@@ -314,13 +289,9 @@ services:
       - "./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
       - "./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro"
       - "prometheus_data:/prometheus"
-    # Prometheus has no login: no published port. Only Grafana reaches it,
-    # inside ft_network at http://prometheus:9090.
     networks: [ft_network]
     restart: unless-stopped
-    # Owner: Mehdi
 
-  # Dashboards and the data source are loaded from files at start (grafana/provisioning).
   grafana:
     container_name: grafana
     image: grafana/grafana:13.2.4
@@ -331,20 +302,16 @@ services:
       GF_SERVER_ROOT_URL: https://grafana.localhost:8080/
       GF_SERVER_SERVE_FROM_SUB_PATH: "false"
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
-      GF_AUTH_ANONYMOUS_ENABLED: "false" # no access without login
-      GF_USERS_ALLOW_SIGN_UP: "false" # nobody can create an account
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
       - "grafana_data:/var/lib/grafana"
       - "./grafana/provisioning:/etc/grafana/provisioning:ro"
       - "./grafana/dashboards:/var/lib/grafana/dashboards:ro"
-    # ports: ["3040:3000"]
     depends_on: [prometheus]
     networks: [ft_network]
     restart: unless-stopped
-    # Owner: Mehdi
 
-  # Exporters: translate Postgres / Redis / host numbers into the Prometheus format.
-  # No ports: only Prometheus, inside ft_network, reads them.
   postgres-exporter:
     container_name: postgres-exporter
     image: prometheuscommunity/postgres-exporter:v0.20.1
@@ -368,7 +335,6 @@ services:
     networks: [ft_network]
     restart: unless-stopped
 
-  # --- Mocked payment ------------------------------------------------------
   stripe-mock:
     container_name: stripe-mock
     image: stripe/stripe-mock:v0.206.0
@@ -376,8 +342,6 @@ services:
     networks: [ft_network]
     restart: unless-stopped
 
-  # --- pgAdmin (database UI, for development) ---------------------------
-  # Credentials come from .env; published on this machine only.
   pgadmin:
     image: dpage/pgadmin4:9
     container_name: pgadmin
@@ -389,7 +353,6 @@ services:
       postgres: { condition: service_healthy }
     networks: [ft_network]
     restart: unless-stopped
-  # new service for rstoring backups
   restore-svc:
     profiles: ["recovery"]
     container_name: restore-svc

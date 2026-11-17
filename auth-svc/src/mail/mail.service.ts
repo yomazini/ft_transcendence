@@ -25,9 +25,6 @@ export class MailService {
 		});
 	}
 
-	/** ⚠️ Receipts are "best effort": the export or the deletion has already happened when
-	 *  they are sent, so a mail failure is logged and must never turn that request into an error.
-	 *  (Invite and reset emails are different: there the email IS the action, so they throw.) */
 	async sendExportReceipt(email: string) {
 		const date = new Date().toUTCString();
 		try {
