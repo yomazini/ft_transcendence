@@ -10,7 +10,8 @@ async function bootstrap() {
 	try {
 		await loadVaultSecrets();
 	} catch(e) {
-		Logger.warn(`Vault unavailable; using .env: ${e}`);
+		Logger.error(`Vault unavailable, cannot start: ${e}`);
+		process.exit(1);
 	}
 	const { AppModule } = await import('./app.module.js');
 
