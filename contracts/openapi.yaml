@@ -320,7 +320,9 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/AuthResponse" }
         "400":
-          description: Invalid parameters or user already exists
+          description: Invalid parameters
+        "409":
+          description: User already exists
 
   /auth/login:
     post:
@@ -417,7 +419,9 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/AuthResponse" }
         "400":
-          description: Invalid parameters or user already exists
+          description: Invalid parameters
+        "409":
+          description: User already exists
         "401":
           description: Invalid or expired signup token
 
@@ -443,7 +447,9 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/AuthResponse" }
         "400":
-          description: Invalid parameters, user already exists, or the organization no longer exists
+          description: Invalid parameters, or the organization no longer exists
+        "409":
+          description: User already exists
         "401":
           description: Invalid or expired invite token
         "403":
@@ -502,7 +508,9 @@ paths:
                   id: { type: string, format: uuid }
                   email: { type: string, format: email }
         "400":
-          description: Invalid parameters or email already in use
+          description: Invalid parameters
+        "409":
+          description: Email already in use
         "401":
           description: Missing or invalid token, or wrong password
 
