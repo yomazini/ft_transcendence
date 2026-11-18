@@ -11,7 +11,7 @@ import Strategic from "@/components/dashboard/home/Strategic";
 
 export default function DashboardPage() {
 	const id = useSelectedJobId();
-	const { report, loading, error } = useReportById(id);
+	const { report, loading } = useReportById(id);
 
 	return (
 		<main className="page-d">
