@@ -84,7 +84,7 @@ def scrape(target: str, query:dict) -> list[dict[str, Any]] | dict[str, Any]:
 	response:Response | None = None
 	session_id = g.session.acquire()
 	try:
-		response = requests.get(target, headers=HEADERS,params=query, cookies={'reddit_session': session_id})
+		response = requests.get(target, headers=HEADERS,params=query, cookies={'reddit_session': session_id}, impersonate="chrome")
 	finally:
 		g.session.release(session_id)
 	g.scraper_reddit_requests_total.labels(str(response.status_code)).inc()
