@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
-import { acceptInvite, saveToken, MIN_PASSWORD_LENGTH, homePath } from "@/lib/auth";
+import { acceptInvite, saveToken, MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH, homePath } from "@/lib/auth";
 
 /** Landing page of the invite email link: /invite/accept#invite_token=<jwt>.
  *  No account exists yet — it is created only when this form is submitted. */
@@ -83,6 +83,7 @@ export default function AcceptInvitePage() {
 
 						<PasswordInput
 							id="password"
+							maxLength={MAX_PASSWORD_LENGTH}
 							name="password"
 							placeholder="••••••••"
 							autoComplete="new-password"
@@ -100,6 +101,7 @@ export default function AcceptInvitePage() {
 
 						<PasswordInput
 							id="confirmPassword"
+							maxLength={MAX_PASSWORD_LENGTH}
 							name="confirmPassword"
 							placeholder="••••••••"
 							autoComplete="new-password"

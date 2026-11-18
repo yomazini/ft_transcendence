@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable,UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable,UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as argon from 'argon2';
 import { AcceptInviteDto, ChangeEmailDto, ChangePasswordDto, Complete42Dto, DeleteAccountDto, ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from './dto';
@@ -21,9 +21,6 @@ export class AuthService {
 		try {
 			const hash = await argon.hash(dto.password);
 
-			/** ⚠️ The org, the user and the membership are created in one transaction.
-			 *  If the user fails (email already taken), the org is rolled back too,
-			 *  so no org without an Admin stays in the database. */
 			const { org, user, role } = await this.prisma.$transaction(async (tx) => {
 				const org = await tx.organization.create({
 					data: {
@@ -66,8 +63,8 @@ export class AuthService {
 				},
 			};
 		} catch (error: any) {
-			if (error.code === 'P2002') { /* duplicate-email check */
-				throw new BadRequestException('User already exists');
+			if (error.code === 'P2002') {
+				throw new ConflictException('User already exists');
 			}
 			throw error;
 		}
@@ -88,7 +85,6 @@ export class AuthService {
 			throw new UnauthorizedException('Invalid credentials');
 		}
 		const role = user.user_roles_organization[0];
-		/** if 2fa anable > New path */
 		if (user.is_2fa_enabled) {
 			const two_factor_token = await this.jwt.signAsync({
 				sub: user.id,
@@ -137,13 +133,11 @@ export class AuthService {
 	}
 
 	async fortyTwoLogin(profile: any) {
-		/** 0. We search for the user by email */
 		const email = profile.emails[0].value;
 		const user = await this.prisma.user.findUnique({
 			where: { email },
 			include: { user_roles_organization: true },
 		})
-		/** 1. If the user doesn't exist, we create a new user */
 		if (!user) {
 			const signup_token = await this.jwt.signAsync({
 				email,
@@ -153,8 +147,6 @@ export class AuthService {
 			)
 			return { signup_token };
 		}
-		/** 2. If the user exists, we log them in */
-		/** 2.a if 2fa anable > New path */
 		if (user.is_2fa_enabled) {
 			const two_factor_token = await this.jwt.signAsync({
 				sub: user.id,
@@ -199,8 +191,6 @@ export class AuthService {
 		try {
 			const hash = await argon.hash(dto.password);
 
-			/** ⚠️ Same rule as register(): one transaction, so a failed user
-			 *  does not leave an org without an Admin behind. */
 			const { org, user, role } = await this.prisma.$transaction(async (tx) => {
 				const org = await tx.organization.create({
 					data: {
@@ -247,8 +237,8 @@ export class AuthService {
 				}
 			}
 		} catch(error: any) {
-			if (error.code === 'P2002') { /* duplicate-email check */
-				throw new BadRequestException('User already exists');
+			if (error.code === 'P2002') {
+				throw new ConflictException('User already exists');
 			}
 			throw error;
 		}
@@ -268,10 +258,6 @@ export class AuthService {
 		try {
 			const hash = await argon.hash(dto.password);
 
-			/** ⚠️ The user and their membership are created in one transaction.
-			 *  An invite is valid for 48 hours, and the org can be deleted in that time.
-			 *  Without a transaction the user would be created, the membership would fail,
-			 *  and a user with no org (who can never log in) would stay in the database. */
 			const { user, role } = await this.prisma.$transaction(async (tx) => {
 				await this.prisma.lock_organization(tx, payload.org_id);
 				await this.billing.assertCanAddMember(payload.org_id, tx);
@@ -315,10 +301,10 @@ export class AuthService {
 			}
 
 		} catch (error: any) {
-			if (error.code === 'P2002') { /* duplicate-email check */
-				throw new BadRequestException('User already exists');
+			if (error.code === 'P2002') {
+				throw new ConflictException('User already exists');
 			}
-			if (error.code === 'P2003') { /* the org in the invite was deleted */
+			if (error.code === 'P2003') {
 				throw new BadRequestException('This organization no longer exists');
 			}
 			throw error;
@@ -365,7 +351,7 @@ export class AuthService {
 			return { id: update.id, email: update.email };
 		} catch(error: any) {
 			if (error.code === 'P2002') {
-				throw new BadRequestException('Email already in use');
+				throw new ConflictException('Email already in use');
 			}
 			throw error;
 		}
@@ -376,8 +362,6 @@ export class AuthService {
 			where: { email: dto.email },
 		});
 
-		/** ⚠️ No error when the email is unknown: the reply is the same in both cases,
-		 *  so nobody can use this route to find out which emails have an account. */
 		if (user) {
 			const reset_token = await this.jwt.signAsync({
 				sub: user.id,
@@ -410,7 +394,7 @@ export class AuthService {
 				where: { id: payload.sub }, data: { password: hash },
 			})
 		} catch (error: any) {
-			if (error.code === 'P2025') { /* the account was deleted after the email was sent */
+			if (error.code === 'P2025') {
 				throw new UnauthorizedException('Invalid reset token');
 			}
 			throw error;
@@ -477,14 +461,11 @@ export class AuthService {
 				where: { org_id: orgId },
 			});
 
-			/** ⚠️ only member: the organization goes with them (an org with nobody in it must not stay). */
 			if (members === 1) {
 				await tx.organization.delete({ where: { id: orgId } });
 				await tx.user.delete({ where: { id: userId } });
 				return;
 			}
-
-			/** ❗⚠️ Other members exist: the last Admin cannot leave them without an Admin. */
 
 			if (membership.role === 'Admin') {
 				const admins = await tx.role_and_organization.count({

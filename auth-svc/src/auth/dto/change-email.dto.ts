@@ -1,12 +1,12 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator'
+import { IsEmail, IsNotEmpty, IsString, MaxLength } from 'class-validator'
 
 export class ChangeEmailDto {
-	/** @example 'amine.new@startup.io' */
 	@IsEmail()
+	@MaxLength(254)
 	new_email!: string;
 
-	/** Current password, asked again to confirm. @example 'password123' */
 	@IsString()
 	@IsNotEmpty()
+	@MaxLength(128)
 	password!: string;
 }

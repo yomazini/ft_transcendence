@@ -12,13 +12,12 @@ import { randomBytes, createHash } from 'crypto';
 export class ApiKeyService {
 	constructor(private readonly prisma: PrismaService) {}
 
-	/* GET /orgs/:id/api-key */
 	async getKey(id: string, userOrgId: string, role: string) {
 		if (id !== userOrgId) {
-			throw new NotFoundException(); /** 404 */
+			throw new NotFoundException();
 		}
 		if (role !== 'Admin') {
-			throw new ForbiddenException(); /** 403 */
+			throw new ForbiddenException();
 		}
 
 		const apiKey = await this.prisma.apiKey.findUnique({
@@ -34,21 +33,19 @@ export class ApiKeyService {
 		return { key: apiKey };
 	}
 
-	/* POST /orgs/:id/api-key */
 	async createKey(id: string,userId: string, userOrgId: string, role: string,
 		createKeyDto: CreateApiKeyDto,
 	) {
 		if (id !== userOrgId) {
-			throw new NotFoundException(); /** 404 */
+			throw new NotFoundException();
 		}
 		if (role !== 'Admin') {
-			throw new ForbiddenException(); /** 403 */
+			throw new ForbiddenException();
 		}
 
 		const rawKey = `if_${randomBytes(32).toString('base64url')}`;
 		const hash = createHash('sha256').update(rawKey).digest('hex');
 		const prefix = rawKey.slice(0, 7);
-		/** Creating ApiKey */
 		try {
 			const apiKey = await this.prisma.apiKey.create({
 				data: {
@@ -75,7 +72,7 @@ export class ApiKeyService {
 
 		} catch (error: any) {
 			if (error.code === 'P2002') {
-				throw new ConflictException('This organization already has an API key'); /* 409 */
+				throw new ConflictException('This organization already has an API key');
 			}
 			throw error;
 		}
@@ -83,10 +80,10 @@ export class ApiKeyService {
 
 	async deleteKey(id: string, userOrgId: string, role: string) {
 		if (id !== userOrgId) {
-			throw new NotFoundException(); /** 404 */
+			throw new NotFoundException();
 		}
 		if (role !== 'Admin') {
-			throw new ForbiddenException(); /** 403 */
+			throw new ForbiddenException();
 		}
 
 		try {

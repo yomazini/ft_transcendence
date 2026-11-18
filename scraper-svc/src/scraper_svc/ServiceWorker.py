@@ -1,4 +1,4 @@
-import os, asyncio
+import os, asyncio, time
 import bullmq as bmq
 import scraper_svc.globals as g
 from typing import cast, Any
@@ -6,7 +6,7 @@ from uuid import uuid4
 from sqlalchemy.orm import Session
 from sqlalchemy import select,exists, update, delete
 from scraper_svc.models import Job, Jobstatuses, Jobmodes, SubJob
-from scraper_svc.helpers import insert_comments, get_job, get_subjob, scrape, get_scrape_target, valid_post_url, update_job_status, normalize_data,RateLimitError,WorkerState, SessionError
+from scraper_svc.helpers import insert_comments, get_job, get_subjob, scrape, get_scrape_target, valid_post_url, update_job_status, normalize_data ,WorkerState, SessionError, RetriableError
 
 SCRAPE_QUEUE=os.getenv('SCRAPE_QUEUE','scrape-job')
 ANALYSIS_QUEUE=os.getenv("ANALYSIS_QUEUE", 'analyze-job')
@@ -65,32 +65,62 @@ class ServiceWorker:
 
 	async def run_pipeline(self, job:bmq.Job, token:str):
 		actions = [self.scrape, self.create_subjobs, self.scrape_subjob, self.save_subjobs, self.insert_bulk]
-		job_data = WorkerData(job.data.get("id", "missing"), job.data.get("data", None), job.data.get("state", WorkerState.SCRAPE))
+		mode = "unknown"
+		started_at = time.perf_counter()
+		job_data = WorkerData(job.data.get("id", "missing"), job.data.get("data", None), WorkerState(job.data.get("state", WorkerState.SCRAPE)))
+		g.scraper_jobs_in_progress.inc()
 		try:
 			job_data.session = self.validate_job(job_data.job_id)
 			await update_job_status(job_data.session, job_data.job_id, Jobstatuses.SCRAPING.value)
+			mode = get_job(job_data.session, job_data.job_id).mode.value
 			i = job_data.state
 			while (i < WorkerState.DONE):
 				i = await actions[i.value](job_data)
 				job_data.state = i
 				await job.updateData(job_data.to_dict())
 			self.log(f"Job {job_data.job_id} Done")
-			
+
 			await self.queue.add("analyze", {'id': job_data.job_id})
+			g.scraper_jobs_total.labels("done").inc()
+		except RetriableError as re:
+			attempts = job.attemptsMade
+			max_attempts = job.opts.get("attempts", 1) - 1
+			g.logger.warning(
+				"Scrape worker: [%s] reason=%s retries=%d",
+				job_data.job_id,
+				re,
+				max_attempts - attempts
+			)
+
+			if attempts >= max_attempts:
+				g.scraper_jobs_total.labels("failed").inc()
+				if job_data.session:
+					job_data.session.rollback()
+					await update_job_status(job_data.session, job_data.job_id, Jobstatuses.FAILED.value, str(re))
+			raise
 		except SessionError as se:
 			g.logger.error("Scrape worker: %s", se)
-		except RateLimitError as rle:
-			g.logger.warning("Scrape worker: %s", rle)
+			g.scraper_jobs_total.labels("failed").inc()
+			raise bmq.UnrecoverableError(str(se)) from se
 		except Exception as e:
 			g.logger.error("Scrape worker: %s", e)
-			await update_job_status(job_data.session, job_data.job_id, Jobstatuses.FAILED.value, str(e))
+			if job_data.session:
+				job_data.session.rollback()
+				await update_job_status(job_data.session, job_data.job_id, Jobstatuses.FAILED.value, str(e))
+			g.scraper_jobs_total.labels("failed").inc()
 			raise bmq.UnrecoverableError(str(e)) from e
 		finally:
+			g.scraper_jobs_in_progress.dec()
+			g.scraper_job_duration_seconds.labels(mode).observe(
+        		time.perf_counter() - started_at
+			)
 			if job_data.session:
 				self.log(f"closed database session")
 				job_data.session.close()
 
 	async def scrape(self, data: WorkerData) -> WorkerState:
+		if (data.session == None):
+			raise RuntimeError("Impossible action error")
 		self.log(f"Scraping job {data.job_id}")
 		job = get_job(data.session, data.job_id)
 		if job.mode == Jobmodes.POST:
@@ -102,7 +132,7 @@ class ServiceWorker:
 		return WorkerState.CREATE_SUBJOBS
 
 	async def create_subjobs(self, data: WorkerData) -> WorkerState:
-		if (not isinstance(data.data, list)):
+		if (not isinstance(data.data, list) or data.session == None):
 			raise RuntimeError("Impossible action error")
 		last_id: str| None = None
 		self.log(f"Create SubJobs for {data.job_id}")
@@ -121,7 +151,7 @@ class ServiceWorker:
 		return WorkerState.SCRAPE_SUBJOB
 
 	async def scrape_subjob(self, data: WorkerData) -> WorkerState:
-		if (not isinstance(data.data, dict)):
+		if (not isinstance(data.data, dict) or data.session == None):
 			raise RuntimeError("Impossible action error")
 		subjob_id = data.data.get("id", "missing")
 		self.log(f"Scrape SubJob {subjob_id}")
@@ -132,7 +162,7 @@ class ServiceWorker:
 		return WorkerState.SAVE_NORM_DATA
 
 	async def save_subjobs(self, data: WorkerData) -> WorkerState:
-		if (not isinstance(data.data, dict)):
+		if (not isinstance(data.data, dict) or data.session == None):
 			raise RuntimeError("Impossible action error")
 		subjob_id = data.data.get("id", "missing")
 		self.log(f"Save SubJob {subjob_id} data")
@@ -151,8 +181,11 @@ class ServiceWorker:
 
 
 	async def insert_bulk(self, data: WorkerData) -> WorkerState:
+		if (data.session == None):
+			raise RuntimeError("Impossible action error")
+		comment_count = 0
 		self.log(f"Start inserting {data.job_id} job")
-		ids: list[str] = data.session.execute(
+		ids = data.session.execute(
 			select(SubJob.id)
 			.where(SubJob.job_id == data.job_id)
 		).scalars().all()
@@ -162,15 +195,16 @@ class ServiceWorker:
 			).scalar_one()
 			if job_data is None:
 				continue
-			insert_comments(data.session, data.job_id, None, job_data)
+			comment_count += insert_comments(data.session, data.job_id, None, cast(dict, job_data))
 		data.session.execute(
 			delete(SubJob).where(SubJob.job_id == data.job_id)
 		)
 		data.session.commit()
+		g.scraper_comments_total.inc(comment_count)
 		return WorkerState.DONE
 
 	def log(self, msg: str):
-		g.logger.info("scrape worker: %s", msg)
+		g.logger.info("Scrape worker: %s", msg)
 
 	async def stop(self):
 		await self.worker.close()

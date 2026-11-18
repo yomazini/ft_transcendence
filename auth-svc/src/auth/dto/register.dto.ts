@@ -1,24 +1,22 @@
-import { IsEmail, IsNotEmpty, IsString, Length, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, Length, MaxLength, MinLength } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class RegisterDto {
-	/** @example 'amine@startup.io' */
 	@IsEmail()
+	@MaxLength(254)
 	email!: string;
 
-	/** At least 8 characters. @example 'password123' */
 	@IsString()
 	@MinLength(8)
+	@MaxLength(128)
 	password!: string;
 
-	/** @example 'Amine Labs' */
+	@Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
 	@IsString()
 	@IsNotEmpty()
+	@MaxLength(50)
 	org_name!: string;
 
-	/**
-	 * What the organization does, 100 to 200 characters (context for the AI reports).
-	 * @example 'We build a scheduling app for freelance designers and want to know what users say about pricing, onboarding and competitors on Reddit.'
-	 */
 	@IsString()
 	@IsNotEmpty()
 	@Length(100, 200)

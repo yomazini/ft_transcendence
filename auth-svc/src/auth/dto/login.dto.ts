@@ -1,12 +1,12 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
 export class LoginDto {
-	/** @example 'amine@startup.io' */
 	@IsEmail()
+	@MaxLength(254)
 	email!: string;
 
-	/** @example 'password123' */
 	@IsString()
 	@IsNotEmpty()
+	@MaxLength(128)
 	password!: string;
 }

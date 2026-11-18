@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-import { MIN_PASSWORD_LENGTH, isValidEmail, register, saveToken, homePath } from "@/lib/auth";
+import { MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH, MAX_EMAIL_LENGTH, MAX_ORG_NAME_LENGTH, isValidEmail, register, saveToken, homePath } from "@/lib/auth";
 
 import { RedirectIfLoggedIn } from "@/components/auth/redirect-if-logged-in";
 
@@ -96,6 +96,7 @@ export default function RegisterPage() {
 
 						<Input
 							id="orgName"
+							maxLength={MAX_ORG_NAME_LENGTH}
 							name="orgName"
 							placeholder="Acme Inc."
 							autoComplete="organization"
@@ -140,6 +141,7 @@ export default function RegisterPage() {
 
 						<Input
 							id="email"
+							maxLength={MAX_EMAIL_LENGTH}
 							name="email"
 							type="email"
 							placeholder="john@example.com"
@@ -160,6 +162,7 @@ export default function RegisterPage() {
 
 						<PasswordInput
 							id="password"
+							maxLength={MAX_PASSWORD_LENGTH}
 							name="password"
 							placeholder="••••••••"
 							autoComplete="new-password"
@@ -180,6 +183,7 @@ export default function RegisterPage() {
 
 						<PasswordInput
 							id="confirmPassword"
+							maxLength={MAX_PASSWORD_LENGTH}
 							name="confirmPassword"
 							placeholder="••••••••"
 							autoComplete="new-password"

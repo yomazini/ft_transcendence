@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { resetPassword, MIN_PASSWORD_LENGTH } from "@/lib/auth";
+import { resetPassword, MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH } from "@/lib/auth";
 import { AuthCard } from "@/components/auth/auth-card";
 import { AuthFooter } from "@/components/auth/auth-footer";
 import { AuthHeader } from "@/components/auth/auth-header";
@@ -70,6 +70,7 @@ export default function ResetPasswordPage() {
 
 						<PasswordInput
 							id="password"
+							maxLength={MAX_PASSWORD_LENGTH}
 							placeholder="••••••••"
 							autoComplete="new-password"
 							value={password}
@@ -85,6 +86,7 @@ export default function ResetPasswordPage() {
 
 						<PasswordInput
 							id="confirmPassword"
+							maxLength={MAX_PASSWORD_LENGTH}
 							placeholder="••••••••"
 							autoComplete="new-password"
 							value={confirmPassword}

@@ -1,8 +1,8 @@
-import { IsNotEmpty, IsString } from 'class-validator'
+import { IsNotEmpty, IsString, MaxLength } from 'class-validator'
 
 export class DeleteAccountDto {
-	/** Current password, asked again to confirm the deletion. @example 'password123' */
 	@IsString()
 	@IsNotEmpty()
+	@MaxLength(128)
 	password!: string;
 }

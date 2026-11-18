@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { forgotPassword, isValidEmail } from "@/lib/auth";
+import { forgotPassword, isValidEmail, MAX_EMAIL_LENGTH } from "@/lib/auth";
 
 import Link from "next/link";
 
@@ -22,14 +22,14 @@ export default function ForgotPasswordPage() {
 
 	async function handleSubmit(e: FormEvent<HTMLFormElement>) {
 		e.preventDefault();
-		if (!isValidEmail(email)) {
+		if (!isValidEmail(email.trim())) {
 			setError("Enter a valid email address.");
 			return;
 		}
 		setError("");
 		setLoading(true);
 		try {
-			const result = await forgotPassword(email);
+			const result = await forgotPassword(email.trim());
 			setMessage(result.message);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -58,6 +58,7 @@ export default function ForgotPasswordPage() {
 
 						<Input
 							id="email"
+							maxLength={MAX_EMAIL_LENGTH}
 							type="email"
 							placeholder="john@example.com"
 							autoComplete="email"

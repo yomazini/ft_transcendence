@@ -4,7 +4,6 @@ import { JwtGuard } from '../guard/jwt.guard';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { TwoFactorCodeDto, VerifyTwoFactorDto } from '../dto';
 
-/* /auth/2fa/ */
 @ApiTags('auth')
 @ApiBearerAuth()
 @Controller('auth/2fa')
@@ -13,14 +12,12 @@ export class TwoFactorController {
 		private readonly  twoFactorService: TwoFactorService,
 	) {}
 
-	/** POST /auth/2fa/setup */
 	@Post('setup')
 	@UseGuards(JwtGuard)
 	setupTwoFactor(@Req() req) {
 		return this.twoFactorService.setup(req.user.sub);
 	}
 
-	/* POST /auth/2fa/enable {code} */
 	@Post('enable')
 	@HttpCode(200)
 	@UseGuards(JwtGuard)
@@ -28,7 +25,6 @@ export class TwoFactorController {
 		return this.twoFactorService.enable(req.user.sub, dto.code);
 	}
 
-	/* POST /auth/2fa/disable {code} */
 	@Post('disable')
 	@HttpCode(200)
 	@UseGuards(JwtGuard)
@@ -36,7 +32,6 @@ export class TwoFactorController {
 		return this.twoFactorService.disable(req.user.sub, dto.code);
 	}
 
-	/* POST /auth/2fa/verify {two_factor_token, code} */
 	@Post('verify')
 	@HttpCode(200)
 	verifyTwoFactor(@Body() dto: VerifyTwoFactorDto) {
