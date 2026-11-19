@@ -802,13 +802,17 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Message" }
         "400":
-          description: Invalid parameters, or a user with this email already exists
+          description: Invalid parameters
         "401":
           description: Unauthorized
         "403":
           description: Caller is not an Admin, or the organization reached its plan's member limit
         "404":
           description: Not the caller's organization
+        "409":
+          description: A user with this email already exists
+        "503":
+          description: The invitation email could not be sent; try again in a few seconds
 
   /orgs/{id}/members/{userId}:
     parameters:
