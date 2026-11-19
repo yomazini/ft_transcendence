@@ -40,7 +40,7 @@ def format_persona_xml(job: dict | None) -> str:
 
 
 def build_synthesis_prompt(job: dict | None, scored_comments: list[dict]) -> str:
-    ranked = rank_top_comments(scored_comments, top_k=10)
+    ranked = rank_top_comments(scored_comments, top_k=20)
     top_10 = ranked["top_overall"]
 
     persona_xml = format_persona_xml(job)
