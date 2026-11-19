@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { InviteMemberDto, UpdateOrgDto } from './dto';
 import { MailService } from 'src/mail/mail.service';
@@ -36,8 +36,14 @@ export class OrgService {
 	async update(id: string, dto: UpdateOrgDto, userOrgId: string, role: string) {
 		if (id !== userOrgId) { throw new NotFoundException();  }
 		if (role !== 'Admin') { throw new ForbiddenException();  }
-		const org = await this.prisma.organization.update({
-			where: { id }, data:  dto })
+		let org;
+		try {
+			org = await this.prisma.organization.update({
+				where: { id }, data: dto });
+		} catch (error: any) {
+			if (error.code === 'P2025') { throw new NotFoundException(); }
+			throw error;
+		}
 		return {
 			id: org.id,
 			name: org.name,
@@ -50,16 +56,21 @@ export class OrgService {
 		if (id !== userOrgId) { throw new NotFoundException();  }
 		if (role !== 'Admin') { throw new ForbiddenException();  }
 		
-		await this.prisma.$transaction(async (tx) => {
-			const members = await tx.role_and_organization.findMany({
-				where: { org_id: id },
-				select: { user_id: true },
+		try {
+			await this.prisma.$transaction(async (tx) => {
+				const members = await tx.role_and_organization.findMany({
+					where: { org_id: id },
+					select: { user_id: true },
+				});
+				await tx.organization.delete({ where: { id } });
+				await tx.user.deleteMany({
+					where: { id: { in: members.map((m) => m.user_id) } },
+				});
 			});
-			await tx.organization.delete({ where: { id } });
-			await tx.user.deleteMany({
-			where: { id: { in: members.map((m) => m.user_id) } },
-		});
-		});
+		} catch (error: any) {
+			if (error.code === 'P2025') { throw new NotFoundException(); }
+			throw error;
+		}
 	}
 
 	async list(id: string, userOrgId: string) {
@@ -86,7 +97,7 @@ export class OrgService {
 		const user = await this.prisma.user.findUnique({
 			where: { email: dto.email },
 		})
-		if (user) { throw new BadRequestException('User already exists'); }
+		if (user) { throw new ConflictException('User already exists'); }
 
 		await this.billing.assertCanAddMember(id);
 
