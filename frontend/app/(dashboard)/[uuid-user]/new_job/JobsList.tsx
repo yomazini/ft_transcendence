@@ -9,7 +9,7 @@ import { useParams } from "next/navigation";
 import { notifyUser } from "./submitJob";
 
 export default function JobsList() {
-	const {data: jobs = [], isLoading, error} = useQuery({queryKey: ["jobs"], queryFn: listJobs})
+	const {data: jobs = [], isLoading, error} = useQuery({queryKey: ["jobs"], queryFn: listJobs, retry: false})
 	const userId = useParams<{'uuid-user': string}>()['uuid-user']
 	const role = useUserRole()
 
