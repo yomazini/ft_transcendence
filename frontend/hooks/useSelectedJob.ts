@@ -9,7 +9,7 @@ import { listJobs } from "@/lib/api/jobs";
  *  newest finished job of the organization (null when there is none yet). */
 export function useSelectedJobId(): string | null {
 	const fromUrl = useSearchParams().get("job");
-	const { data } = useQuery({ queryKey: ["jobs"], queryFn: listJobs });
+	const { data } = useQuery({ queryKey: ["jobs"], queryFn: listJobs, retry: false});
 	if (fromUrl) return fromUrl;
 	return data?.find((job) => job.status === "done")?.id ?? null;
 }

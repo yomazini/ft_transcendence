@@ -6,6 +6,7 @@ import {
 	Settings,
 	Users,
 	ChevronRight,
+	ChevronDown,
 } from "lucide-react"
 
 import {
@@ -28,6 +29,7 @@ import {
 } from "@/components/ui/collapsible"
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useJobsLive } from "@/hooks/useJobsLive";
+import { useState } from "react";
 
 /** Pages under /<user id>/…; the id is read from the current URL. */
 const dashboardItems = [
@@ -40,6 +42,7 @@ const dashboardItems = [
 
 export function AppSidebar() {
 	const pathname = usePathname();
+	const [isOpen, setOpen] = useState<boolean>(true)
 	const userId = useParams<{ "uuid-user": string }>()["uuid-user"];
 	const { jobs = [], loading: loading , error} = useJobsLive();
 	const selectedJob = useSearchParams().get("job");
@@ -52,7 +55,6 @@ export function AppSidebar() {
 			collapsible="icon"
 			className="border bg-white dark:bg-black"
 		>
-			{/* Logo */}
 			<SidebarHeader className="border-b">
 				<Link href="/">
 
@@ -78,7 +80,6 @@ export function AppSidebar() {
 			</SidebarHeader>
 
 			<SidebarContent>
-				{/* Dashboard */}
 				<SidebarGroup>
 					<SidebarGroupLabel>
 						DASHBOARD
@@ -107,13 +108,18 @@ export function AppSidebar() {
 					</SidebarGroupContent>
 				</SidebarGroup>
 				<SidebarGroup className="group-data-[collapsible=icon]:hidden">
-					<Collapsible defaultOpen>
+					<Collapsible open={isOpen} onOpenChange={setOpen}>
 						<CollapsibleTrigger>
 							<SidebarGroupLabel>
 								Jobs
-								<ChevronRight
-									className="ml-auto transition-transform duration-200 [[data-state=open]_&]:rotate-90"
-								/>
+								{isOpen ? 
+									<ChevronDown
+										className="ml-auto transition-transform duration-200"
+									/> :
+									<ChevronRight
+										className="ml-auto transition-transform duration-200"
+									/>
+								}
 							</SidebarGroupLabel>
 						</CollapsibleTrigger>
 

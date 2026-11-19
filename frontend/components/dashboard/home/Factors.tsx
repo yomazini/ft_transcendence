@@ -25,7 +25,8 @@ export function FactorsCard({ report } : { report: ReportDetails | null}) {
 			<div className="space-y-6 p-5 pt-0 sm:p-6 sm:pt-0">
 				{Object.entries(report?.blue_ocean?.factors ?? {}).map(
 					([name, factor]) => {
-						const percentage = Math.round(factor.satisfaction * 100);
+						const calculate_percentage = Math.round(factor.satisfaction * 100);
+						const percentage = calculate_percentage < 0 ? 0 : calculate_percentage > 100 ? 100 : calculate_percentage;
 						const hasData = factor.importance > 0;
 
 						return (

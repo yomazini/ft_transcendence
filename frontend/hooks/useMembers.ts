@@ -13,6 +13,7 @@ export function useMembers() {
 		queryKey: ["members", orgId],
 		queryFn: () => getMembers(orgId as string),
 		enabled: !!orgId,
+		retry: false
 	});
 	return { members: data ?? [], loading: isLoading, error: error as Error | null, orgId, me: user };
 }

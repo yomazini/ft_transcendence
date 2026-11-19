@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Moon, Download, Sparkles } from "lucide-react";
+import { Download, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
