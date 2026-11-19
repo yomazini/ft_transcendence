@@ -118,7 +118,6 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -147,6 +146,19 @@
   }
 
   .page-d {
-    @apply min-w-0 w-full mx-auto max-w-9xl space-y-3 bg-background p-3 text-foreground sm:p-5 lg:p-6
+    @apply min-w-0 w-full mx-auto max-w-9xl space-y-3 bg-background p-3 text-foreground sm:p-5 lg:p-6;
   }
 }
+
+@keyframes typing {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(-2px);
+    opacity: 1;
+  }
+}
+
