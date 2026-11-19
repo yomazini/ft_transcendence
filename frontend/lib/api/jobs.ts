@@ -18,5 +18,5 @@ export async function listJobs(): Promise<JobItem[]> {
 	if (!response.ok) {
 		throw new Error(`Could not load jobs (${response.status})`);
 	}
-	return response.json();
+	return (await response.json());
 }
