@@ -153,7 +153,11 @@ async def call_openrouter_json(
                     error_message = "OpenRouter request failed"
                     error_status = 502
                     break
-                except (httpx.TimeoutException, httpx.NetworkError, EmptyCompletionError) as e:
+                except (
+                    httpx.TimeoutException,
+                    httpx.NetworkError,
+                    EmptyCompletionError,
+                ) as e:
                     _record_llm(model, "error", started)
                     logger.warning(
                         "OpenRouter transient error on %s (attempt %d): %s",
@@ -215,7 +219,11 @@ async def call_openrouter_text(
                     raise _http_error(status) from e
                 error_message = "OpenRouter request failed"
                 error_status = 502
-            except (httpx.TimeoutException, httpx.NetworkError, EmptyCompletionError) as e:
+            except (
+                httpx.TimeoutException,
+                httpx.NetworkError,
+                EmptyCompletionError,
+            ) as e:
                 _record_llm(model, "error", started)
                 logger.warning("OpenRouter text call failed on %s: %s", model, e)
     raise LLMError(error_message, error_status)
