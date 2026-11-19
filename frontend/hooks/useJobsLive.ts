@@ -14,7 +14,7 @@ type JobEvent = {
 export function useJobsLive()
 {
 	const client = useQueryClient()
-	const {data, isLoading, error} = useQuery({queryKey: ["jobs"], queryFn: listJobs})
+	const {data, isLoading, error} = useQuery({queryKey: ["jobs"], queryFn: listJobs, retry: false})
 
 	useEffect (() => {
 		const socket = io({
