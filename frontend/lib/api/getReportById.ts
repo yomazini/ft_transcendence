@@ -18,5 +18,5 @@ export async function getReportById(id: string): Promise<ReportDetails> {
 	toast.success("Report loaded successfully", {
 		duration: 3000,
 	});
-	return response.json();
+	return (await response.json());
 }

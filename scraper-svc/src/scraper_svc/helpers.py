@@ -23,7 +23,10 @@ class WorkerState(enum.IntEnum):
 	INSERT_BULK = 4
 	DONE = 5
 
-class RateLimitError(Exception):
+class RetriableError(Exception):
+	pass
+
+class RateLimitError(RetriableError):
     pass
 
 class BadJobError(Exception):
@@ -81,7 +84,7 @@ def scrape(target: str, query:dict) -> list[dict[str, Any]] | dict[str, Any]:
 	response:Response | None = None
 	session_id = g.session.acquire()
 	try:
-		response = requests.get(target, headers=HEADERS,params=query, cookies={'reddit_session': session_id})
+		response = requests.get(target, headers=HEADERS,params=query, cookies={'reddit_session': session_id}, impersonate="chrome")
 	finally:
 		g.session.release(session_id)
 	g.scraper_reddit_requests_total.labels(str(response.status_code)).inc()
@@ -140,13 +143,18 @@ def normalize_posts(data:dict):
 def normalize_data(data: list | dict, mode: Jobmodes) ->  dict | list:
 	match mode:
 		case Jobmodes.POST:
+			if (not isinstance(data, list)):
+				raise RuntimeError("Impossible action error")
 			return (normalize_post(data))
 		case _:
+			if (not isinstance(data, dict)):
+				raise RuntimeError("Impossible action error")
 			return (normalize_posts(data))
 
 # Database Insertion
 
-def insert_comments(session:Session, job_id:str, parent_id: str | None, data: dict):
+def insert_comments(session:Session, job_id:str, parent_id: str | None, data: dict) -> int:
+	comment_count = 0
 	hashed_data = hashlib.sha256(json.dumps({k: data[k] for k in ("body", "upvotes")}, sort_keys=True).encode("utf-8")).hexdigest()
 	comment: Comments | None = session.execute(
 		select(Comments).where(and_(
@@ -172,7 +180,8 @@ def insert_comments(session:Session, job_id:str, parent_id: str | None, data: di
 		)
 		session.add(comment)
 	for comment_data in data["children"]:
-		insert_comments(session, job_id, comment.id, comment_data)
+		comment_count += insert_comments(session, job_id, comment.id, comment_data)
+	return comment_count + 1
 
 async def update_job_status(session: Session, job_id: str, job_status: str,error:str | None = None):
 	session.execute(
