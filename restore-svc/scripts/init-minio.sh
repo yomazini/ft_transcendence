@@ -34,22 +34,7 @@ mc alias set app http://127.0.0.1:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" >
 
 mc ls "app/$MINIO_BUCKET_NAME" > /dev/null
 
-RULE_ID=$(
-    mc --json ilm rule ls "local/$MINIO_BUCKET_NAME" |
-    jq -r '[.config.Rules[]? |
-        select(
-            .Expiration.Days != null and
-            (.Filter.Prefix // .Prefix // "") == ""
-        ) |
-        .ID][0] // empty'
-)
-
-if [ -n "$RULE_ID" ]; then
-    mc ilm rule edit "local/$MINIO_BUCKET_NAME" --id "$RULE_ID" --expire-days 30 --enable
-else
-    mc ilm rule add "local/$MINIO_BUCKET_NAME" \
-        --expire-days 30
-fi
+mc ilm rule add "local/$MINIO_BUCKET_NAME" --expire-days 30
 
 mc ilm rule ls "local/$MINIO_BUCKET_NAME"
 
