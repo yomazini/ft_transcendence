@@ -11,10 +11,6 @@ export function FactorsCard({ report } : { report: ReportDetails | null}) {
 					<span className="text-base font-semibold tracking-tight text-zinc-900 dark:text-white">
 						Satisfaction by Factor
 					</span>
-
-					<div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-orange-100 bg-orange-50 dark:border-orange-500/20 dark:bg-orange-500/10">
-						<ChartNoAxesColumnIncreasing className="size-5 text-orange-600 dark:text-orange-400" />
-					</div>
 				</div>
 
 				<p className="mt-1 text-xs leading-5 text-zinc-500 dark:text-zinc-400">

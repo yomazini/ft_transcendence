@@ -51,8 +51,6 @@ export function FeaturesCard({ report } : { report : ReportDetails | null}) {
 					<div className="mt-5 pt-4">
 						<div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-500/20 dark:bg-amber-500/5">
 							<div className="mb-2 flex items-center gap-2">
-								<AlertTriangle className="size-4 text-amber-500 dark:text-amber-400" />
-
 								<span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
 									Weakest Suggestion
 								</span>
