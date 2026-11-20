@@ -118,7 +118,6 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -147,6 +146,264 @@
   }
 
   .page-d {
-    @apply min-w-0 w-full mx-auto max-w-9xl space-y-3 bg-background p-3 text-foreground sm:p-5 lg:p-6
+    @apply min-w-0 w-full mx-auto max-w-9xl space-y-3 bg-background p-3 text-foreground sm:p-5 lg:p-6;
+  }
+
+  /* Chat */
+  .chat-scroll {
+    @apply relative flex-1 bg-muted/30;
+  }
+
+  .chat-content {
+    @apply gap-4 p-4;
+  }
+
+  .chat-empty {
+    @apply my-auto flex h-full flex-col items-center justify-center p-6 text-center text-muted-foreground;
+  }
+
+  .chat-empty-icon {
+    @apply mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-inner;
+  }
+
+  .chat-empty-title {
+    @apply mb-1 text-sm font-semibold text-foreground;
+  }
+
+  .chat-empty-text {
+    @apply max-w-[240px] text-xs leading-relaxed text-muted-foreground;
+  }
+
+  .chat-loading {
+    @apply flex items-center gap-2 text-xs italic text-muted-foreground;
+  }
+
+  .chat-scroll-button {
+    @apply absolute bottom-4 right-4;
+  }
+
+  .chat-message {
+    @apply items-start;
+  }
+
+  .chat-message-user {
+    @apply flex-row-reverse;
+  }
+
+  .chat-message-body {
+    @apply flex max-w-[82%] flex-col items-start;
+  }
+
+  .chat-message-user .chat-message-body {
+    @apply items-end;
+  }
+
+  .chat-avatar {
+    @apply shadow-sm;
+  }
+
+  .chat-avatar-fallback {
+    @apply bg-secondary text-secondary-foreground;
+  }
+
+  .chat-message-user .chat-avatar-fallback {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  .chat-bubble {
+    @apply rounded-2xl rounded-tl-none border border-border bg-card px-4 py-3 text-sm leading-relaxed text-card-foreground shadow-sm;
+  }
+
+  .chat-message-user .chat-bubble {
+    @apply whitespace-pre-wrap rounded-tl-2xl rounded-tr-none border-transparent bg-primary text-primary-foreground;
+  }
+
+  .chat-citations {
+    @apply mt-2 flex flex-col gap-1.5;
+  }
+
+  .chat-citations-label {
+    @apply text-[11px] font-semibold uppercase tracking-wider text-muted-foreground;
+  }
+
+  .chat-citations-list {
+    @apply flex flex-wrap gap-1.5;
+  }
+
+  .chat-citation {
+    @apply h-auto gap-1 rounded-md px-2.5 py-1 text-xs font-normal;
+  }
+
+  .chat-citation-index {
+    @apply font-mono text-[10px] text-muted-foreground;
+  }
+
+  .chat-timestamp {
+    @apply mt-1 px-1 text-[10px] text-muted-foreground;
+  }
+
+  .chat-footer {
+    @apply flex flex-col gap-2 border-t bg-background p-3;
+  }
+
+  .chat-quick-list {
+    @apply flex gap-1.5 overflow-x-auto pb-1 text-[11px];
+  }
+
+  .chat-quick-list > button {
+    @apply shrink-0 rounded-full;
+  }
+
+  .chat-input {
+    @apply rounded-2xl;
+  }
+
+  .chat-send {
+    @apply px-1 pb-1;
+  }
+
+  .chat-modal {
+    @apply sm:max-w-lg;
+  }
+
+  .chat-modal-body {
+    @apply flex flex-col gap-4 p-1;
+  }
+
+  .chat-modal-meta {
+    @apply flex items-center justify-between text-xs text-muted-foreground;
+  }
+
+  .chat-modal-comment {
+    @apply max-h-60 overflow-y-auto rounded-lg border border-border bg-muted p-4 font-sans text-sm leading-relaxed text-foreground;
+  }
+
+  .chat-modal-footer {
+    @apply flex justify-end;
+  }
+
+  .chat-modal-footnote {
+    @apply flex items-center justify-between text-xs text-muted-foreground;
+  }
+
+  .chat-modal-id {
+    @apply font-mono text-[10px];
+  }
+
+  .chat-sentiment {
+    @apply rounded-full border px-2 py-0.5 text-[11px] font-medium;
+  }
+
+  .chat-sentiment-positive {
+    @apply border-emerald-200 bg-emerald-50 text-emerald-700;
+  }
+
+  .chat-sentiment-negative {
+    @apply border-rose-200 bg-rose-50 text-rose-700;
+  }
+
+  .chat-sentiment-neutral {
+    @apply border-border bg-muted text-muted-foreground;
+  }
+
+  .chat-widget {
+    @apply relative flex h-full flex-col bg-background;
+  }
+
+  .chat-header {
+    @apply sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/80 px-4 py-3.5 backdrop-blur-md;
+  }
+
+  .chat-header-brand {
+    @apply flex items-center gap-2.5;
+  }
+
+  .chat-header-icon {
+    @apply flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-md;
+  }
+
+  .chat-header-title-row {
+    @apply flex items-center gap-2;
+  }
+
+  .chat-header-title {
+    @apply text-sm leading-tight text-foreground;
+  }
+
+  .chat-header-badge {
+    @apply flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600;
+  }
+
+  .chat-header-job {
+    @apply font-mono text-[11px] text-muted-foreground;
+  }
+
+  .chat-header-actions {
+    @apply flex items-center gap-1;
+  }
+
+  .chat-launcher-wrap {
+    @apply fixed bottom-6 right-6 z-40;
+  }
+
+  .chat-launcher {
+    @apply flex cursor-pointer items-center justify-center rounded-full shadow-2xl transition-all duration-300;
+  }
+
+  .chat-launcher-open {
+    @apply h-12 w-12 bg-slate-800 text-white hover:bg-slate-900;
+  }
+
+  .chat-launcher-closed {
+    @apply h-14 w-14 bg-gradient-to-tr from-blue-700 to-cyan-500 text-white shadow-blue-500/30 hover:scale-105 active:scale-95;
+  }
+
+  .chat-launcher-x {
+    @apply w-5 h-5 transition-transform group-hover:rotate-90;
+  }
+
+  .chat-launcher-icon {
+    @apply w-6 h-6 transition-transform group-hover:scale-110;
+  }
+
+  .chat-ping {
+    @apply absolute -top-1 -right-1 flex h-3 w-3;
+  }
+
+  .chat-ping-ring {
+    @apply absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75;
+  }
+
+  .chat-ping-dot {
+    @apply relative inline-flex h-3 w-3 rounded-full border-2 border-white bg-cyan-500;
+  }
+
+  .chat-backdrop {
+    @apply fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-[2px] transition-opacity duration-300;
+  }
+
+  .chat-drawer {
+    @apply fixed top-0 right-0 z-50 flex h-full w-full flex-col border-l border-gray-200 bg-white shadow-2xl transition-transform duration-300 ease-in-out sm:w-[420px];
+  }
+
+  .chat-drawer-open {
+    @apply translate-x-0;
+  }
+
+  .chat-drawer-closed {
+    @apply translate-x-full;
   }
 }
+
+@keyframes typing {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(-2px);
+    opacity: 1;
+  }
+}
+

@@ -122,7 +122,7 @@ export function ChatWidget({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white relative">
+    <div className="chat-widget">
       <ChatHeader jobId={jobId} onReset={handleReset} onClose={onClose} />
       <MessageList
         messages={messages}

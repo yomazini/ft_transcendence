@@ -20,8 +20,8 @@ def rank_top_comments(
 
     ranked = sorted(enriched, key=lambda x: x["impact_score"], reverse=True)
 
-    top_positive = [c for c in ranked if float(c.get("compound", 0.0)) >= 0.05][:5]
-    top_negative = [c for c in ranked if float(c.get("compound", 0.0)) <= -0.05][:5]
+    top_positive = [c for c in ranked if float(c.get("compound", 0.0)) >= 0.05][:10]
+    top_negative = [c for c in ranked if float(c.get("compound", 0.0)) <= -0.05][:10]
 
     return {
         "top_overall": ranked[:top_k],
