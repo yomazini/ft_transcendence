@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+from .config import settings
 from .ranking import rank_top_comments
 
 SKILLS_DIR = Path(__file__).resolve().parent.parent / "skills"
@@ -40,11 +41,11 @@ def format_persona_xml(job: dict | None) -> str:
 
 
 def build_synthesis_prompt(job: dict | None, scored_comments: list[dict]) -> str:
-    ranked = rank_top_comments(scored_comments, top_k=20)
-    top_10 = ranked["top_overall"]
+    ranked = rank_top_comments(scored_comments, top_k=settings.report_top_k)
+    top_comments = ranked["top_overall"]
 
     persona_xml = format_persona_xml(job)
-    comments_xml = format_comments_xml(top_10)
+    comments_xml = format_comments_xml(top_comments)
 
     sufficiency_skill = (SKILLS_DIR / "skills-data-sufficiency.md").read_text(
         encoding="utf-8"

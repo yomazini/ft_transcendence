@@ -15,7 +15,8 @@ class Settings(BaseSettings):
 
     embedding_model: str = "all-MiniLM-L6-v2"
 
-    rag_top_k: int = 10
+    rag_retrieval_k: int = 20
+    rag_context_k: int = 8
     report_top_k: int = 20
     worker_concurrency: int = 3
     openrouter_api_key: str = ""

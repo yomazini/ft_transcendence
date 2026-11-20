@@ -220,8 +220,11 @@ async def query_rag(payload: RagQueryRequest):
         logger.exception("RAG embedding failed for job %s", payload.job_id)
         raise HTTPException(status_code=503, detail="Embedding model unavailable")
 
+    retrieval_k = settings.rag_retrieval_k
+    context_k = min(settings.rag_context_k, retrieval_k)
+
     candidates = await search_comments_by_vector(
-        payload.job_id, query_vec, limit=settings.rag_top_k
+        payload.job_id, query_vec, limit=retrieval_k
     )
     if not candidates:
         raise HTTPException(
@@ -229,7 +232,7 @@ async def query_rag(payload: RagQueryRequest):
             detail=f"Target job vector data not found for job {payload.job_id}",
         )
 
-    reranked = rerank_for_rag(candidates, top_k=settings.rag_top_k)
+    reranked = rerank_for_rag(candidates, top_k=context_k)
     prompt = build_rag_prompt(payload.query, reranked, job)
     try:
         answer = await call_openrouter_text(prompt, max_tokens=768, temperature=0.2)
