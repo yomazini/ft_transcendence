@@ -1,5 +1,14 @@
-import { useState, FormEvent } from "react";
+"use client";
+
+import { useState } from "react";
 import { Send, Loader2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  PromptInput,
+  PromptInputActions,
+  PromptInputTextarea,
+} from "@/components/ui/prompt-input";
 
 interface ChatInputProps {
   onSend: (text: string) => void;
@@ -10,9 +19,7 @@ interface ChatInputProps {
 export function ChatInput({ onSend, isLoading, onQuickQuery }: ChatInputProps) {
   const [input, setInput] = useState("");
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-
+  const handleSubmit = () => {
     if (!input.trim() || isLoading) return;
     onSend(input.trim());
     setInput("");
@@ -25,44 +32,53 @@ export function ChatInput({ onSend, isLoading, onQuickQuery }: ChatInputProps) {
   ];
 
   return (
-    <footer className="p-3 bg-white border-t border-gray-200 flex flex-col gap-2">
+    <footer className="chat-footer">
       {onQuickQuery && (
-        <div className="flex gap-1.5 overflow-x-auto pb-1 text-[11px] scrollbar-none">
+        <div className="chat-quick-list">
           {quickPrompts.map((prompt, i) => (
-            <button
+            <Button
               key={i}
               type="button"
+              variant="secondary"
+              size="xs"
               disabled={isLoading}
               onClick={() => onQuickQuery(prompt)}
-              className="shrink-0 px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors disabled:opacity-50 text-left"
+              className="chat-quick"
             >
               {prompt}
-            </button>
+            </Button>
           ))}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="flex gap-2 items-center">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          disabled={isLoading}
-          placeholder={isLoading ? "AI is generating answer..." : "Ask anything about this report..."}
-          className="flex-1 bg-slate-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all disabled:opacity-60"
+      <PromptInput
+        value={input}
+        onValueChange={setInput}
+        onSubmit={handleSubmit}
+        isLoading={isLoading}
+        disabled={isLoading}
+        maxHeight={160}
+        className="chat-input"
+      >
+        <PromptInputTextarea
+          placeholder={
+            isLoading
+              ? "AI is generating answer..."
+              : "Ask anything about this report..."
+          }
         />
-        <button
-          type="submit"
-          disabled={!input.trim() || isLoading}
-          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white p-2.5 rounded-xl shadow-sm transition-all flex items-center justify-center shrink-0 cursor-pointer disabled:cursor-not-allowed"
-        >
-          {isLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Send className="w-4 h-4" />
-          )}
-        </button>
-      </form>
+        <PromptInputActions className="chat-send">
+          <Button
+            type="button"
+            size="icon-sm"
+            onClick={handleSubmit}
+            disabled={!input.trim() || isLoading}
+            aria-label="Send message"
+          >
+            {isLoading ? <Loader2 className="animate-spin" /> : <Send />}
+          </Button>
+        </PromptInputActions>
+      </PromptInput>
     </footer>
   );
 }
