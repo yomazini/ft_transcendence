@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import json
 
@@ -6,28 +7,33 @@ import asyncpg
 from .config import settings
 
 _pool: asyncpg.Pool | None = None
+_pool_lock = asyncio.Lock()
 
 
 async def get_pool() -> asyncpg.Pool:
     global _pool
     if _pool is None:
-        _pool = await asyncpg.create_pool(
-            user=settings.postgres_user,
-            password=settings.postgres_password,
-            database=settings.postgres_db,
-            host=settings.postgres_host,
-            port=settings.postgres_port,
-            min_size=2,
-            max_size=5,
-        )
+        async with _pool_lock:
+            if _pool is None:
+                _pool = await asyncpg.create_pool(
+                    user=settings.postgres_user,
+                    password=settings.postgres_password,
+                    database=settings.postgres_db,
+                    host=settings.postgres_host,
+                    port=settings.postgres_port,
+                    min_size=2,
+                    max_size=5,
+                )
     return _pool
 
 
 async def close_pool():
     global _pool
-    if _pool:
-        await _pool.close()
-        _pool = None
+    async with _pool_lock:
+        if _pool:
+            pool = _pool
+            _pool = None
+            await pool.close()
 
 
 async def update_job_status(job_id: str, status: str):
