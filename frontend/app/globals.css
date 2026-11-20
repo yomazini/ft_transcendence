@@ -191,39 +191,31 @@
   }
 
   .chat-message-body {
-    @apply flex max-w-[82%] flex-col;
+    @apply flex max-w-[82%] flex-col items-start;
   }
 
-  .chat-message-body-user {
+  .chat-message-user .chat-message-body {
     @apply items-end;
-  }
-
-  .chat-message-body-assistant {
-    @apply items-start;
   }
 
   .chat-avatar {
     @apply shadow-sm;
   }
 
-  .chat-avatar-user {
-    @apply bg-primary text-primary-foreground;
-  }
-
-  .chat-avatar-assistant {
+  .chat-avatar-fallback {
     @apply bg-secondary text-secondary-foreground;
   }
 
+  .chat-message-user .chat-avatar-fallback {
+    @apply bg-primary text-primary-foreground;
+  }
+
   .chat-bubble {
-    @apply rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm;
+    @apply rounded-2xl rounded-tl-none border border-border bg-card px-4 py-3 text-sm leading-relaxed text-card-foreground shadow-sm;
   }
 
-  .chat-bubble-user {
-    @apply whitespace-pre-wrap rounded-tr-none bg-primary text-primary-foreground;
-  }
-
-  .chat-bubble-assistant {
-    @apply rounded-tl-none border border-border bg-card text-card-foreground;
+  .chat-message-user .chat-bubble {
+    @apply whitespace-pre-wrap rounded-tl-2xl rounded-tr-none border-transparent bg-primary text-primary-foreground;
   }
 
   .chat-citations {
@@ -258,7 +250,7 @@
     @apply flex gap-1.5 overflow-x-auto pb-1 text-[11px];
   }
 
-  .chat-quick {
+  .chat-quick-list > button {
     @apply shrink-0 rounded-full;
   }
 

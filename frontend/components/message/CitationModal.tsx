@@ -18,23 +18,20 @@ interface CitationModalProps {
 export function CitationModal({ citation, onClose }: CitationModalProps) {
   const score = citation?.sentiment_score ?? null;
 
-  const sentimentClass =
-    score === null
-      ? "chat-sentiment-neutral"
-      : score > 0.1
-        ? "chat-sentiment-positive"
-        : score < -0.1
-          ? "chat-sentiment-negative"
-          : "chat-sentiment-neutral";
-
+  const tone =
+    score === null || Math.abs(score) <= 0.1
+      ? "neutral"
+      : score > 0
+        ? "positive"
+        : "negative";
+  const percent = Math.round((score ?? 0) * 100);
+  const sentimentClass = `chat-sentiment-${tone}`;
   const sentimentLabel =
-    score === null
+    tone === "neutral"
       ? "Neutral"
-      : score > 0.1
-        ? `Positive (+${(score * 100).toFixed(0)}%)`
-        : score < -0.1
-          ? `Negative (${(score * 100).toFixed(0)}%)`
-          : "Neutral";
+      : tone === "positive"
+        ? `Positive (+${percent}%)`
+        : `Negative (${percent}%)`;
 
   return (
     <Dialog

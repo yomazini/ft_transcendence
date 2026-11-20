@@ -35,15 +35,14 @@ export function ChatInput({ onSend, isLoading, onQuickQuery }: ChatInputProps) {
     <footer className="chat-footer">
       {onQuickQuery && (
         <div className="chat-quick-list">
-          {quickPrompts.map((prompt, i) => (
+          {quickPrompts.map((prompt) => (
             <Button
-              key={i}
+              key={prompt}
               type="button"
               variant="secondary"
               size="xs"
               disabled={isLoading}
               onClick={() => onQuickQuery(prompt)}
-              className="chat-quick"
             >
               {prompt}
             </Button>

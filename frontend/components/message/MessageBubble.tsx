@@ -18,26 +18,13 @@ export function MessageBubble({
   return (
     <Message className={isUser ? "chat-message chat-message-user" : "chat-message"}>
       <Avatar className="chat-avatar">
-        <AvatarFallback
-          className={isUser ? "chat-avatar-user" : "chat-avatar-assistant"}
-        >
+        <AvatarFallback className="chat-avatar-fallback">
           {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
         </AvatarFallback>
       </Avatar>
 
-      <div
-        className={
-          isUser
-            ? "chat-message-body chat-message-body-user"
-            : "chat-message-body chat-message-body-assistant"
-        }
-      >
-        <MessageContent
-          markdown={!isUser}
-          className={
-            isUser ? "chat-bubble chat-bubble-user" : "chat-bubble chat-bubble-assistant"
-          }
-        >
+      <div className="chat-message-body">
+        <MessageContent markdown={!isUser} className="chat-bubble">
           {message.content}
         </MessageContent>
 
@@ -49,7 +36,7 @@ export function MessageBubble({
             <div className="chat-citations-list">
               {message.citations.map((c, idx) => (
                 <Button
-                  key={c.id || idx}
+                  key={c.id}
                   type="button"
                   variant="secondary"
                   size="xs"
