@@ -5,8 +5,9 @@ from typing import cast, Any
 from uuid import uuid4
 from sqlalchemy.orm import Session
 from sqlalchemy import select,exists, update, delete
+from sqlalchemy.exc import OperationalError, InterfaceError
 from scraper_svc.models import Job, Jobstatuses, Jobmodes, SubJob
-from scraper_svc.helpers import insert_comments, get_job, get_subjob, scrape, get_scrape_target, valid_post_url, update_job_status, normalize_data ,WorkerState, SessionError, RetriableError
+from scraper_svc.helpers import insert_comments, get_job, get_subjob, scrape, get_scrape_target, valid_post_url, update_job_status, normalize_data, safe_cleanup, WorkerState, SessionError, RetriableError
 
 SCRAPE_QUEUE=os.getenv('SCRAPE_QUEUE','scrape-job')
 ANALYSIS_QUEUE=os.getenv("ANALYSIS_QUEUE", 'analyze-job')
@@ -42,7 +43,7 @@ class ServiceWorker:
 			SCRAPE_QUEUE,
 			cast(Any, self.run_pipeline),
 			{
-				'concurrency': worker_num if worker_num < g.MAX_WORKER else g.MAX_WORKER,
+				'concurrency': max(1, min(worker_num, g.MAX_WORKER)),
 				'connection': g.REDIS_URL,
 				'autorun': False
 			}
@@ -52,14 +53,13 @@ class ServiceWorker:
 			{'connection': g.REDIS_URL}
 		)	
 
-	def validate_job(self, job_id: str) -> Session:
-		session: Session = g.db.get_session()
-		result = session.scalar(
-			select(exists().where(Job.id == job_id))
+	def validate_job(self, job_data: WorkerData):
+		job_data.session = g.db.get_session()
+		result = job_data.session.scalar(
+			select(exists().where(Job.id == job_data.job_id))
 		)
 		if result:
-			return session
-		session.close()
+			return
 		raise SessionError("invalid job id")
 
 
@@ -70,7 +70,7 @@ class ServiceWorker:
 		job_data = WorkerData(job.data.get("id", "missing"), job.data.get("data", None), WorkerState(job.data.get("state", WorkerState.SCRAPE)))
 		g.scraper_jobs_in_progress.inc()
 		try:
-			job_data.session = self.validate_job(job_data.job_id)
+			self.validate_job(job_data)
 			await update_job_status(job_data.session, job_data.job_id, Jobstatuses.SCRAPING.value)
 			mode = get_job(job_data.session, job_data.job_id).mode.value
 			i = job_data.state
@@ -91,12 +91,23 @@ class ServiceWorker:
 				re,
 				max_attempts - attempts
 			)
-
 			if attempts >= max_attempts:
 				g.scraper_jobs_total.labels("failed").inc()
 				if job_data.session:
-					job_data.session.rollback()
 					await update_job_status(job_data.session, job_data.job_id, Jobstatuses.FAILED.value, str(re))
+			raise
+		except (OperationalError, InterfaceError) as db_error:
+			attempts = job.attemptsMade
+			max_attempts = job.opts.get("attempts", 1) - 1
+			g.logger.warning(
+				"Scrape worker: [%s] reason=%s retries=%d",
+				job_data.job_id,
+				db_error,
+				max_attempts - attempts
+			)
+			if attempts >= max_attempts:
+				g.scraper_jobs_total.labels("failed").inc()
+				g.logger.error("can't access the database")
 			raise
 		except SessionError as se:
 			g.logger.error("Scrape worker: %s", se)
@@ -105,7 +116,6 @@ class ServiceWorker:
 		except Exception as e:
 			g.logger.error("Scrape worker: %s", e)
 			if job_data.session:
-				job_data.session.rollback()
 				await update_job_status(job_data.session, job_data.job_id, Jobstatuses.FAILED.value, str(e))
 			g.scraper_jobs_total.labels("failed").inc()
 			raise bmq.UnrecoverableError(str(e)) from e
@@ -116,7 +126,7 @@ class ServiceWorker:
 			)
 			if job_data.session:
 				self.log(f"closed database session")
-				job_data.session.close()
+				safe_cleanup(job_data.session)
 
 	async def scrape(self, data: WorkerData) -> WorkerState:
 		if (data.session == None):
