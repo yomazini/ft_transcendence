@@ -21,7 +21,7 @@ async function updateJobName(id: string, name:string): Promise<updateJobNamePara
 		}
 	)
 	if (!response.ok) {
-		throw new Error(`Failed to delete job: ${response.status}`);
+		throw new Error(`Failed to change job name: ${response.status}`);
 	}
 	return {id, name}
 }

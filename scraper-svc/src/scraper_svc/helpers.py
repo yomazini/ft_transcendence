@@ -206,3 +206,15 @@ def get_subjob(session: Session, job_id:str) -> SubJob:
 	if job is None:
 		raise BadJobError(f"SubJob [{job_id}] doesn't exist")
 	return (job)
+
+# save cleanup
+
+def safe_cleanup(session: Session):
+	try:
+		session.rollback()
+	except Exception:
+		pass
+	try:
+		session.close()
+	except Exception:
+		pass
