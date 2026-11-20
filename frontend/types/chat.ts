@@ -29,5 +29,4 @@ export interface RagQueryResponse {
 export interface FloatingChatWidgetProps {
   jobId?: string;
   apiEndpoint?: string;
-  initialMessage?: string;
 }
