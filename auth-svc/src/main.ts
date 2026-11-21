@@ -15,6 +15,7 @@ async function bootstrap() {
 	const { AppModule } = await import('./app.module.js');
 
   const app = await NestFactory.create(AppModule);
+  app.enableShutdownHooks();
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
 
    const config = new DocumentBuilder()
