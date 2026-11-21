@@ -260,7 +260,7 @@ export function VisualizerCard({ report }: { report: ReportDetails | null }) {
 				axisLine={false}
 				tickMargin={8}
 				minTickGap={20}
-				tick={{ fontSize: 10, fill: "#6b7280" }}
+				tick={{ fontSize: 10, fill: "#9ca3af" }}
 				tickFormatter={(date: string) =>
 					new Date(`${date}T12:00:00`).toLocaleDateString("en-US", {
 						month: "short",

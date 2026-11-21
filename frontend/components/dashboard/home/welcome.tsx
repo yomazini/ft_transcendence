@@ -100,19 +100,6 @@ export default function Welcome() {
           </div>
         </div>
       </div>
-
-      <div className="relative hidden min-h-[220px] items-end justify-end lg:flex">
-        <div className="absolute bottom-0 right-0 h-44 w-72 rounded-tl-[100px] bg-orange-200/30 dark:bg-orange-500/10" />
-
-        <Image
-          src="/analytic-user.svg"
-          width={320}
-          height={320}
-          alt="Analytics illustration"
-          className="relative z-10 max-h-[235px] w-auto object-contain object-bottom"
-          priority
-        />
-      </div>
     </section>
   );
 }

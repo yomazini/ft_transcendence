@@ -1,6 +1,5 @@
 
 import { Progress } from "@/components/ui/progress";
-import { ChartNoAxesColumnIncreasing } from "lucide-react";
 import { ReportDetails } from "@/app/types/report";
 
 export function FactorsCard({ report } : { report: ReportDetails | null}) {
@@ -13,7 +12,7 @@ export function FactorsCard({ report } : { report: ReportDetails | null}) {
 					</span>
 				</div>
 
-				<p className="mt-1 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+				<p className="mt-1 text-sm leading-5 text-zinc-600 dark:text-zinc-400">
 					Satisfaction (%) and number of importance mentions
 				</p>
 			</div>
@@ -33,7 +32,7 @@ export function FactorsCard({ report } : { report: ReportDetails | null}) {
 											{name.replaceAll("_", " ")}:
 										</span>
 
-										<span className="shrink-0 rounded-md bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+										<span className="shrink-0 rounded-md bg-zinc-100 px-2 py-0.5 text-xs dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
 											{factor.importance} mentions
 										</span>
 									</div>
