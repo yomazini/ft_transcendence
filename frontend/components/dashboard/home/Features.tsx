@@ -11,8 +11,8 @@ export function FeaturesCard({ report } : { report : ReportDetails | null}) {
 						Features
 					</span>
 
-					<p className="mt-1.5 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
-						AI-generated product improvement suggestions
+					<p className="mt-1.5 text-sm leading-5 text-zinc-600 dark:text-zinc-400">
+						Product improvement suggestions
 					</p>
 				</div>
 			</div>
@@ -39,7 +39,7 @@ export function FeaturesCard({ report } : { report : ReportDetails | null}) {
 									</span>
 								</div>
 
-								<p className="text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+								<p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
 									{feature.justification}
 								</p>
 							</div>
@@ -56,7 +56,7 @@ export function FeaturesCard({ report } : { report : ReportDetails | null}) {
 								</span>
 							</div>
 
-							<p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+							<p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-400">
 								{report.blue_ocean.weakest_suggestion}
 							</p>
 						</div>

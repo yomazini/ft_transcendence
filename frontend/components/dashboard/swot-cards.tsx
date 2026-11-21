@@ -65,7 +65,7 @@ export function Cards({
     >
       <CardHeader className="shrink-0 min-w-0">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="min-w-0 truncate text-base font-semibold  text-zinc-900 dark:text-white">
+          <h3 className="min-w-0 truncate text-base font-semibold text-zinc-900 dark:text-white">
             {title}
           </h3>
 
@@ -77,7 +77,7 @@ export function Cards({
           </div>
         </div>
 
-        <p className="mt-1 truncate text-xs text-slate-400">
+        <p className="mt-1 truncate text-sm text-zinc-600 dark:text-zinc-200">
           {description}
         </p>
       </CardHeader>
@@ -106,7 +106,7 @@ export function Cards({
               >
                 <span className="stat-list-dot mt-1.5 shrink-0" />
 
-                <span className="min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:anywhere] text-sm leading-relaxed">
+                <span className="min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:anywhere] text-sm  text-zinc-800 dark:text-zinc-200 leading-relaxed">
                   {textOf(item)}
                 </span>
               </li>
