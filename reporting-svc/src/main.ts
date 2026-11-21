@@ -1,7 +1,6 @@
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { ValidationPipe } from "@nestjs/common";
-import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { readFile } from "node:fs/promises";
 import { PrismaClientExceptionFilte } from "./prisma-client-exception/prisma-client-exception.filter";
 
@@ -109,23 +108,12 @@ async function bootstrap() {
 	}
 
 	const app = await NestFactory.create(AppModule, {abortOnError: false});
-	const config = new DocumentBuilder()
-		.setTitle("Reporting service")
-		.setDescription("Reporting API, Prisma, and database backups")
-		.setVersion("0.1.0")
-		.addBearerAuth()
-		.build();
-	const document = SwaggerModule.createDocument(app, config);
-	SwaggerModule.setup("api/reporting/docs", app, document);
 	app.useGlobalPipes(new ValidationPipe({transform: true, whitelist: true, forbidNonWhitelisted: false,}));
 	app.enableShutdownHooks();
 	app.useGlobalFilters(new PrismaClientExceptionFilte());
 	const port = process.env.PORT ?? 3003;
 	await app.listen(port);
 	console.log(`Reporting service is running on port ${port}`);
-	console.log(
-		`Swagger documentation: https://localhost:${port}/api/reporting/docs`,
-	);
 }
 void bootstrap().catch((err: unknown) => {
 	console.log("Reporting service failed to start:", err);
