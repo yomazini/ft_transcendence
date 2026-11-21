@@ -27,7 +27,7 @@ export default function JobsList() {
 						<h1 className="text-zinc-700 dark:text-zinc-200">There is no report</h1>
 					</div>
 				) : (
-				<div>
+				<div className="flex w-full flex-col gap-5 px-4 py-3">
 					{
 						isLoading ?
 						<p className="text-zinc-600 dark:text-zinc-300">Loading jobs...</p> :
