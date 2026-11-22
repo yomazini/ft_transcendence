@@ -158,6 +158,7 @@ services:
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       BACKUP_PATH: ${BACKUP_PATH:-postgres}
       POSTGRES_HOST: ${POSTGRES_HOST:-/tmp/backups}
+      NODE_ENV: ${NODE_ENV:-production}
     depends_on:
       postgres: { condition: service_healthy }
       minio: { condition: service_healthy }

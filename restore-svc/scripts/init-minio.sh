@@ -20,19 +20,19 @@ unset TOKEN JSON
 
 mc alias set local http://minio:9000/ "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
 
-if mc admin user svcacct info local "$MINIO_ACCESS_KEY" >/dev/null 2>&1; then
+if mc admin user svcacct info local "$MINIO_ACCESS_KEY"; then
     echo "Service account already exists"
 else
     echo "Creating service account..."
 
-    mc admin user svcacct add local --access-key "$MINIO_ACCESS_KEY" --secret-key "$MINIO_SECRET_KEY" "$MINIO_ROOT_USER" > /dev/null
+    mc admin user svcacct add local --access-key "$MINIO_ACCESS_KEY" --secret-key "$MINIO_SECRET_KEY" "$MINIO_ROOT_USER"
 
 fi
 mc mb --ignore-existing "local/$MINIO_BUCKET_NAME"
 
-mc alias set app http://127.0.0.1:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" > /dev/null
+mc alias set app http://127.0.0.1:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY"
 
-mc ls "app/$MINIO_BUCKET_NAME" > /dev/null
+mc ls "app/$MINIO_BUCKET_NAME"
 
 mc ilm rule add "local/$MINIO_BUCKET_NAME" --expire-days 30
 
