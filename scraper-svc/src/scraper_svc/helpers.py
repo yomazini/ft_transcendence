@@ -23,11 +23,11 @@ class WorkerState(enum.IntEnum):
 	INSERT_BULK = 4
 	DONE = 5
 
-class RetriableError(Exception):
-	pass
+# class RetriableError(Exception):
+# 	pass
 
-class RateLimitError(RetriableError):
-    pass
+# class RateLimitError(RetriableError):
+#     pass
 
 class BadJobError(Exception):
 	pass
@@ -41,7 +41,7 @@ def clean_split(string:str, sep:str) -> list[str]:
 	return list(filter(None, string.split(sep)))
 
 def valid_keyword_url(path: str) -> tuple[str, dict]:
-	return f"{BASE_URL}/search.json", {'q': path, 'limit': 5}
+	return f"{BASE_URL}/search.json", {'q': path, 'limit': g.LIMIT}
 
 def valid_user_url(path: str) -> tuple[str, dict]:
 	path_list: list[str] = clean_split(path, "/")
@@ -49,7 +49,7 @@ def valid_user_url(path: str) -> tuple[str, dict]:
 	if (len(path_list) != 2
 		or path_list[0] != 'user'):
 		raise RuntimeError("Invalid user")
-	return f"{BASE_URL}/{"/".join(path_list)}/submitted.json", {'limit': 5}
+	return f"{BASE_URL}/{"/".join(path_list)}/submitted.json", {'limit': g.LIMIT}
 
 def valid_subreddit_url(path: str) -> tuple[str, dict]:
 	path_list: list[str] = clean_split(path, "/")
@@ -57,7 +57,7 @@ def valid_subreddit_url(path: str) -> tuple[str, dict]:
 		or path_list[0] != 'r'
 		or path_list[2] not in ["top", "new", "rising", "best", "hot"]):
 		raise RuntimeError("Invalid subreddit")
-	return f"{BASE_URL}/{"/".join(path_list)}.json", {'limit': 5}
+	return f"{BASE_URL}/{"/".join(path_list)}.json", {'limit': g.LIMIT}
 
 def valid_post_url(path: str) -> str:
 	path_list: list[str] = clean_split(path, "/")
@@ -80,18 +80,13 @@ def get_scrape_target(target: str, mode: Jobmodes) -> tuple[str, dict]:
 
 # Scraper
 
-def scrape(target: str, query:dict) -> list[dict[str, Any]] | dict[str, Any]:
-	response:Response | None = None
-	session_id = g.session.acquire()
-	try:
-		response = requests.get(target, headers=HEADERS,params=query, cookies={'reddit_session': session_id}, impersonate="chrome")
-	finally:
-		g.session.release(session_id)
+async def scrape(target: str, query:dict) -> list[dict[str, Any]] | dict[str, Any]:
+	response = g.session.send_request(target, query)
 	g.scraper_reddit_requests_total.labels(str(response.status_code)).inc()
-	if response.status_code == 429:
-		g.session.pause_all()
-		raise RateLimitError("Reddit rate limit exceeded")
-	g.logger.info("Scraper: request status [%s]", response.status_code)
+	# if response.status_code == 429:
+	# 	g.session.pause_all()
+	# 	raise RateLimitError("Reddit rate limit exceeded")
+	# g.logger.info("Scraper: request status [%s]", response.status_code)
 	response.raise_for_status()
 	return response.json()
 
@@ -140,16 +135,16 @@ def normalize_posts(data:dict):
 		l.append(post_content["permalink"])
 	return l
 
-def normalize_data(data: list | dict, mode: Jobmodes) ->  dict | list:
-	match mode:
-		case Jobmodes.POST:
-			if (not isinstance(data, list)):
-				raise RuntimeError("Impossible action error")
-			return (normalize_post(data))
-		case _:
-			if (not isinstance(data, dict)):
-				raise RuntimeError("Impossible action error")
-			return (normalize_posts(data))
+# def normalize_data(data: list | dict, mode: Jobmodes) ->  dict | list:
+# 	match mode:
+# 		case Jobmodes.POST:
+# 			if (not isinstance(data, list)):
+# 				raise RuntimeError("Impossible action error")
+# 			return (normalize_post(data))
+# 		case _:
+# 			if (not isinstance(data, dict)):
+# 				raise RuntimeError("Impossible action error")
+# 			return (normalize_posts(data))
 
 # Database Insertion
 

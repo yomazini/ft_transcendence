@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select,exists, update, delete
 from sqlalchemy.exc import OperationalError, InterfaceError
 from scraper_svc.models import Job, Jobstatuses, Jobmodes, SubJob
-from scraper_svc.helpers import insert_comments, get_job, get_subjob, scrape, get_scrape_target, valid_post_url, update_job_status, normalize_data, safe_cleanup, WorkerState, SessionError, RetriableError
+from scraper_svc.helpers import insert_comments, get_job, get_subjob, scrape, get_scrape_target, valid_post_url, update_job_status, normalize_post, normalize_posts, safe_cleanup, WorkerState, SessionError, RetriableError
 
 SCRAPE_QUEUE=os.getenv('SCRAPE_QUEUE','scrape-job')
 ANALYSIS_QUEUE=os.getenv("ANALYSIS_QUEUE", 'analyze-job')
@@ -17,18 +17,21 @@ class WorkerData:
 	job_id:str
 	data: list | dict | None
 	state: WorkerState
+	requests: int
 
-	def __init__(self, job_id: str, data: list | dict | None, state: WorkerState):
+	def __init__(self, job_id: str, data: list | dict | None, state: WorkerState, requests: int):
 		self.job_id = job_id
 		self.data = data
 		self.state = state
 		self.session = None
+		self.requests = requests
 
 	def to_dict(self):
 		return {
 			"id": self.job_id,
 			"data": self.data,
-			"state": self.state.value
+			"state": self.state.value,
+			"requests": self.requests
 		}
 
 class ServiceWorker:
@@ -67,7 +70,7 @@ class ServiceWorker:
 		actions = [self.scrape, self.create_subjobs, self.scrape_subjob, self.save_subjobs, self.insert_bulk]
 		mode = "unknown"
 		started_at = time.perf_counter()
-		job_data = WorkerData(job.data.get("id", "missing"), job.data.get("data", None), WorkerState(job.data.get("state", WorkerState.SCRAPE)))
+		job_data = WorkerData(job.data.get("id", "missing"), job.data.get("data", None), WorkerState(job.data.get("state", WorkerState.SCRAPE)), job.data.get("requests", 0))
 		g.scraper_jobs_in_progress.inc()
 		try:
 			self.validate_job(job_data)
@@ -131,14 +134,24 @@ class ServiceWorker:
 	async def scrape(self, data: WorkerData) -> WorkerState:
 		if (data.session == None):
 			raise RuntimeError("Impossible action error")
+
 		self.log(f"Scraping job {data.job_id}")
 		job = get_job(data.session, data.job_id)
+
 		if job.mode == Jobmodes.POST:
 			valid_post_url(job.target)
 			data.data = [job.target]
+			await g.session.reserve()
+			data.requests = 1
 			return WorkerState.CREATE_SUBJOBS
-		result = await asyncio.to_thread(scrape, *get_scrape_target(job.target, job.mode))
-		data.data = normalize_data(result, job.mode)
+		await g.session.reserve(g.LIMIT + 1)
+		data.requests = g.LIMIT + 1
+		result = await scrape(*get_scrape_target(job.target, job.mode))
+		g.session.release()
+		data.requests -= 1
+		data.data = normalize_posts(result)
+		await g.session.release(data.requests - len(data.data))
+		data.requests -= data.requests - len(data.data)
 		return WorkerState.CREATE_SUBJOBS
 
 	async def create_subjobs(self, data: WorkerData) -> WorkerState:
@@ -167,8 +180,10 @@ class ServiceWorker:
 		self.log(f"Scrape SubJob {subjob_id}")
 		job = get_subjob(data.session, subjob_id)
 		url = valid_post_url(job.url)
-		result = await asyncio.to_thread(scrape, url, {})
-		data.data["data"] = normalize_data(result, Jobmodes.POST)
+		result = await scrape(url, {})
+		g.session.release()
+		data.requests -= 1
+		data.data["data"] = normalize_post(result)
 		return WorkerState.SAVE_NORM_DATA
 
 	async def save_subjobs(self, data: WorkerData) -> WorkerState:
