@@ -3,11 +3,6 @@
 set -eu
 umask 077
 
-# -----------------------------------------
-# Configuration
-# -----------------------------------------
-
-SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 
 LOGIN_FILE="${LOGIN_FILE:-/run/vault/login.json}"
 BACKUP_PATH="${BACKUP_PATH:-/tmp/backups}"
@@ -32,19 +27,14 @@ MC_CONFIG_DIR="$(mktemp -d)"
 export MC_CONFIG_DIR
 
 trap 'rm -rf "$MC_CONFIG_DIR"' EXIT
-trap 'exit 1' HUP INT TERM
 
-# -----------------------------------------
-# 1. Authenticate with Vault
-# -----------------------------------------
+
 
 echo "Authenticating with Vault..."
 
 TOKEN=$(curl -fsS -X POST -H "Content-Type: application/json" --data-binary @"$LOGIN_FILE" "$VAULT_ADDR/v1/auth/approle/login" | jq -er '.auth.client_token')
 
-# -----------------------------------------
-# 2. Retrieve secrets
-# -----------------------------------------
+
 
 echo "Retrieving secrets..."
 
@@ -71,17 +61,13 @@ POSTGRES_DB=$(printf '%s' "$PGJSON" | jq -er '.data.data.database')
 
 unset TOKEN MINJSON PGJSON
 
-# -----------------------------------------
-# 3. Connect directly to MinIO
-# -----------------------------------------
+
 
 echo "Connecting to MinIO..."
 
 mc alias set myminio "$MINIO_URL" "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" > /dev/null
 
-# -----------------------------------------
-# 4. Find latest backup
-# -----------------------------------------
+
 
 echo "Getting backup file name..."
 
@@ -113,9 +99,7 @@ ShaFileName="$FileName.hmac"
 
 echo "Using backup: $FileName"
 
-# -----------------------------------------
-# 5. Download files from MinIO
-# -----------------------------------------
+
 
 echo "Downloading backup..."
 
@@ -129,9 +113,7 @@ mc cp "myminio/$MINIO_BUCKET_NAME/$ShaFileName" "$BACKUP_PATH/$ShaFileName"
     exit 1
 }
 
-# -----------------------------------------
-# 6. Verify backup integrity
-# -----------------------------------------
+
 
 echo "Verifying integrity..."
 
@@ -163,9 +145,7 @@ esac
 
 echo "Integrity OK"
 
-# -----------------------------------------
-# 7. Validate backup archive
-# -----------------------------------------
+
 
 echo "Checking backup format..."
 
@@ -175,19 +155,15 @@ pg_restore --list "$BACKUP_PATH/$FileName" \
     exit 1
 }
 
-# -----------------------------------------
-# 8. Connect to PostgreSQL
-# -----------------------------------------
+
 
 echo "Checking PostgreSQL connection..."
 
 export PGPASSWORD="$POSTGRES_PASSWORD"
 
-psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -c "SELECT 1;" > /dev/null
+psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -c "SELECT 1;"
 
-# -----------------------------------------
-# 9. Validate target database
-# -----------------------------------------
+
 
 case "$POSTGRES_DB" in
     ""|postgres|template0|template1)
@@ -211,9 +187,7 @@ case "$POSTGRES_DB" in
         ;;
 esac
 
-# -----------------------------------------
-# 10. Recreate database
-# -----------------------------------------
+
 
 echo "Recreating database..."
 
@@ -221,9 +195,7 @@ psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres -v 
 
 psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE \"$POSTGRES_DB\";"
 
-# -----------------------------------------
-# 11. Restore database
-# -----------------------------------------
+
 
 echo "Restoring database..."
 
