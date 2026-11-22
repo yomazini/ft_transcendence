@@ -78,27 +78,17 @@ export async function send<T>(
   return data as T;
 }
 
-// =============================================
 // GET /api/orgs/billing
-// =============================================
-
 export function getBilling(): Promise<Billing> {
   return send<Billing>("/api/orgs/billing");
 }
 
-// =============================================
 // GET /api/orgs/billing/payments
-// =============================================
-
 export function getPayments(): Promise<Payment[]> {
   return send<Payment[]>("/api/orgs/billing/payments");
 }
 
-// =============================================
 // POST /api/orgs/billing/checkout
-// Create Stripe Mock checkout session
-// =============================================
-
 export function createCheckout(
   plan: PaidPlan,
   idempotencyKey: string,
@@ -115,11 +105,7 @@ export function createCheckout(
   );
 }
 
-// =============================================
 // POST /api/orgs/billing/verify/:paymentId
-// Read payment status from backend
-// =============================================
-
 export function verifyCheckout(
   paymentId: string,
 ): Promise<VerifyResponse> {
@@ -131,10 +117,7 @@ export function verifyCheckout(
   );
 }
 
-// =============================================
 // Poll until simulated payment is finalized
-// =============================================
-
 export async function verifyCheckoutUntilComplete(
   paymentId: string,
   options: {
@@ -196,11 +179,7 @@ export async function verifyCheckoutUntilComplete(
   };
 }
 
-// =============================================
 // POST /api/orgs/billing/simulate/:paymentId
-// Development-only simulated payment
-// =============================================
-
 export function simulatePayment(
   paymentId: string,
   outcome: SimulationOutcome,
@@ -214,10 +193,7 @@ export function simulatePayment(
   );
 }
 
-// =============================================
 // POST /api/orgs/billing/cancel
-// =============================================
-
 export function cancelSubscription(): Promise<CancelResponse> {
   return send<CancelResponse>(
     "/api/orgs/billing/cancel",

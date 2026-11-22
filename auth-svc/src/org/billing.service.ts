@@ -13,6 +13,7 @@ import {
 	SubscriptionStatus,
 	Prisma,
 	Payment,
+	Roles
 } from '../../generated/prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
@@ -30,7 +31,6 @@ export interface BillingIdentity {
 
 type ApiPlan = 'free' | 'premium' | 'extra';
 type PaidPlan = 'premium' | 'extra';
-type SimulatedOutcome = 'succeeded' | 'failed';
 
 const PLANS: Record<
 	ApiPlan,
@@ -76,7 +76,7 @@ export class BillingService {
 	private readonly stripe: Stripe;
 
 	private readonly frontendUrl =
-		process.env.FRONTEND_URL ?? 'http://localhost:8080';
+		process.env.FRONTEND_URL ?? 'https://localhost:8080';
 
 	constructor(private readonly prisma: PrismaService) {
 		this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? 'sk_test_mock', {
@@ -89,20 +89,31 @@ export class BillingService {
 	}
 
 	private async getOrganization(identity: BillingIdentity, admin = false) {
-		if (admin && identity.role !== 'Admin') {
+		const membership =
+			await this.prisma.role_and_organization.findFirst({
+				where: {
+					user_id: identity.userId,
+					org_id: identity.organizationId,
+				},
+				select: {
+					org_id: true,
+					role: true,
+				},
+			});
+
+		if (!membership) {
+			throw new NotFoundException(
+				'Organization membership not found',
+			);
+		}
+
+		if (admin && membership.role !== Roles.Admin) {
 			throw new ForbiddenException(
 				'Only organization admins can manage billing',
 			);
 		}
-		const organization = await this.prisma.organization.findUnique({
-			where: { id: identity.organizationId },
-		});
 
-		if (!organization) {
-			throw new NotFoundException('Organization not found');
-		}
-
-		return organization;
+		return { id: membership.org_id };
 	}
 
 	async assertCanAddMember(orgId: string, db: Prisma.TransactionClient = this.prisma): Promise<void> {
@@ -351,11 +362,8 @@ export class BillingService {
 	async simulatePayment(
 		identity: BillingIdentity,
 		paymentId: string,
-		outcome: SimulatedOutcome,
+		outcome: string,
 	) {
-		// if (process.env.NODE_ENV !== 'development') {
-		// 	throw new ForbiddenException('Payment simulation is disabled');
-		// }
 
 		if (outcome !== 'succeeded' && outcome !== 'failed') {
 			throw new BadRequestException('Invalid simulated outcome');

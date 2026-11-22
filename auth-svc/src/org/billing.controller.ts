@@ -42,25 +42,25 @@ export class BillingController {
 
 	// Current organization subscription and usage
 	@Get()
-	async getBilling(@Req() req: AuthenticatedRequest) {
+	getBilling(@Req() req: AuthenticatedRequest) {
 		return this.billingService.getBilling(this.getIdentity(req));
 	}
 
 	// Organization payment history
 	@Get('payments')
-	async getPayments(@Req() req: AuthenticatedRequest) {
+	getPayments(@Req() req: AuthenticatedRequest) {
 		return this.billingService.getPayments(this.getIdentity(req));
 	}
 
 	// Create a simulated Stripe checkout
 	@Post('checkout')
-	async checkout(@Req() req: AuthenticatedRequest, @Body() dto: CheckoutDto) {
+	checkout(@Req() req: AuthenticatedRequest, @Body() dto: CheckoutDto) {
 		return this.billingService.checkout(this.getIdentity(req), dto);
 	}
 
 	// Check the locally recorded payment status
 	@Post('verify/:paymentId')
-	async verify(
+	verify(
 		@Req() req: AuthenticatedRequest,
 		@Param('paymentId', ParseUUIDPipe) paymentId: string,
 	) {
@@ -69,15 +69,15 @@ export class BillingController {
 
 	// Cancel at the end of the paid period
 	@Post('cancel')
-	async cancel(@Req() req: AuthenticatedRequest) {
+	cancel(@Req() req: AuthenticatedRequest) {
 		return this.billingService.cancel(this.getIdentity(req));
 	}
 
 	@Post('simulate/:paymentId')
-	async simulatePayment(
+	simulatePayment(
 		@Req() req: AuthenticatedRequest,
 		@Param('paymentId', ParseUUIDPipe) paymentId: string,
-		@Body('outcome') outcome: 'succeeded' | 'failed',
+		@Body('outcome') outcome: string,
 	) {
 		return this.billingService.simulatePayment(
 			this.getIdentity(req),
