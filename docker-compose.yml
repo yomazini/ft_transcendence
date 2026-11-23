@@ -5,6 +5,10 @@ networks:
     name: ft_network
     driver: bridge
 
+secrets:
+  env:
+    file: ./.env
+
 volumes:
   postgres_data:
     name: postgres_db
@@ -264,9 +268,9 @@ services:
     container_name: vault
     image: vault-prod
     build: ./vault
-    ports: ["127.0.0.1:8200:8200"]
     cap_add: [IPC_LOCK]
-    env_file: .env
+    secrets:
+      - env
     volumes:
       - "vault_data:/vault"
       - "./vault/secret:/secret"

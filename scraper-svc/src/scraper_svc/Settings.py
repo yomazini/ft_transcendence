@@ -12,10 +12,9 @@ VAULT_URL=f"http://{VAULT_DNS}:8200"
 class Settings:
 	_client: hvac.Client
 	_url: URL | None
-	_sessions: list[str]
+	_session: str
 	_role_id: str
 	_secret_id: str
-	_num_workers: int
 
 	class SettingError(Exception):
 		pass
@@ -25,8 +24,7 @@ class Settings:
 		self._role_id = ""
 		self._secret_id = ""
 		self._url = None
-		self._sessions = []
-		self._num_workers = 0
+		self._sessions = ""
 
 	def _load(self) -> None:
 		self._log("Loading Vault AppRole credentials")
@@ -57,9 +55,8 @@ class Settings:
 			raise_on_deleted_version=True
 		) 
 
-		data = secret["data"]["data"]["sessions"]
-		self._sessions = data.split(',')
-		self._num_workers = len(self._sessions)
+		data = secret["data"]["data"]["session"]
+		self._sessions = str(data)
 
 	def _init_database(self) -> None:
 		secret = self._client.secrets.kv.v2.read_secret_version(
@@ -109,18 +106,14 @@ class Settings:
 	def _error(self, msg:str):
 		raise self.SettingError(f"Settings: {msg}")
 
-	def get_sessions(self) -> list[str]:
-		if len(self._sessions) == 0:
-			self._error("Sessions are not initialized")
-		return (self._sessions.copy())
+	def get_session(self) -> str:
+		return (self._sessions)
 
 	def get_database_url(self) -> URL:
 		if self._url is None:
 			self._error("Database URL is not initialized")
 		return (self._url)
 
-	def get_worker_num(self)->int:
-		return (self._num_workers)
 		
 		
 

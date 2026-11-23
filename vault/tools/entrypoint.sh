@@ -19,6 +19,6 @@ else
 	mv "$CREDS_FILE.tmp" "$CREDS_FILE"
 fi
 
-uv run --project /vault-py --no-sync vault-py &
+uv run --project /vault-py --no-sync --env-file /run/secrets/env  vault-py &
 
 exec env -i /usr/local/bin/docker-entrypoint.sh "$@"

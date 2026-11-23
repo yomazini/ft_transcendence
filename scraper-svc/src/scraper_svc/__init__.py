@@ -15,7 +15,7 @@ async def lifespan(app: FastAPI):
 		g.logger.info("Starting scraping service...")
 		g.settings.init_settings()
 		g.db.init_database(g.settings.get_database_url())
-		g.session.init_session_manager(g.settings.get_sessions())
+		g.session.init_session_manager()
 		scraper = ServiceWorker()
 		workers = [
 			asyncio.create_task(scraper.start()),

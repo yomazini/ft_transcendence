@@ -1,6 +1,8 @@
 #!/bin/sh
 set -eu
 
+
+CREDS_FILE="${CREDS_FILE:-/secret/credentials.json}"
 export VAULT_ADDR="http://127.0.0.1:8200"
 
 vault status >/dev/null 2>&1

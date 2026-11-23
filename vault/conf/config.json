@@ -4,11 +4,8 @@
 			"name": "scraper-svc",
 			"values": [
 				{
-					"name": "sessions",
-					"env": [
-						"REDDIT_SESSIONS"
-					],
-					"join": ","
+					"name": "session",
+					"env": "REDDIT_SESSION"
 				}
 			]
 		},
@@ -70,10 +67,6 @@
 		{
 			"name": "analysis-svc",
 			"values": [
-				{
-					"name": "gemini_api_key",
-					"env": "GEMINI_API_KEY"
-				},
 				{
 					"name": "openrouter_api_key",
 					"env": "OPENROUTER_API_KEY"

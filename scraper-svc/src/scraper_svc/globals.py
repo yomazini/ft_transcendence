@@ -7,7 +7,8 @@ from scraper_svc.SessionManager import SessionManager
 from scraper_svc.EventManager import EventManager
 
 REDIS_URL = f"redis://{os.getenv('REDIS_HOST', 'redis')}:{os.getenv('REDIS_PORT', '6379')}"
-MAX_WORKER=5
+MAX_WORKER=int(os.getenv("MAX_WORKER", 5))
+LIMIT=int(os.getenv("POST_LIMIT", 10))
 
 scraper_jobs_total = Counter(
 	"scraper_jobs_total",
