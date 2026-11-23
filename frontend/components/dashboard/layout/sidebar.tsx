@@ -44,7 +44,7 @@ export function AppSidebar() {
 	const pathname = usePathname();
 	const [isOpen, setOpen] = useState<boolean>(true)
 	const userId = useParams<{ "uuid-user": string }>()["uuid-user"];
-	const { jobs = [], loading: loading , error} = useJobsLive();
+	const { jobs = [], loading: loading, error } = useJobsLive();
 	const selectedJob = useSearchParams().get("job");
 	const { user } = useCurrentUser();
 	const visibleItems = dashboardItems.filter((item) => !item.adminOnly || user?.role === "Admin");
@@ -109,18 +109,18 @@ export function AppSidebar() {
 				</SidebarGroup>
 				<SidebarGroup className="group-data-[collapsible=icon]:hidden">
 					<Collapsible open={isOpen} onOpenChange={setOpen}>
-						<CollapsibleTrigger>
-							<SidebarGroupLabel>
-								Jobs
-								{isOpen ? 
-									<ChevronDown
-										className="ml-auto transition-transform duration-200"
-									/> :
-									<ChevronRight
-										className="ml-auto transition-transform duration-200"
-									/>
-								}
-							</SidebarGroupLabel>
+						<CollapsibleTrigger className="w-full">
+								<SidebarMenuButton className="text-sm w-full">
+									Jobs
+									{isOpen ?
+										<ChevronDown
+											className="ml-auto transition-transform duration-200"
+										/> :
+										<ChevronRight
+											className="ml-auto transition-transform duration-200"
+										/>
+									}
+								</SidebarMenuButton>
 						</CollapsibleTrigger>
 
 						<CollapsibleContent>
