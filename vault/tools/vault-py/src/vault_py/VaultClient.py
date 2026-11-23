@@ -3,7 +3,7 @@ from typing import Any
 from time import sleep
 from vault_py.VaultConf import VaultConf
 from vault_py.VaultSecret import VaultSecret
-import durospan, logging
+import logging
 
 VAULT_ADDR="http://127.0.0.1:8200"
 
@@ -105,10 +105,8 @@ class VaultClient:
 			self.client.auth.approle.create_or_update_approle(
 				role_name=role.name,
 				token_policies=role.token_policies,
-				token_ttl=self.config.setting.token_ttl,
-				token_max_ttl=self.config.setting.token_max_ttl,
-				secret_id_ttl=self.config.setting.secret_id_ttl,
-				secret_id_num_uses=self.config.setting.secret_id_num_uses
+				token_ttl="1h",
+				token_max_ttl="4h"
 			)
 			self._roatate_role_credentials(role.name)
 
@@ -142,19 +140,3 @@ class VaultClient:
 	def mark_ready(self):
 		self.secret.ready = True
 		self.secret.save(self.config.get_secret_path())
-
-
-	def start_rotation(self):
-		while True:
-			sleep(
-				max(
-					1,
-					durospan.parse_ns(
-						self.config.setting.secret_id_ttl,
-						dialect="go"
-					) // 4_000_000_000
-				)
-			)
-			logging.getLogger("vault-py").info("rotate roles.")
-			for role in self.config.roles:
-				self._roatate_role_credentials(role.name)

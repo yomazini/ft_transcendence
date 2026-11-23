@@ -1,4 +1,4 @@
-import json, os, durospan
+import json, os
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from enum import StrEnum
 from typing import cast
@@ -6,13 +6,13 @@ from typing import cast
 CREDS_FILE = os.getenv("CREDS_FILE", "/secret/credentials.json")
 
 class Capability(StrEnum):
-    CREATE = "create"
-    READ = "read"
-    UPDATE = "update"
-    DELETE = "delete"
-    LIST = "list"
-    SUDO = "sudo"
-    DENY = "deny"
+	CREATE = "create"
+	READ = "read"
+	UPDATE = "update"
+	DELETE = "delete"
+	LIST = "list"
+	SUDO = "sudo"
+	DENY = "deny"
 
 class StrictModel(BaseModel):
 	model_config = ConfigDict(extra="forbid")
@@ -22,10 +22,6 @@ class Setting(StrictModel):
 	role_credentials_path: str = "/credentials/"
 	role_file:str = "login"
 	audit_file:str = "audit"
-	token_ttl:str = "1h"
-	token_max_ttl:str = "4h"
-	secret_id_ttl:str = "4h"
-	secret_id_num_uses:int = 0
 
 	@model_validator(mode="after")
 	def validate_data(self):
@@ -41,37 +37,15 @@ class Setting(StrictModel):
 		if "/" in self.role_file or "." in self.role_file or self.role_file == "":
 			raise ValueError(f"role_file {self.role_file} shouldn't be empty or have a '/' and/or '.'")
 
-		durospan.parse_ns(self.token_ttl, dialect="go")
-		durospan.parse_ns(self.token_max_ttl, dialect="go")
-		durospan.parse_ns(self.secret_id_ttl, dialect="go")
-
 		return self
 
 
 class SecretKeyValue(StrictModel):
 	name: str
-	env: list[str] | str
-	join: str | None = None
-
-	@model_validator(mode="after")
-	def validate_join(self):
-		if isinstance(self.env, list) and self.join is None:
-			raise ValueError("join is required when env is a list")
-
-		if isinstance(self.env, str) and self.join is not None:
-			raise ValueError("join is only allowed when env is a list")
-
-		return self
+	env: str
 
 	def get_env_value(self) -> str:
-		if isinstance(self.env, str):
-			return (os.getenv(self.env, ""))
-		l: list[str] = []
-		for i in self.env:
-			val = os.getenv(i)
-			if val:
-				l.append(val)
-		return (cast(str, self.join).join(l))
+		return (os.getenv(self.env, ""))
 
 class Secret(StrictModel):
 	name:str
@@ -82,7 +56,7 @@ class Secret(StrictModel):
 		for secret in self.values:
 			val = secret.get_env_value()
 			if val == "":
-				raise RuntimeError(f"Empty envirement variable(s) ({secret.env})")
+				raise RuntimeError(f"Empty envirement variable ({secret.env})")
 			d[secret.name] = val
 		return d
 
@@ -145,6 +119,6 @@ class VaultConf(StrictModel):
 
 	@classmethod
 	def load_config(cls, path: str) -> "VaultConf":
-	    with open(path, "r") as f:
-	        return cls.model_validate(json.load(f))
+		with open(path, "r") as f:
+			return cls.model_validate(json.load(f))
 		
