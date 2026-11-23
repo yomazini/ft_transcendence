@@ -11,7 +11,8 @@ import { Prisma } from "src/generated/prisma/client";
 
 @Catch(Prisma.PrismaClientKnownRequestError)
 export class PrismaClientExceptionFilte implements ExceptionFilter {
-	catch(exception: PrismaClientExceptionFilte, host: ArgumentsHost) {
+	catch(exception: Prisma.PrismaClientKnownRequestError, host: ArgumentsHost) {
+
 		const response: Response = host.switchToHttp().getResponse<Response>();
 		if (
 			typeof exception === "object" &&
@@ -23,11 +24,6 @@ export class PrismaClientExceptionFilte implements ExceptionFilter {
 				statusCode: HttpStatus.CONFLICT,
 				message: "A unique field already exists",
 			});
-		}
-		if (exception instanceof HttpException) {
-			return response
-				.status(exception.getStatus())
-				.json(exception.getResponse());
 		}
 		return response.status(500).json({
 			statusCode: 500,
