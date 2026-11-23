@@ -83,7 +83,6 @@ class Organization(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str] = mapped_column(String(200), nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False, server_default=text('CURRENT_TIMESTAMP'))
-    counter: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
 
     ApiKey: Mapped[list['ApiKey']] = relationship('ApiKey', back_populates='org')
     Job: Mapped[list['Job']] = relationship('Job', back_populates='org')
@@ -103,7 +102,6 @@ class User(Base):
     email: Mapped[str] = mapped_column(Text, nullable=False)
     password: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False, server_default=text('CURRENT_TIMESTAMP'))
-    email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
     is_2fa_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
     two_factor_secret: Mapped[Optional[str]] = mapped_column(Text)
 
@@ -167,7 +165,6 @@ class Job(Base):
     mode: Mapped[Jobmodes] = mapped_column(Enum(Jobmodes, values_callable=lambda cls: [member.value for member in cls], name='JobModes'), nullable=False, server_default=text('\'Keyword\'::"JobModes"'))
     status: Mapped[Jobstatuses] = mapped_column(Enum(Jobstatuses, values_callable=lambda cls: [member.value for member in cls], name='JobStatuses'), nullable=False, server_default=text('\'Queued\'::"JobStatuses"'))
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False, server_default=text('CURRENT_TIMESTAMP'))
-    updatable: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
     name: Mapped[str] = mapped_column(Text, nullable=False)
     customer_persona: Mapped[Optional[object]] = mapped_column(JSONB)
 
@@ -206,6 +203,7 @@ class RoleAndOrganization(Base):
         ForeignKeyConstraint(['org_id'], ['Organization.id'], ondelete='CASCADE', onupdate='CASCADE', name='role_and_organization_org_id_fkey'),
         ForeignKeyConstraint(['user_id'], ['User.id'], ondelete='CASCADE', onupdate='CASCADE', name='role_and_organization_user_id_fkey'),
         PrimaryKeyConstraint('id', name='role_and_organization_pkey'),
+        Index('role_and_organization_user_id_key', 'user_id', unique=True),
         Index('role_and_organization_user_id_org_id_key', 'user_id', 'org_id', unique=True)
     )
 
