@@ -9,60 +9,6 @@ HEADERS = {
 	"Accept": "application/json",
 }
 
-OUOTA_LIMIT=100
-
-# REST_TIME=10
-# BREAK_TIME=60
-
-# class SessionManager:
-# 	_data: list[str] | None
-# 	_sessions: list[str]
-# 	_condition: Condition
-# 	_cooldown: float
-
-
-# 	def __init__(self) -> None:
-# 		self._data = None
-# 		self._sessions = []
-# 		self._condition = Condition()
-# 		self._cooldown = 0.0
-
-# 	def init_session_manager(self, sessions: list[str]):
-# 		self._data = sessions
-# 		self._sessions = self._data
-
-# 	def acquire(self)-> str:
-# 		with self._condition:
-# 			while True:
-# 				rest = self._cooldown - monotonic()
-# 				if rest > 0:
-# 					self._condition.wait(timeout=rest)
-# 					continue
-
-# 				if self._sessions:
-# 					cookie = self._sessions.pop()
-# 					self._log(f"session granted left [{len(self._sessions)}]")
-# 					return cookie
-				
-# 				self._condition.wait()
-
-# 	def pause_all(self):
-# 		with self._condition:
-# 			self._cooldown = max(
-# 				self._cooldown,
-# 				monotonic() + BREAK_TIME
-# 			)
-# 			self._condition.notify_all()
-
-# 	def release(self, cookie: str) -> None:
-# 		with self._condition:
-# 			self._sessions.insert(0, cookie)
-# 			self._log(f"session retreived left [{len(self._sessions)}]")
-# 			self._condition.notify()
-
-# 	def _log(self, msg: str):
-# 		g.logger.info("Session manager: %s", msg)
-
 class SessionManager:
 	_initialized: bool = False
 	_use_api: bool = False
@@ -80,30 +26,29 @@ class SessionManager:
 
 	def init_session_manager(self):
 		self._use_api = False
-		self._session = g.settings.get_sessions()[0]
+		self._session = g.settings.get_session()
 		self._deadline = monotonic()
-		# self.send_request_session("https://www.reddit.com/api/v1/me", {})
 		self._initialized = True
 
-	async def reserve(self, request_count: int = 1):
-		await asyncio.to_thread(self._reserve, request_count)
+	async def reserve(self):
+		await asyncio.to_thread(self._reserve)
 
-	def _reserve(self, request_count: int):
+	def _reserve(self):
 		while(True):
 			sleep_time = 0.0
 			with self._lock:
 				sleep_time = self._deadline - monotonic()
-				if (sleep_time <= 1 and self._reserved == 0) or self._left > self._reserved + request_count:
-					self._reserved += request_count
+				if (sleep_time <= 1 and self._reserved == 0) or self._left > self._reserved + 1:
+					self._reserved += 1
 					break
 			sleep(max(1, sleep_time))
 
-	async def release(self, request_count: int = 1):
-		await asyncio.to_thread(self._release, request_count)
+	async def release(self):
+		await asyncio.to_thread(self._release)
 
-	def _release(self, request_count: int):
+	def _release(self):
 		with self._lock:
-			self._reserved -= request_count
+			self._reserved -= 1
 
 
 
@@ -111,12 +56,12 @@ class SessionManager:
 		return await asyncio.to_thread(self.send_request_session, path, query);
 
 	def send_request_session(self, path: str, query: dict) -> Response:
-		response = requests.get(path, params=query, headers=HEADERS, cookies={'reddit_session': self._session}, impersonate="chrome")
 		with self._lock:
+			response = requests.get(path, params=query, headers=HEADERS, cookies={'reddit_session': self._session}, impersonate="chrome")
 			headers = response.headers
 			self._consumed = float(headers.get("X-Ratelimit-Used", self._consumed))
 			self._left = float(headers.get("X-Ratelimit-Remaining", self._left))
-			countdown = self._time_for_reset = float(headers.get("X-Ratelimit-Reset", self._time_for_reset))
+			countdown = float(headers.get("X-Ratelimit-Reset", 60.0))
 			self._deadline = monotonic() + countdown
 		return response
 		

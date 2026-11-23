@@ -1,37 +1,48 @@
-import os, asyncio, time
+import os, time
 import bullmq as bmq
 import scraper_svc.globals as g
 from typing import cast, Any
 from uuid import uuid4
 from sqlalchemy.orm import Session
 from sqlalchemy import select,exists, update, delete
-from sqlalchemy.exc import OperationalError, InterfaceError
 from scraper_svc.models import Job, Jobstatuses, Jobmodes, SubJob
-from scraper_svc.helpers import insert_comments, get_job, get_subjob, scrape, get_scrape_target, valid_post_url, update_job_status, normalize_post, normalize_posts, safe_cleanup, WorkerState, SessionError, RetriableError
+from scraper_svc.helpers import (
+	insert_comments,
+	get_job,
+	get_subjob,
+	scrape,get_scrape_target,
+	valid_post_url,
+	update_job_status,
+	normalize_post,
+	normalize_posts,
+	safe_update_job_status,
+	safe_rollback,
+	safe_cleanup,
+	WorkerState,
+	BadJobError
+)
 
 SCRAPE_QUEUE=os.getenv('SCRAPE_QUEUE','scrape-job')
 ANALYSIS_QUEUE=os.getenv("ANALYSIS_QUEUE", 'analyze-job')
+COMMENTS_LIMIT=int(os.getenv('COMMENTS_LIMIT', 1000))
 
 class WorkerData:
 	session: Session | None
 	job_id:str
 	data: list | dict | None
 	state: WorkerState
-	requests: int
 
-	def __init__(self, job_id: str, data: list | dict | None, state: WorkerState, requests: int):
+	def __init__(self, job_id: str, data: list | dict | None, state: WorkerState):
 		self.job_id = job_id
 		self.data = data
 		self.state = state
 		self.session = None
-		self.requests = requests
 
 	def to_dict(self):
 		return {
 			"id": self.job_id,
 			"data": self.data,
 			"state": self.state.value,
-			"requests": self.requests
 		}
 
 class ServiceWorker:
@@ -41,12 +52,11 @@ class ServiceWorker:
 	def __init__(self):
 		self.log("Setting up workers")
 
-		worker_num: int = g.settings.get_worker_num()
 		self.worker = bmq.Worker(
 			SCRAPE_QUEUE,
 			cast(Any, self.run_pipeline),
 			{
-				'concurrency': max(1, min(worker_num, g.MAX_WORKER)),
+				'concurrency': max(1, g.MAX_WORKER),
 				'connection': g.REDIS_URL,
 				'autorun': False
 			}
@@ -63,19 +73,22 @@ class ServiceWorker:
 		)
 		if result:
 			return
-		raise SessionError("invalid job id")
+		raise BadJobError("invalid job id")
 
 
 	async def run_pipeline(self, job:bmq.Job, token:str):
 		actions = [self.scrape, self.create_subjobs, self.scrape_subjob, self.save_subjobs, self.insert_bulk]
 		mode = "unknown"
-		started_at = time.perf_counter()
-		job_data = WorkerData(job.data.get("id", "missing"), job.data.get("data", None), WorkerState(job.data.get("state", WorkerState.SCRAPE)), job.data.get("requests", 0))
+		started_at = time.monotonic()
+		job_data = WorkerData(job.data.get("id", "missing"), job.data.get("data", None), WorkerState(job.data.get("state", WorkerState.SCRAPE)))
 		g.scraper_jobs_in_progress.inc()
+	
 		try:
+
 			self.validate_job(job_data)
 			await update_job_status(job_data.session, job_data.job_id, Jobstatuses.SCRAPING.value)
 			mode = get_job(job_data.session, job_data.job_id).mode.value
+
 			i = job_data.state
 			while (i < WorkerState.DONE):
 				i = await actions[i.value](job_data)
@@ -85,48 +98,41 @@ class ServiceWorker:
 
 			await self.queue.add("analyze", {'id': job_data.job_id})
 			g.scraper_jobs_total.labels("done").inc()
-		except RetriableError as re:
+
+		except BadJobError as bje:
+			safe_rollback(job_data.session)
+			
+			g.logger.error("Scrape worker: %s", bje)
+			g.scraper_jobs_total.labels("failed").inc()
+			if job_data.session:
+				await safe_update_job_status(job_data.session, job_data.job_id, Jobstatuses.FAILED.value, str(bje).splitlines()[0])
+			raise bmq.UnrecoverableError(str(bje)) from bje
+
+		except Exception as e:
+			safe_rollback(job_data.session)
 			attempts = job.attemptsMade
 			max_attempts = job.opts.get("attempts", 1) - 1
 			g.logger.warning(
 				"Scrape worker: [%s] reason=%s retries=%d",
 				job_data.job_id,
-				re,
+				e,
 				max_attempts - attempts
 			)
 			if attempts >= max_attempts:
 				g.scraper_jobs_total.labels("failed").inc()
 				if job_data.session:
-					await update_job_status(job_data.session, job_data.job_id, Jobstatuses.FAILED.value, str(re))
+					await safe_update_job_status(job_data.session, job_data.job_id, Jobstatuses.FAILED.value, str(e).splitlines()[0])
 			raise
-		except (OperationalError, InterfaceError) as db_error:
-			attempts = job.attemptsMade
-			max_attempts = job.opts.get("attempts", 1) - 1
-			g.logger.warning(
-				"Scrape worker: [%s] reason=%s retries=%d",
-				job_data.job_id,
-				db_error,
-				max_attempts - attempts
-			)
-			if attempts >= max_attempts:
-				g.scraper_jobs_total.labels("failed").inc()
-				g.logger.error("can't access the database")
-			raise
-		except SessionError as se:
-			g.logger.error("Scrape worker: %s", se)
-			g.scraper_jobs_total.labels("failed").inc()
-			raise bmq.UnrecoverableError(str(se)) from se
-		except Exception as e:
-			g.logger.error("Scrape worker: %s", e)
-			if job_data.session:
-				await update_job_status(job_data.session, job_data.job_id, Jobstatuses.FAILED.value, str(e))
-			g.scraper_jobs_total.labels("failed").inc()
-			raise bmq.UnrecoverableError(str(e)) from e
+
 		finally:
 			g.scraper_jobs_in_progress.dec()
 			g.scraper_job_duration_seconds.labels(mode).observe(
-        		time.perf_counter() - started_at
+        		time.monotonic() - started_at
 			)
+			try:
+				await job.updateData(job_data.to_dict())
+			except:
+				pass
 			if job_data.session:
 				self.log(f"closed database session")
 				safe_cleanup(job_data.session)
@@ -141,17 +147,9 @@ class ServiceWorker:
 		if job.mode == Jobmodes.POST:
 			valid_post_url(job.target)
 			data.data = [job.target]
-			await g.session.reserve()
-			data.requests = 1
 			return WorkerState.CREATE_SUBJOBS
-		await g.session.reserve(g.LIMIT + 1)
-		data.requests = g.LIMIT + 1
 		result = await scrape(*get_scrape_target(job.target, job.mode))
-		g.session.release()
-		data.requests -= 1
 		data.data = normalize_posts(result)
-		await g.session.release(data.requests - len(data.data))
-		data.requests -= data.requests - len(data.data)
 		return WorkerState.CREATE_SUBJOBS
 
 	async def create_subjobs(self, data: WorkerData) -> WorkerState:
@@ -180,9 +178,7 @@ class ServiceWorker:
 		self.log(f"Scrape SubJob {subjob_id}")
 		job = get_subjob(data.session, subjob_id)
 		url = valid_post_url(job.url)
-		result = await scrape(url, {})
-		g.session.release()
-		data.requests -= 1
+		result = await scrape(url, {'limit': COMMENTS_LIMIT})
 		data.data["data"] = normalize_post(result)
 		return WorkerState.SAVE_NORM_DATA
 

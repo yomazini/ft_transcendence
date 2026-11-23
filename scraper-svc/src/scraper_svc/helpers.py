@@ -10,10 +10,6 @@ from scraper_svc.models import Comments, Jobmodes, Job, SubJob, Jobmodes
 # Reddit scrapping
 
 BASE_URL="https://oauth.reddit.com"
-HEADERS = {
-	"User-Agent": "linux:ft-transcendence-scraper:v0.1",
-	"Accept": "application/json",
-}
 
 class WorkerState(enum.IntEnum):
 	SCRAPE = 0
@@ -23,16 +19,7 @@ class WorkerState(enum.IntEnum):
 	INSERT_BULK = 4
 	DONE = 5
 
-# class RetriableError(Exception):
-# 	pass
-
-# class RateLimitError(RetriableError):
-#     pass
-
 class BadJobError(Exception):
-	pass
-
-class SessionError(Exception):
 	pass
 
 # Validation helpers
@@ -81,12 +68,15 @@ def get_scrape_target(target: str, mode: Jobmodes) -> tuple[str, dict]:
 # Scraper
 
 async def scrape(target: str, query:dict) -> list[dict[str, Any]] | dict[str, Any]:
-	response = g.session.send_request(target, query)
+	await g.session.reserve()
+	response: Response | None = None
+	try:
+		response = await g.session.send_request(target, query)
+	finally:
+		await g.session.release()
 	g.scraper_reddit_requests_total.labels(str(response.status_code)).inc()
-	# if response.status_code == 429:
-	# 	g.session.pause_all()
-	# 	raise RateLimitError("Reddit rate limit exceeded")
-	# g.logger.info("Scraper: request status [%s]", response.status_code)
+	if (response.status_code >= 400 and response.status_code < 500):
+		raise BadJobError(f"{response.reason} {response.status_code}")
 	response.raise_for_status()
 	return response.json()
 
@@ -179,12 +169,14 @@ def insert_comments(session:Session, job_id:str, parent_id: str | None, data: di
 	return comment_count + 1
 
 async def update_job_status(session: Session, job_id: str, job_status: str,error:str | None = None):
-	session.execute(
+	j_id = session.execute(
 		update(Job)
 		.where(Job.id == job_id)
 		.values(status=job_status)
 		.returning(Job.id)
-	).scalar_one()
+	).scalar_one_or_none()
+	if j_id is None:
+		raise BadJobError("job doesn't exist")
 	session.commit()
 	await g.events.publish(job_id, job_status, error)
 
@@ -204,11 +196,19 @@ def get_subjob(session: Session, job_id:str) -> SubJob:
 
 # save cleanup
 
-def safe_cleanup(session: Session):
+async def safe_update_job_status(session: Session, job_id: str, job_status: str,error:str | None = None):
+	try:
+		await update_job_status(session, job_id, job_status, error)
+	except:
+		pass
+
+def safe_rollback(session: Session):
 	try:
 		session.rollback()
 	except Exception:
 		pass
+
+def safe_cleanup(session: Session):
 	try:
 		session.close()
 	except Exception:
