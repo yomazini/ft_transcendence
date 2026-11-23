@@ -59,12 +59,12 @@ export class BillingController {
 	}
 
 	// Check the locally recorded payment status
-	@Post('verify/:paymentId')
+	@Post('cancel/:paymentId')
 	verify(
 		@Req() req: AuthenticatedRequest,
 		@Param('paymentId', ParseUUIDPipe) paymentId: string,
 	) {
-		return this.billingService.verify(this.getIdentity(req), paymentId);
+		return this.billingService.CancelPayment(this.getIdentity(req), paymentId);
 	}
 
 	// Cancel at the end of the paid period

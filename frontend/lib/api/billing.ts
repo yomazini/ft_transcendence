@@ -11,13 +11,17 @@ export type PaymentStatus =
 
 export type SimulationOutcome = "succeeded" | "failed";
 
+export interface CancelPayment {
+  payment_id: string,
+  status: PaymentStatus,
+  message: string,
+}
 export interface Billing {
   organization_id: string;
   plan: PlanTier;
   status: "free" | "active" | "canceled" | "expired";
   member_count: number;
   max_users: number;
-  max_jobs: number;
   price_cents: number;
   subscription_end: string | null;
   cancel_at_period_end: boolean;
@@ -60,7 +64,6 @@ export async function send<T>(
     headers: {
       "Content-Type": "application/json",
       ...authHeaders(),
-      ...(init.headers ?? {}),
     },
   });
 
@@ -71,7 +74,7 @@ export async function send<T>(
       Array.isArray(data?.message)
         ? data.message.join(", ")
         : data?.message ??
-          `Request failed (${response.status})`,
+        `Request failed (${response.status})`,
     );
   }
 
@@ -105,6 +108,19 @@ export function createCheckout(
   );
 }
 
+
+// POST /api/orgs/billing/cancel/:paymentId
+export function cancelPending(
+  paymentId: string,
+): Promise<CancelPayment> {
+  return send<CancelPayment>(
+    `/api/orgs/billing/cancel/${encodeURIComponent(paymentId)}`,
+    {
+      method: "POST",
+    },
+  );
+}
+
 // POST /api/orgs/billing/verify/:paymentId
 export function verifyCheckout(
   paymentId: string,
@@ -118,66 +134,66 @@ export function verifyCheckout(
 }
 
 // Poll until simulated payment is finalized
-export async function verifyCheckoutUntilComplete(
-  paymentId: string,
-  options: {
-    maxAttempts?: number;
-    intervalMs?: number;
-    signal?: AbortSignal;
-  } = {},
-): Promise<VerifyResponse> {
-  const {
-    maxAttempts = 5,
-    intervalMs = 1500,
-    signal,
-  } = options;
+// export async function verifyCheckoutUntilComplete(
+//   paymentId: string,
+//   options: {
+//     maxAttempts?: number;
+//     intervalMs?: number;
+//     signal?: AbortSignal;
+//   } = {},
+// ): Promise<VerifyResponse> {
+//   const {
+//     maxAttempts = 5,
+//     intervalMs = 1500,
+//     signal,
+//   } = options;
 
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    if (signal?.aborted) {
-      throw new Error("Verification canceled");
-    }
+//   for (let attempt = 0; attempt < maxAttempts; attempt++) {
+//     if (signal?.aborted) {
+//       throw new Error("Verification canceled");
+//     }
 
-    const result = await verifyCheckout(paymentId);
+//     const result = await verifyCheckout(paymentId);
 
-    if (
-      result.status === "succeeded" ||
-      result.status === "failed"
-    ) {
-      return result;
-    }
+//     if (
+//       result.status === "succeeded" ||
+//       result.status === "failed"
+//     ) {
+//       return result;
+//     }
 
-    if (attempt < maxAttempts - 1) {
-      await new Promise<void>((resolve, reject) => {
-        if (signal?.aborted) {
-          reject(new Error("Verification canceled"));
-          return;
-        }
+//     if (attempt < maxAttempts - 1) {
+//       await new Promise<void>((resolve, reject) => {
+//         if (signal?.aborted) {
+//           reject(new Error("Verification canceled"));
+//           return;
+//         }
 
-        const timeout = setTimeout(() => {
-          signal?.removeEventListener("abort", onAbort);
-          resolve();
-        }, intervalMs);
+//         const timeout = setTimeout(() => {
+//           signal?.removeEventListener("abort", onAbort);
+//           resolve();
+//         }, intervalMs);
 
-        function onAbort() {
-          clearTimeout(timeout);
-          signal?.removeEventListener("abort", onAbort);
-          reject(new Error("Verification canceled"));
-        }
+//         function onAbort() {
+//           clearTimeout(timeout);
+//           signal?.removeEventListener("abort", onAbort);
+//           reject(new Error("Verification canceled"));
+//         }
 
-        signal?.addEventListener("abort", onAbort, {
-          once: true,
-        });
-      });
-    }
-  }
+//         signal?.addEventListener("abort", onAbort, {
+//           once: true,
+//         });
+//       });
+//     }
+//   }
 
-  return {
-    payment_id: paymentId,
-    status: "pending",
-    message:
-      "Payment confirmation is taking longer than expected",
-  };
-}
+//   return {
+//     payment_id: paymentId,
+//     status: "pending",
+//     message:
+//       "Payment confirmation is taking longer than expected",
+//   };
+// }
 
 // POST /api/orgs/billing/simulate/:paymentId
 export function simulatePayment(

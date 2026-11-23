@@ -76,7 +76,7 @@ export class BillingService {
 	private readonly stripe: Stripe;
 
 	private readonly frontendUrl =
-		process.env.FRONTEND_URL ?? 'https://localhost:8080';
+		process.env.FRONTEND_URL ?? 'http://localhost:3000';
 
 	constructor(private readonly prisma: PrismaService) {
 		this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? 'sk_test_mock', {
@@ -329,8 +329,8 @@ export class BillingService {
 			);
 		}
 	}
-
-	async verify(identity: BillingIdentity, paymentId: string) {
+	
+	async CancelPayment(identity: BillingIdentity, paymentId: string) {
 		const org = await this.getOrganization(identity, true);
 
 		const payment = await this.prisma.payment.findFirst({
@@ -344,18 +344,26 @@ export class BillingService {
 			throw new NotFoundException('Payment not found');
 		}
 
-		const status = toApiPaymentStatus(payment.status);
+		if (payment.status !== PaymentStatus.Pending) {
+			throw new BadRequestException('Only pending payments can be cancelled');
+		}
+
+		await this.prisma.payment.updateMany({
+			where: {
+				id: payment.id,
+				org_id: org.id,
+				status: PaymentStatus.Pending,
+			},
+			data: {
+				status: PaymentStatus.Failed,
+				failure_reason: 'Payment cancelled by user',
+			},
+		});
 
 		return {
 			payment_id: payment.id,
-			status,
-			message:
-				status === 'succeeded'
-					? 'Payment successful'
-					: status === 'failed'
-						? (payment.failure_reason ?? 'Payment failed')
-						: 'Waiting for simulated payment confirmation',
-			...(status === 'succeeded' ? { plan: toApiPlan(payment.plan) } : {}),
+			status: 'failed',
+			message: 'Payment cancelled successfully',
 		};
 	}
 

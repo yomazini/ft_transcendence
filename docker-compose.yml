@@ -30,7 +30,8 @@ services:
     ports: ["127.0.0.1:${HTTP_PORT:-8080}:${HTTP_PORT:-8080}"]
     environment:
       ALLOWED_METHODS: "GET POST PATCH DELETE PUT"
-    depends_on: [gateway-svc, frontend, auth-svc, reporting-svc, grafana]
+    depends_on: [gateway-svc, auth-svc, reporting-svc, grafana]
+    # depends_on: [gateway-svc, frontend, auth-svc, reporting-svc, grafana]
     volumes:
       - "./nginx/cert:/etc/nginx/ssl:ro"
     healthcheck:
@@ -41,14 +42,14 @@ services:
     networks: [ft_network]
     restart: unless-stopped
 
-  frontend:
-    container_name: frontend
-    image: frontend
-    build: ./frontend
-    expose: ["3000"]
-    depends_on: [gateway-svc]
-    networks: [ft_network]
-    restart: unless-stopped
+  # frontend:
+  #   container_name: frontend
+  #   image: frontend
+  #   build: ./frontend
+  #   expose: ["3000"]
+  #   depends_on: [gateway-svc]
+  #   networks: [ft_network]
+  #   restart: unless-stopped
 
   gateway-svc:
     container_name: gateway-svc
