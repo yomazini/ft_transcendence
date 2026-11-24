@@ -276,6 +276,8 @@
 
   .chat-modal-comment {
     @apply max-h-60 overflow-y-auto rounded-lg border border-border bg-muted p-4 font-sans text-sm leading-relaxed text-foreground;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
   }
 
   .chat-modal-footer {
@@ -406,4 +408,3 @@
     opacity: 1;
   }
 }
-
