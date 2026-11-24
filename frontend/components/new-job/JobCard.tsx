@@ -1,19 +1,18 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card"
-import type { JobItem, JobStatus } from "@/lib/api/jobs";
 import { AlertTriangle, Edit, RefreshCw, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import Link from "next/link";
-import { useDeleteJobById } from "./deleteJob";
-import { notifyUser } from "./submitJob";
-import { useUpdateJobById } from "./useUpdateJobById";
-import { Role } from "@/lib/auth";
-import { RoleButton } from "./RoleButton";
-import { EditNameButton } from "./ConfirmationButton";
-import { useUpdateJobNameById } from "./useUpdateJobName";
-import { RoleConfirmButton } from "./RoleConfirmButton";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
+
+import type { JobItem, JobStatus } from "@/lib/api/jobs";
+import { useDeleteJobById } from "@/hooks/useDeleteJobById";
+import { notifyUser } from "@/lib/new-job-utilities";
+import { useUpdateJobById } from "@/hooks/useUpdateJobById";
+import { Role } from "@/lib/auth";
+import { useUpdateJobNameById } from "@/hooks/useUpdateJobName";
+import { RoleConfirmButton } from "./RoleConfirmButton";
 
 interface JobCardProps {
 	userId: string
@@ -103,9 +102,6 @@ export function JobCard( {key, userId,  role, jobs } : JobCardProps) {
 									setAllow(val.target.value.trim() !== "" && /^[a-zA-Z0-9 _-]+$/.test(val.target.value.trim()));
 								}}/>
 							</RoleConfirmButton>
-							{/* <RoleButton roles={["Analyst", "Admin"]} userRole={role} onClick={updateButton} className="hover:text-orange-500">
-								<RefreshCw />
-							</RoleButton> */}
 							<RoleConfirmButton 
 								role={role} roles={["Admin", "Analyst"]}
 								trigger={<Button className="hover:text-orange-500" variant="ghost" size="icon"><RefreshCw /></Button>}

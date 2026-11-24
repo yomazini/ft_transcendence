@@ -1,9 +1,10 @@
-import { JobItem, JobStatus, listJobs } from "@/lib/api/jobs";
-import { getToken } from "@/lib/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { io } from "socket.io-client";
-import { notifyUser } from "@/app/(dashboard)/[uuid-user]/new_job/submitJob"; 
+
+import { JobItem, JobStatus, listJobs } from "@/lib/api/jobs";
+import { getToken } from "@/lib/auth";
+import { notifyUser } from "@/lib/new-job-utilities"; 
 
 type JobEvent = {
 	job_id: string

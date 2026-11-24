@@ -1,5 +1,5 @@
 import { authHeaders } from "@/lib/auth";
-import { notifyUser } from "./submitJob";
+import { notifyUser } from "@/lib/new-job-utilities";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { JobItem } from "@/lib/api/jobs";
 
