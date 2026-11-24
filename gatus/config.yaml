@@ -40,6 +40,11 @@ endpoints:
     interval: 30s
     conditions:
       - "[STATUS] == 200"
+  - name: Redis
+    url: "tcp://redis:6379"
+    interval: 30s
+    conditions:
+      - "[CONNECTED] == true"
   - name: Analysis SVC
     url: "http://analysis-svc:8001/health"
     interval: 30s
