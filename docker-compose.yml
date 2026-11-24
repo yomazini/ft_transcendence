@@ -193,8 +193,6 @@ services:
     expose:
       - "9000"
       - "9001"
-    ports:
-      - "9001:9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 5s
@@ -390,8 +388,8 @@ services:
     environment:
       GATUS_CONFIG_PATH: /config/config.yaml
       SSL_CERT_FILE: /certs/server.pem
-    ports:
-      - "4443:8080"
+    expose:
+      - "4443"
     volumes:
       - ./gatus/config.yaml:/config/config.yaml:ro
       - ./nginx/cert:/certs:ro
