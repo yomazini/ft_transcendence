@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState } from "react";
-import { type Billing, cancelSubscription } from "@/lib/api/billing";
+import { type Billing, deleteSubscription } from "@/lib/api/billing";
 import { formatAmount, formatDate } from "@/lib/billing/utils";
 import { CalendarDays, Crown } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
@@ -20,26 +19,22 @@ export default function CurrentPlanCard({
     if (!billinginfo) return null;
 
     async function handleCancel() {
-        if (
-            !window.confirm(
-                "Cancel your subscription at the end of the current billing period?"
-            )
-        ) {
+        if (!window.confirm("Cancel your subscription immediately?")) {
             return;
         }
 
         setCanceling(true);
 
         try {
-            const result = await cancelSubscription();
+            const result = await deleteSubscription();
             await onCancelledPlan();
             toast.success(result.message);
         } catch (err) {
             toast.error(
-                err instanceof Error
-                    ? err.message
-                    : "Unable to cancel subscription."
-            );
+                            err instanceof Error
+                                ? err.message
+                                : "Unable to cancel subscription."
+                        );
         } finally {
             setCanceling(false);
         }
@@ -76,23 +71,16 @@ export default function CurrentPlanCard({
                 </div>
             )}
 
-            {billinginfo.cancel_at_period_end && (
-                <p className="mt-3 text-sm text-amber-600 dark:text-amber-400">
-                    Your subscription is scheduled to expire.
-                </p>
+            {billinginfo.status === "active" && (
+                <button
+                    type="button"
+                    onClick={handleCancel}
+                    disabled={canceling}
+                    className="mt-5 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium hover:bg-zinc-50 disabled:opacity-50 dark:border-white/10 dark:hover:bg-zinc-800"
+                >
+                    {canceling ? "Canceling..." : "Cancel subscription"}
+                </button>
             )}
-
-            {billinginfo.status === "active" &&
-                !billinginfo.cancel_at_period_end && (
-                    <button
-                        type="button"
-                        onClick={handleCancel}
-                        disabled={canceling}
-                        className="mt-5 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium hover:bg-zinc-50 disabled:opacity-50 dark:border-white/10 dark:hover:bg-zinc-800"
-                    >
-                        {canceling ? "Canceling..." : "Cancel subscription"}
-                    </button>
-                )}
         </div>
     );
 }

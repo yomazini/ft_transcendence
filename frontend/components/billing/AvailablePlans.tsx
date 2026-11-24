@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { createCheckout, type Billing, type PaidPlan } from "@/lib/api/billing";
+import {
+    createCheckout,
+    updateSubscription,
+    type Billing,
+    type PaidPlan
+} from "@/lib/api/billing";
 import { PLANS } from "@/lib/billing/plans";
 import { PlanCard } from "./PlanCard";
 import { toast } from "sonner";
@@ -15,53 +20,32 @@ export default function AvailablePlans({ billinginfo }: { billinginfo: Billing |
     async function handleCheckout(plan: PaidPlan) {
         if (processingPlan !== null) return;
 
-        if (billinginfo?.status === "active") {
-            toast.error(
-                "An active subscription already exists. Plan switching is not available yet.",
-            );
-            return;
-        }
         setProcessingPlan(plan);
-        
+
         try {
-            const checkout = await createCheckout(
-                plan,
-                crypto.randomUUID(),
-            );
-            
-            if (!checkout.url) {
-                throw new Error(
-                    "Checkout service did not return a URL.",
-                );
+            if (billinginfo?.status === "active") {
+                const result = await updateSubscription(plan);
+                toast.success(result.message);
+                window.location.reload();
+            } else {
+                const checkout = await createCheckout(plan);
+
+                if (!checkout.url) {
+                    throw new Error("Checkout URL is missing.");
+                }
+
+                window.location.assign(checkout.url);
             }
-            
-            // console.log("checkout");
-            // console.log(checkout);
-
-            const url = new URL(checkout.url);
-
-            if (!["http:", "https:"].includes(url.protocol)) {
-                throw new Error("Invalid checkout URL.");
-            }
-
-            // if (url.origin !== window.location.origin) {
-            //     throw new Error(
-            //         "Checkout must use the local InsightFlow application.",
-            //     );
-            // }
-
-            window.location.assign(url.toString());
         } catch (err) {
             toast.error(
                 err instanceof Error
                     ? err.message
-                    : "Unable to create checkout.",
+                    : "Unable to change subscription."
             );
-
+        } finally {
             setProcessingPlan(null);
         }
     }
-
 
     return (
         <section>
@@ -70,9 +54,12 @@ export default function AvailablePlans({ billinginfo }: { billinginfo: Billing |
 
             <div className="mt-5 grid gap-4 md:grid-cols-3">
                 {PLANS.map((plan) => {
+                    console.log("plan is : ", billinginfo.plan);
+                    console.log("plan id : ", plan.id);
                     const current = billinginfo.plan === plan.id;
                     const paid = plan.id !== "free";
-                    const canCheckout = paid && !current && billinginfo.status !== "active";
+                    const canCheckout = paid && !current;
+
                     return (
                         <PlanCard key={plan.id} plan={plan} current={current} canCheckout={canCheckout} processingPlan={processingPlan} onCheckout={handleCheckout} />
                     );
@@ -81,5 +68,3 @@ export default function AvailablePlans({ billinginfo }: { billinginfo: Billing |
         </section>
     )
 }
-
-

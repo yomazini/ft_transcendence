@@ -1,13 +1,17 @@
 import {
 	Controller,
-	Get,
 	Post,
-	Body,
-	Param,
 	Req,
+	Headers,
+	type RawBodyRequest,
+	HttpCode,
+	BadRequestException,
 	UseGuards,
-	ParseUUIDPipe,
 	UnauthorizedException,
+	Get,
+	Body,
+	Delete,
+	Patch,
 } from '@nestjs/common';
 
 import { BillingIdentity, BillingService } from './billing.service';
@@ -24,7 +28,6 @@ interface AuthenticatedRequest {
 }
 
 @Controller('orgs/billing')
-@UseGuards(JwtGuard)
 export class BillingController {
 	constructor(private readonly billingService: BillingService) { }
 
@@ -40,50 +43,72 @@ export class BillingController {
 		return { userId, organizationId, role };
 	}
 
-	// Current organization subscription and usage
+	@UseGuards(JwtGuard)
 	@Get()
 	getBilling(@Req() req: AuthenticatedRequest) {
 		return this.billingService.getBilling(this.getIdentity(req));
 	}
 
-	// Organization payment history
+	@UseGuards(JwtGuard)
 	@Get('payments')
-	getPayments(@Req() req: AuthenticatedRequest) {
-		return this.billingService.getPayments(this.getIdentity(req));
-	}
-
-	// Create a simulated Stripe checkout
-	@Post('checkout')
-	checkout(@Req() req: AuthenticatedRequest, @Body() dto: CheckoutDto) {
-		return this.billingService.checkout(this.getIdentity(req), dto);
-	}
-
-	// Check the locally recorded payment status
-	@Post('cancel/:paymentId')
-	verify(
-		@Req() req: AuthenticatedRequest,
-		@Param('paymentId', ParseUUIDPipe) paymentId: string,
-	) {
-		return this.billingService.CancelPayment(this.getIdentity(req), paymentId);
-	}
-
-	// Cancel at the end of the paid period
-	@Post('cancel')
-	cancel(@Req() req: AuthenticatedRequest) {
-		return this.billingService.cancel(this.getIdentity(req));
-	}
-
-	@Post('simulate/:paymentId')
-	simulatePayment(
-		@Req() req: AuthenticatedRequest,
-		@Param('paymentId', ParseUUIDPipe) paymentId: string,
-		@Body('outcome') outcome: string,
-	) {
-		return this.billingService.simulatePayment(
+	getPaymentsHistory(@Req() req: AuthenticatedRequest) {
+		return this.billingService.getPaymentsHistory(
 			this.getIdentity(req),
-			paymentId,
-			outcome,
 		);
 	}
+
+
+	@Post('webhook')
+	async webhook(
+		@Req() req: RawBodyRequest<Request>,
+		@Headers('stripe-signature') signature: string,
+	) {
+		console.log('Signature exists:', !!signature);
+		console.log('Raw body exists:', !!req.rawBody);
+		if (!req.rawBody || !signature) {
+			throw new BadRequestException(
+				'Missing body or signature',
+			);
+		}
+
+		return this.billingService.stripeWebhooks(
+			req.rawBody,
+			signature,
+		);
+	}
+
+	@UseGuards(JwtGuard)
+	@Post('checkout')
+	async createCheckout(
+		@Req() req: AuthenticatedRequest,
+		@Body() dto: CheckoutDto,
+	) {
+		return this.billingService.createCheckout(
+			this.getIdentity(req),
+			dto,
+		);
+	}
+
+	@UseGuards(JwtGuard)
+	@Delete('subscription')
+	async deleteSubscription(@Req() req: AuthenticatedRequest) {
+		return this.billingService.deleteSubscription(
+			this.getIdentity(req),
+		);
+	}
+
+	@UseGuards(JwtGuard)
+	@Patch()
+	async updateSubscription(
+		@Req() req: AuthenticatedRequest,
+		@Body() dto: CheckoutDto,
+	) {
+		return this.billingService.updateSubscription(
+			this.getIdentity(req),
+			dto,
+		);
+	}
+
+	
 
 }

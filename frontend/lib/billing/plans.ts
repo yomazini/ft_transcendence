@@ -12,10 +12,10 @@ export const PLANS = [
       "1 organization member",
       "Basic workspace access",
       "Community support",
-    ],
+    ]
   },
   {
-    id: "premium",
+    id: "Premium",
     name: "Premium",
     price: 29,
     maxUsers: 5,
@@ -26,10 +26,10 @@ export const PLANS = [
       "Team collaboration",
       "Advanced insights",
       "Priority support",
-    ],
+    ]
   },
   {
-    id: "extra",
+    id: "Extra",
     name: "Extra",
     price: 59,
     maxUsers: 20,
@@ -40,6 +40,6 @@ export const PLANS = [
       "Team collaboration",
       "Advanced insights",
       "Priority support",
-    ],
+    ]
   },
 ]

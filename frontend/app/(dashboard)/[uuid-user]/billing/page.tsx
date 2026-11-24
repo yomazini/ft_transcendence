@@ -5,7 +5,7 @@ import BillingHeader from "@/components/billing/BillingHeader";
 import CurrentPlanCard from "@/components/billing/CurrentPlanCard";
 import PaymentHistory from "@/components/billing/PaymentHistory";
 import TeamUsageCard from "@/components/billing/TeamUsageCard";
-import { type Billing, getBilling, getPayments, type Payment } from "@/lib/api/billing";
+import { type Billing, getBilling, getPayments, Payment } from "@/lib/api/billing";
 import { useEffect, useState } from "react";
 
 
@@ -32,7 +32,8 @@ export default function BillingPage() {
     void loadBilling();
   }, []);
 
-  if (!billingInformation || !payments) {
+  if (!billingInformation ) {
+    // || !payments
     return (
       <div className="">Loding</div>
     )

@@ -11,6 +11,10 @@ s ?=
 
 up: $(CERT)
 	$(COMPOSE) up -d --build
+	bash ./stripe-webhook.sh
+	$(COMPOSE) up -d --build auth-svc
+	
+
 
 down:
 	$(COMPOSE) down

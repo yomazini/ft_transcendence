@@ -107,7 +107,7 @@ export function AppSidebar() {
 						</SidebarMenu>
 					</SidebarGroupContent>
 				</SidebarGroup>
-				<SidebarGroup className="group-data-[collapsible=icon]:hidden">
+				{/* <SidebarGroup className="group-data-[collapsible=icon]:hidden">
 					<Collapsible open={isOpen} onOpenChange={setOpen}>
 						<CollapsibleTrigger>
 							<SidebarGroupLabel>
@@ -157,7 +157,7 @@ export function AppSidebar() {
 							</SidebarGroupContent>
 						</CollapsibleContent>
 					</Collapsible>
-				</SidebarGroup>
+				</SidebarGroup> */}
 
 			</SidebarContent>
 

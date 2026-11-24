@@ -1,6 +1,7 @@
 /**
-	- This tells Prisma "when I run a command, build me a typed JavaScript/TypeScript library based on whatever models I define below, and put that generated code here (output)."
-*/
+ * - This tells Prisma "when I run a command, build me a typed JavaScript/TypeScript library based on whatever models I define below, and put that generated code here (output)."
+ */
+
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -11,13 +12,15 @@ datasource db {
 }
 
 model Organization {
-  id                String                  @id @default(uuid())
-  name              String
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  created_at  DateTime @default(now())
+
+  stripeCustomerId String?       @unique
+  subscription     Subscription?
+
   user_organization role_and_organization[]
-  description       String
-  created_at        DateTime                @default(now())
-  subscriptions     Subscription[]
-  payments          Payment[]
   apiKeys           ApiKey?
 }
 
@@ -33,12 +36,15 @@ model User {
 }
 
 model role_and_organization {
-  id           String       @id @default(uuid())
-  user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  user_id      String
+  id String @id @default(uuid())
+
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id String
+
   organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
   org_id       String
-  role         Roles        @default(Viewer)
+
+  role Roles @default(Viewer)
 }
 
 enum Roles {
@@ -53,63 +59,167 @@ enum PlanTier {
   Extra
 }
 
-enum SubscriptionStatus {
-  Active
-  Canceled
-  Expired
-}
-
-enum PaymentStatus {
-  Pending
-  Succeeded
-  Failed
-}
-
 model Subscription {
-  id                   String             @id @default(uuid())
-  org_id               String
-  organization         Organization       @relation(fields: [org_id], references: [id], onDelete: Cascade)
-  plan                 PlanTier
-  status               SubscriptionStatus @default(Active)
-  started_at           DateTime           @default(now())
-  ends_at              DateTime
-  cancel_at_period_end Boolean            @default(false)
-  created_at           DateTime           @default(now())
-  updated_at           DateTime           @updatedAt
-  payments             Payment[]
-}
+  id String @id @default(uuid())
 
-model Payment {
-  id                 String        @id @default(uuid())
-  org_id             String
-  organization       Organization  @relation(fields: [org_id], references: [id], onDelete: Cascade)
-  subscription_id    String?
-  subscription       Subscription? @relation(fields: [subscription_id], references: [id], onDelete: SetNull)
-  plan               PlanTier
-  amount_cents       Int
-  currency           String        @default("USD")
-  status             PaymentStatus @default(Pending)
-  provider_reference String?       @unique
-  idempotency_key    String?       @unique
-  failure_reason     String?
-  created_at         DateTime      @default(now())
-  updated_at         DateTime      @updatedAt
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  stripeSubscriptionId String @unique
+  stripePriceId        String
+
+  plan   PlanTier
+  status String
+
+  startDate DateTime
+  endDate   DateTime
+
+  // cancelAtPeriodEnd    Boolean      @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ApiKey {
-  id           String       @id @default(uuid())
-  org_id       String       @unique
-  user_id      String       @unique
-  key_hash     String       @unique
+  id           String    @id @default(uuid())
+  org_id       String    @unique
+  user_id      String    @unique
+  key_hash     String    @unique
   prefix       String
   label        String?
-  active       Boolean      @default(true)
-  created_at   DateTime     @default(now())
+  active       Boolean   @default(true)
+  created_at   DateTime  @default(now())
   last_used_at DateTime?
   revoked_at   DateTime?
+
   organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([org_id, active])
 }
 
+// generator client {
+//   provider = "prisma-client"
+//   output   = "../generated/prisma"
+// }
+
+// datasource db {
+//   provider = "postgresql"
+// }
+
+// model Organization {
+//   id                String                  @id @default(uuid())
+//   name              String
+//   user_organization role_and_organization[]
+//   description       String
+//   created_at        DateTime                @default(now())
+//   subscriptions     Subscription[]
+//   // payments          Payment[]
+//   apiKeys           ApiKey?
+// }
+
+// model User {
+//   id                      String                  @id @default(uuid())
+//   email                   String                  @unique
+//   password                String
+//   user_roles_organization role_and_organization[]
+//   two_factor_secret       String?
+//   is_2fa_enabled          Boolean                 @default(false)
+//   created_at              DateTime                @default(now())
+//   apiKeys                 ApiKey?
+// }
+
+// model role_and_organization {
+//   id           String       @id @default(uuid())
+//   user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+//   user_id      String
+//   organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+//   org_id       String
+//   role         Roles        @default(Viewer)
+// }
+
+// enum Roles {
+//   Admin
+//   Analyst
+//   Viewer
+// }
+
+// enum PlanTier {
+//   Free
+//   Premium
+//   Extra
+// }
+
+// // enum SubscriptionStatus {
+// //   Active
+// //   Canceled
+// //   Expired
+// // }
+
+// // enum PaymentStatus {
+// //   Pending
+// //   Succeeded
+// //   Failed
+// // }
+
+// model Subscription {
+//   id     String             @id @default(cuid()) @map("_id")
+//   organizationId String             @unique
+//   plan   PlanTier
+
+//   startDate DateTime @default(now())
+//   endDate   DateTime
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   Organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+// }
+
+// // model Subscription {
+// //   id                   String             @id @default(uuid())
+// //   org_id               String
+// //   organization         Organization       @relation(fields: [org_id], references: [id], onDelete: Cascade)
+// //   plan                 PlanTier
+// //   status               SubscriptionStatus @default(Active)
+// //   started_at           DateTime           @default(now())
+// //   ends_at              DateTime
+// //   cancel_at_period_end Boolean            @default(false)
+// //   created_at           DateTime           @default(now())
+// //   updated_at           DateTime           @updatedAt
+// //   payments             Payment[]
+// // }
+
+// // model Payment {
+// //   id                 String        @id @default(uuid())
+// //   org_id             String
+// //   organization       Organization  @relation(fields: [org_id], references: [id], onDelete: Cascade)
+// //   subscription_id    String?
+// //   subscription       Subscription? @relation(fields: [subscription_id], references: [id], onDelete: SetNull)
+// //   plan               PlanTier
+// //   amount_cents       Int
+// //   currency           String        @default("USD")
+// //   status             PaymentStatus @default(Pending)
+// //   provider_reference String?       @unique
+// //   idempotency_key    String?       @unique
+// //   failure_reason     String?
+// //   created_at         DateTime      @default(now())
+// //   updated_at         DateTime      @updatedAt
+// // }
+
+// model ApiKey {
+//   id           String       @id @default(uuid())
+//   org_id       String       @unique
+//   user_id      String       @unique
+//   key_hash     String       @unique
+//   prefix       String
+//   label        String?
+//   active       Boolean      @default(true)
+//   created_at   DateTime     @default(now())
+//   last_used_at DateTime?
+//   revoked_at   DateTime?
+//   organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+//   user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+//   @@index([org_id, active])
+// }
