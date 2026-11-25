@@ -74,6 +74,7 @@ services:
       VAULT_ADDR: ${VAULT_ADDR:-http://vault:8200}
     depends_on:
       postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
       vault: { condition: service_healthy }
     volumes:
       - "./vault/creds/gateway-svc:/run/vault:ro"
