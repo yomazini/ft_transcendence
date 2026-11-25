@@ -18,53 +18,18 @@ enum PlanTier {
     Extra
 }
 
-enum PaymentStatus {
-    Pending
-    Succeeded
-    Failed
-}
-
-enum SubscriptionStatus {
-    Active
-    Canceled
-    Expired
-}
-
 model Subscription {
-    id                   String             @id @default(uuid())
-    org_id               String
-    organization_id      Organization       @relation(fields: [org_id], references: [id], onDelete: Cascade)
+    id                   String       @id @default(uuid())
+    organizationId       String       @unique
+    organization_id      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
     plan                 PlanTier
-    status               SubscriptionStatus @default(Active)
-    started_at           DateTime           @default(now())
-    ends_at              DateTime
-    updated_at           DateTime           @updatedAt
-    cancel_at_period_end Boolean            @default(false)
-    created_at           DateTime           @default(now())
-    payment              Payment[]
-
-    @@index([org_id, status])
-    @@index([ends_at])
-}
-
-model Payment {
-    id                 String        @id @default(uuid())
-    org_id             String
-    organization_id    Organization  @relation(fields: [org_id], references: [id], onDelete: Cascade)
-    subscription_id    String?
-    subscription       Subscription? @relation(fields: [subscription_id], references: [id], onDelete: SetNull)
-    plan               PlanTier
-    amount_cents       Int
-    currency           String        @default("USD")
-    status             PaymentStatus @default(Pending)
-    idempotency_key    String?       @unique
-    provider_reference String?       @unique
-    failure_reason     String?
-    created_at         DateTime      @default(now())
-    updated_at         DateTime      @updatedAt
-
-    @@index([org_id, created_at])
-    @@index([subscription_id])
+    status               String
+    updatedAt            DateTime     @updatedAt
+    createdAt            DateTime     @default(now())
+    stripePriceId        String
+    stripeSubscriptionId String       @unique
+    startDate            DateTime
+    endDate              DateTime
 }
 
 model Organization {
@@ -72,17 +37,11 @@ model Organization {
     name              String
     script_jobs       Job[]
     user_organization role_and_organization[]
-    subscription      Subscription[]
-    payment           Payment[]
     description       String                  @db.VarChar(200)
     created_at        DateTime                @default(now())
     apiKeys           ApiKey?
-}
-
-enum PriceSensitivity {
-    budget
-    midMarket
-    premium
+    stripeCustomerId String?       @unique
+    subscription     Subscription?
 }
 
 model SubJob {
