@@ -2,8 +2,8 @@
 import { IsEnum, IsUUID } from 'class-validator';
 
 export enum PaidPlan {
-  premium = 'premium',
-  extra = 'extra',
+  premium = 'Premium',
+  extra = 'Extra',
 }
 
 export class CheckoutDto {
