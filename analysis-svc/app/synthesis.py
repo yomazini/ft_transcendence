@@ -6,7 +6,6 @@ from .llm import LLMError, call_openrouter_json
 
 logger = logging.getLogger("analysis-synthesis")
 
-# Below this, a report is mostly noise; say so instead of inventing insights.
 MIN_COMMENTS_FOR_REPORT = 3
 
 
@@ -73,6 +72,7 @@ def synthesize_blue_ocean(sentiment_summary: dict, scored_comments: list[dict]) 
         "ux_design": {"importance": 0, "satisfaction": 0.0},
     }
 
+    # NOTE later enhancement ==> those still hardcoded for now later thinking about some semantic approach like jev return typesafe answr
     keywords = {
         "price": ["price", "pricing", "cost", "expensive", "free", "budget", "pay"],
         "support": ["support", "help", "respond", "customer service", "fix"],
@@ -189,9 +189,7 @@ async def synthesize_full_report(
     scored_comments: list[dict],
 ) -> dict[str, Any]:
     if len(scored_comments) < MIN_COMMENTS_FOR_REPORT:
-        logger.warning(
-            "Not enough comments for a report: %d", len(scored_comments)
-        )
+        logger.warning("Not enough comments for a report: %d", len(scored_comments))
         return _insufficient_report(len(scored_comments))
 
     fallback_swot = synthesize_swot(sentiment_summary, scored_comments)

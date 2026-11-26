@@ -27,7 +27,7 @@ export function ChatWidget({
       id: "initial-welcome",
       role: "assistant",
       content:
-        "Hello! I am your ft_transcendence RAG Assistant. Ask me anything about the customer sentiment, competitor threats, or pricing feedback in this report.",
+        "Hello! I am your InsightFlow RAG Assistant. Ask me anything about the customer sentiment, competitor threats, or pricing feedback in this report.",
       timestamp: "Just now",
     },
   ]);

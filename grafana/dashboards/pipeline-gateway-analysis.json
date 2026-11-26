@@ -1,7 +1,7 @@
 {
   "uid": "ft-pipeline-gateway-analysis",
   "title": "Job pipeline \u2014 gateway + analysis",
-  "description": "Owner: Youssef. Jobs created and WebSocket connections (gateway-svc), analysis job results, stage p95 and LLM calls (analysis-svc). The scraper part is in \"Job pipeline \u2014 scraper\".",
+  "description": "Owner: Youssef. Jobs created and WebSocket connections (gateway-svc), analysis job results and LLM calls (analysis-svc). The scraper part is in \"Job pipeline \u2014 scraper\".",
   "tags": [
     "ft_transcendence"
   ],
@@ -182,55 +182,6 @@
       ]
     },
     {
-      "id": 4,
-      "type": "timeseries",
-      "title": "Analysis stage p95",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 8,
-        "w": 12,
-        "h": 8
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "drawStyle": "line",
-            "lineWidth": 1,
-            "fillOpacity": 10
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by (le, stage) (rate(analysis_stage_duration_seconds_bucket[5m])))",
-          "legendFormat": "{{stage}}",
-          "range": true,
-          "refId": "A"
-        }
-      ]
-    },
-    {
       "id": 5,
       "type": "timeseries",
       "title": "LLM calls / s by model and status",
@@ -239,9 +190,9 @@
         "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
-        "x": 12,
+        "x": 0,
         "y": 8,
-        "w": 12,
+        "w": 24,
         "h": 8
       },
       "fieldConfig": {

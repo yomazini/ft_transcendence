@@ -56,7 +56,7 @@ async def insert_comment(
 ):
     pool = await get_pool()
     embedding_str = "[" + ",".join(str(v) for v in embedding) + "]"
-    # Legacy payload path has no Reddit id, so reuse the row id.
+    # Legacy payload path has no Reddit id, so reuse the row id. only in conflitt id ; so if already there skip it ; on conflict
     reddit_id = comment_id
     text_hash = hashlib.sha256(text.encode()).hexdigest()
     await pool.execute(

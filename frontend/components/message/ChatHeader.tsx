@@ -20,7 +20,7 @@ export function ChatHeader({ jobId, onReset, onClose }: ChatHeaderProps) {
             <h3 className="chat-header-title">Report Assistant</h3>
             <span className="chat-header-badge">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Online
+              Assistant
             </span>
           </div>
           <p className="chat-header-job">

@@ -10,11 +10,6 @@ http_duration = Histogram(
     "HTTP request duration",
     ["method", "route"],
 )
-analysis_stage_duration = Histogram(
-    "analysis_stage_duration_seconds",
-    "Analysis stage duration",
-    ["stage"],
-)
 analysis_llm_requests = Counter(
     "analysis_llm_requests_total",
     "LLM calls by model and status",
@@ -30,4 +25,3 @@ analysis_jobs = Counter(
     "Analysis jobs by result",
     ["result"],
 )
-
