@@ -74,7 +74,6 @@ services:
       VAULT_ADDR: ${VAULT_ADDR:-http://vault:8200}
     depends_on:
       postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
       vault: { condition: service_healthy }
     volumes:
       - "./vault/creds/gateway-svc:/run/vault:ro"
@@ -151,8 +150,7 @@ services:
     build: ./reporting-svc
     expose: ["3003"]
     volumes:
-      - "./vault/creds/database:/run/vault:ro"
-      - "./vault/creds/minio:/run/vault:ro"
+      - "./vault/creds/reporting-svc:/run/vault:ro"
     environment:
       MINIO_BROWSER: ${MINIO_BROWSER:-on}
       MINIO: ${MINIO:-minio}
