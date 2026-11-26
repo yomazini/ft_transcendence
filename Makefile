@@ -17,7 +17,7 @@ down:
 
 clean:
 	$(COMPOSE) down -v
-	rm -rf vault/creds vault/secret vault/audit
+	sudo rm -rf vault/creds vault/secret vault/audit
 
 cleardb:
 	$(COMPOSE) rm -sf postgres
@@ -37,21 +37,21 @@ ps:
 re: clean up
 
 recover:
-	sudo sh ./recover.sh
+	sh ./recover.sh
 
 CERT_DIR := nginx/cert
 KEY := $(CERT_DIR)/server.key
 CERT := $(CERT_DIR)/server.pem
 
 $(KEY):
-	mkdir -p $(CERT_DIR)
-	openssl genrsa -out $@ 2048
-	chmod 644 $@
+	sudo mkdir -p $(CERT_DIR)
+	sudo openssl genrsa -out $@ 2048
+	sudo chmod 644 $@
 
 $(CERT): $(KEY)
-	openssl req -x509 -new -nodes -key $< \
+	sudo openssl req -x509 -new -nodes -key $< \
 		-sha256 -days 365 \
 		-out $@ \
 		-subj "/CN=localhost" \
 		-addext "subjectAltName=DNS:localhost,DNS:*.localhost,DNS:nginx"
-	chmod 644 $@
+	sudo chmod 644 $@
