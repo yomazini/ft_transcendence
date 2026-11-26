@@ -1,53 +1,24 @@
-
 import { authHeaders } from "@/lib/auth";
 
-export type PlanTier = "free" | "premium" | "extra";
-export type PaidPlan = Exclude<PlanTier, "free">;
-
-export type PaymentStatus =
-  | "pending"
-  | "succeeded"
-  | "failed";
-
-export type SimulationOutcome = "succeeded" | "failed";
+export type PlanTier = "Free" | "Premium" | "Extra";
+export type PaidPlan = Exclude<PlanTier, "Free">;
 
 export interface Billing {
   organization_id: string;
   plan: PlanTier;
-  status: "free" | "active" | "canceled" | "expired";
+  status: "Free" | "Active";
   member_count: number;
   max_users: number;
-  max_jobs: number;
   price_cents: number;
   subscription_end: string | null;
-  cancel_at_period_end: boolean;
-}
-
-export interface Payment {
-  id: string;
-  plan: PlanTier;
-  amount_cents: number;
-  currency: string;
-  status: PaymentStatus;
-  failure_reason: string | null;
-  created_at: string;
 }
 
 export interface CheckoutResponse {
-  payment_id: string;
   url: string;
 }
 
-export interface VerifyResponse {
-  payment_id: string;
-  status: PaymentStatus;
-  message?: string;
-  plan?: PaidPlan;
-}
-
-export interface CancelResponse {
+export interface SubscriptionResponse {
   message: string;
-  ends_at: string;
 }
 
 export async function send<T>(
@@ -60,7 +31,6 @@ export async function send<T>(
     headers: {
       "Content-Type": "application/json",
       ...authHeaders(),
-      ...(init.headers ?? {}),
     },
   });
 
@@ -71,134 +41,62 @@ export async function send<T>(
       Array.isArray(data?.message)
         ? data.message.join(", ")
         : data?.message ??
-          `Request failed (${response.status})`,
+        `Request failed (${response.status})`,
     );
   }
 
   return data as T;
 }
 
-// GET /api/orgs/billing
 export function getBilling(): Promise<Billing> {
   return send<Billing>("/api/orgs/billing");
 }
 
-// GET /api/orgs/billing/payments
-export function getPayments(): Promise<Payment[]> {
-  return send<Payment[]>("/api/orgs/billing/payments");
-}
-
-// POST /api/orgs/billing/checkout
 export function createCheckout(
   plan: PaidPlan,
-  idempotencyKey: string,
 ): Promise<CheckoutResponse> {
   return send<CheckoutResponse>(
     "/api/orgs/billing/checkout",
     {
       method: "POST",
-      body: JSON.stringify({
-        plan,
-        idempotency_key: idempotencyKey,
-      }),
+      body: JSON.stringify({ plan }),
     },
   );
 }
 
-// POST /api/orgs/billing/verify/:paymentId
-export function verifyCheckout(
-  paymentId: string,
-): Promise<VerifyResponse> {
-  return send<VerifyResponse>(
-    `/api/orgs/billing/verify/${encodeURIComponent(paymentId)}`,
+export function deleteSubscription(): Promise<SubscriptionResponse> {
+  return send<SubscriptionResponse>(
+    "/api/orgs/billing/subscription",
     {
-      method: "POST",
+      method: "DELETE",
     },
   );
 }
 
-// Poll until simulated payment is finalized
-export async function verifyCheckoutUntilComplete(
-  paymentId: string,
-  options: {
-    maxAttempts?: number;
-    intervalMs?: number;
-    signal?: AbortSignal;
-  } = {},
-): Promise<VerifyResponse> {
-  const {
-    maxAttempts = 5,
-    intervalMs = 1500,
-    signal,
-  } = options;
-
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    if (signal?.aborted) {
-      throw new Error("Verification canceled");
-    }
-
-    const result = await verifyCheckout(paymentId);
-
-    if (
-      result.status === "succeeded" ||
-      result.status === "failed"
-    ) {
-      return result;
-    }
-
-    if (attempt < maxAttempts - 1) {
-      await new Promise<void>((resolve, reject) => {
-        if (signal?.aborted) {
-          reject(new Error("Verification canceled"));
-          return;
-        }
-
-        const timeout = setTimeout(() => {
-          signal?.removeEventListener("abort", onAbort);
-          resolve();
-        }, intervalMs);
-
-        function onAbort() {
-          clearTimeout(timeout);
-          signal?.removeEventListener("abort", onAbort);
-          reject(new Error("Verification canceled"));
-        }
-
-        signal?.addEventListener("abort", onAbort, {
-          once: true,
-        });
-      });
-    }
-  }
-
-  return {
-    payment_id: paymentId,
-    status: "pending",
-    message:
-      "Payment confirmation is taking longer than expected",
-  };
-}
-
-// POST /api/orgs/billing/simulate/:paymentId
-export function simulatePayment(
-  paymentId: string,
-  outcome: SimulationOutcome,
-): Promise<VerifyResponse> {
-  return send<VerifyResponse>(
-    `/api/orgs/billing/simulate/${encodeURIComponent(paymentId)}`,
+export function updateSubscription(
+  plan: PaidPlan,
+): Promise<SubscriptionResponse> {
+  return send<SubscriptionResponse>(
+    "/api/orgs/billing",
     {
-      method: "POST",
-      body: JSON.stringify({ outcome }),
+      method: "PATCH",
+      body: JSON.stringify({ plan }),
     },
   );
 }
 
-// POST /api/orgs/billing/cancel
-export function cancelSubscription(): Promise<CancelResponse> {
-  return send<CancelResponse>(
-    "/api/orgs/billing/cancel",
-    {
-      method: "POST",
-    },
-  );
+
+export interface Payment {
+  id: string;
+  amount_cents: number;
+  currency: string;
+  status: "draft" | "open" | "paid" | "uncollectible" | "void" | null;
+  created_at: string;
+  invoice_url: string | null;
+  invoice_pdf: string | null;
 }
+
+export function getPayments(): Promise<Payment[]> {
+  return send<Payment[]>("/api/orgs/billing/payments");
+}
+
