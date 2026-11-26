@@ -16,7 +16,9 @@ export function MessageBubble({
   const isUser = message.role === "user";
 
   return (
-    <Message className={isUser ? "chat-message chat-message-user" : "chat-message"}>
+    <Message
+      className={isUser ? "chat-message chat-message-user" : "chat-message"}
+    >
       <Avatar className="chat-avatar">
         <AvatarFallback className="chat-avatar-fallback">
           {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}

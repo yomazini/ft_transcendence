@@ -29,8 +29,8 @@ export function MessageList({
             </div>
             <h4 className="chat-empty-title">Reddit Intelligence Assistant</h4>
             <p className="chat-empty-text">
-              Ask any question about this competitor report. The AI will retrieve
-              and cite verified Reddit comments.
+              Ask any question about this competitor report. The AI will
+              retrieve and cite verified Reddit comments.
             </p>
           </div>
         )}
