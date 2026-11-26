@@ -57,7 +57,7 @@ export default function AvailablePlans({ billinginfo }: { billinginfo: Billing |
                     console.log("plan is : ", billinginfo.plan);
                     console.log("plan id : ", plan.id);
                     const current = billinginfo.plan === plan.id;
-                    const paid = plan.id !== "free";
+                    const paid = plan.id !== "Free";
                     const canCheckout = paid && !current;
 
                     return (

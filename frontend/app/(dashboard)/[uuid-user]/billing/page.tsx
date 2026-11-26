@@ -32,7 +32,7 @@ export default function BillingPage() {
     void loadBilling();
   }, []);
 
-  if (!billingInformation ) {
+  if (!billingInformation || !payments) {
     // || !payments
     return (
       <div className="">Loding</div>
