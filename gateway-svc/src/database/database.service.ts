@@ -56,9 +56,10 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     try {
       const client = await this.pool.connect();
       try {
-        this.logger.log(`Connected to PostgreSQL at ${host}:${port}/${database}`);
+        this.logger.log(
+          `Connected to PostgreSQL at ${host}:${port}/${database}`,
+        );
       } finally {
-        // Always return the probe client. pool.query() releases its own clients.
         client.release();
       }
     } catch (err: any) {
@@ -84,7 +85,6 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  /** Used when a service that has no database access (scraper-svc) reports a failure. */
   async updateJobStatus(id: string, status: string): Promise<void> {
     await this.db.query('UPDATE "Job" SET status = $1 WHERE id = $2;', [
       this.normalizeJobStatus(status),
@@ -100,7 +100,6 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     return res.rows[0]?.description ?? null;
   }
 
-  /** The latest jobs of one organization, newest first (dashboard job list). */
   async findJobsByOrg(orgId: string, limit = 50): Promise<JobRecord[]> {
     const res: QueryResult = await this.db.query(
       `SELECT id, org_id, target, name, mode, status, customer_persona, created_at

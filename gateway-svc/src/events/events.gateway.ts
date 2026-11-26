@@ -35,9 +35,6 @@ export class EventsGateway
   constructor(private readonly databaseService: DatabaseService) {}
 
   onModuleInit() {
-    if (process.env.NODE_ENV === 'test') {
-      return;
-    }
     const host = process.env.REDIS_HOST || 'redis';
     const port = parseInt(process.env.REDIS_PORT || '6379', 10);
 
@@ -55,19 +52,17 @@ export class EventsGateway
         const data = JSON.parse(message);
         const { job_id, status, ...extra } = data;
         if (job_id && status) {
-          // Scraper failures also update the database.
+          // may set by scrapper case ;
           if (status === 'failed') {
-            // Persist Failed without blocking Redis.
             void this.databaseService.updateJobStatus(job_id, 'failed');
           }
-          // Push live event, do not wait.
           void this.broadcastJobStatus(job_id, status, extra);
         }
       } catch {
         this.logger.warn(`Invalid job-events payload: ${message}`);
       }
     });
-    // ioredis reconnects automatically; subscribe again whenever it is ready.
+    // ioredis reconnects automatically; subscribe again whenever it is ready btw https://github.com/redis/ioredis#connection-events
     this.subscriber.on('ready', () => {
       void this.subscriber
         ?.subscribe('job-events')
@@ -135,10 +130,6 @@ export class EventsGateway
       this.logger.warn('WebSocket server not initialized; skipping emit');
       return;
     }
-
-    // removed this for the new card already removed alos from front
-    // this.server.to(job.org_id).emit(`job:${status}`, payload);
-
     this.server.to(job.org_id).emit('job:update', payload);
   }
 }
