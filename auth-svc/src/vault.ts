@@ -38,7 +38,9 @@ export async function loadVaultSecrets() {
 	process.env.FORTYTWO_CLIENT_SECRET = auth.forty_two_client_secret;
 	process.env.MAIL_USER = auth.mail_user;
 	process.env.MAIL_PASS = auth.mail_pass;
-	process.env.STRIPE_SECRET_KEY = auth.stripe_secret_key;
+
+	process.env.SECRET_KEY = auth.secret_key;
+	process.env.SECRET_STRIP_WEBHOOKS = auth.secret_strip_webhooks;
 
 	process.env.DATABASE_URL = `postgresql://${db.user}:${encodeURIComponent(db.password)}@postgres:5432/${db.database}`;
 }
