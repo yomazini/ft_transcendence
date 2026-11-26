@@ -14,7 +14,7 @@ import {
 	Patch,
 } from '@nestjs/common';
 
-import { BillingIdentity, BillingService } from './billing.service';
+import { BillingIdentity, BillingService, PaymentHistory } from './billing.service';
 import { CheckoutDto } from './dto/checkout.dto';
 import { JwtGuard } from '../auth/guard/jwt.guard';
 
@@ -51,7 +51,7 @@ export class BillingController {
 
 	@UseGuards(JwtGuard)
 	@Get('payments')
-	getPaymentsHistory(@Req() req: AuthenticatedRequest) {
+	getPaymentsHistory(@Req() req: AuthenticatedRequest) : Promise<PaymentHistory[]>  {
 		return this.billingService.getPaymentsHistory(
 			this.getIdentity(req),
 		);

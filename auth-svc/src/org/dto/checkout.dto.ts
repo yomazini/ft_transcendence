@@ -1,5 +1,5 @@
 
-import { IsEnum, IsUUID } from 'class-validator';
+import { IsEnum } from 'class-validator';
 
 export enum PaidPlan {
   premium = 'Premium',
@@ -9,7 +9,4 @@ export enum PaidPlan {
 export class CheckoutDto {
   @IsEnum(PaidPlan)
   plan!: PaidPlan;
-
-  @IsUUID()
-  idempotency_key!: string;
 }

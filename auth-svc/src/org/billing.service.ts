@@ -26,14 +26,14 @@ export interface BillingIdentity {
 	role: string;
 }
 
-type ApiPlan = 'free' | 'Premium' | 'Extra';
+type ApiPlan = 'Free' | 'Premium' | 'Extra';
 type PaidPlan = 'Premium' | 'Extra';
 
 const PLANS: Record<
 	ApiPlan,
 	{ price: number; maxUsers: number; }
 > = {
-	free: { price: 0, maxUsers: 1 },
+	Free: { price: 0, maxUsers: 1 },
 	Premium: { price: 2900, maxUsers: 5 },
 	Extra: { price: 5900, maxUsers: 20 },
 };
@@ -45,11 +45,11 @@ function toApiPlan(plan: PlanTier): ApiPlan {
 		case PlanTier.Extra:
 			return 'Extra';
 		default:
-			return 'free';
+			return 'Free';
 	}
 }
 
-interface PaymentHistory {
+export interface PaymentHistory {
 	id: string;
 	amount_cents: number;
 	currency: string;
@@ -98,7 +98,7 @@ export class BillingService {
 		});
 
 		const isActive =
-			subscription?.status === 'active' &&
+			subscription?.status === 'Active' &&
 			subscription.endDate > new Date();
 
 		const plan = toApiPlan(
@@ -162,7 +162,7 @@ export class BillingService {
 		]);
 
 		const isActive =
-			subscription?.status === 'active' &&
+			subscription?.status === 'Active' &&
 			subscription.endDate > new Date();
 
 		const plan = toApiPlan(
@@ -172,7 +172,7 @@ export class BillingService {
 		return {
 			organization_id: org.id,
 			plan,
-			status: isActive ? 'active' : 'free',
+			status: isActive ? 'Active' : 'Free',
 			member_count: memberCount,
 			max_users: PLANS[plan].maxUsers,
 			price_cents: PLANS[plan].price,
@@ -246,7 +246,10 @@ export class BillingService {
 			stripeSubscriptionId: subscription.id,
 			stripePriceId: priceId,
 			plan,
-			status: subscription.status,
+			// status: subscription.status,
+			status: subscription.status === 'active'
+				? 'Active'
+				: subscription.status,
 			startDate: new Date(
 				item.current_period_start * 1000,
 			),
@@ -431,6 +434,15 @@ export class BillingService {
 			subscription.stripeSubscriptionId,
 		);
 
+		await this.prisma.subscription.update({
+			where: {
+				id: subscription.id,
+			},
+			data: {
+				status: 'canceled',
+			},
+		});
+
 		return {
 			message: 'Subscription canceled successfully',
 		};
@@ -448,7 +460,7 @@ export class BillingService {
 			},
 		});
 
-		if (!subscription || subscription.status !== 'active') {
+		if (!subscription || subscription.status !== 'Active') {
 			throw new NotFoundException('No active subscription');
 		}
 
@@ -497,33 +509,44 @@ export class BillingService {
 		};
 	}
 
-	async getPaymentsHistory(identity: BillingIdentity) {
+	async getPaymentsHistory(identity: BillingIdentity) : Promise<PaymentHistory[]>  {
 		const org = await this.getOrganization(identity);
 
-		const organization = await this.prisma.organization.findUnique({
-			where: {
-				id: org.id,
-			},
-		});
+		const subscriptionIds = new Set<string>();
+		const invoices: Stripe.Invoice[] = [];
 
-		if (!organization?.stripeCustomerId) {
-			return [];
+		for await (const session of this.stripe.checkout.sessions.list({
+			status: 'complete',
+			limit: 100,
+		})) {
+			if (
+				session.client_reference_id === org.id &&
+				typeof session.subscription === 'string'
+			) {
+				subscriptionIds.add(session.subscription);
+			}
 		}
 
-		const invoices = await this.stripe.invoices.list({
-			customer: organization.stripeCustomerId,
-			limit: 100,
-		});
+		for (const subscriptionId of subscriptionIds) {
+			for await (const invoice of this.stripe.invoices.list({
+				subscription: subscriptionId,
+				limit: 100,
+			})) {
+				invoices.push(invoice);
+			}
+		}
 
-		return invoices.data.map((invoice) => ({
-			id: invoice.id,
-			amount_cents: invoice.amount_paid,
-			currency: invoice.currency,
-			status: invoice.status as string | null,
-			created_at: new Date(invoice.created * 1000),
-			invoice_url: invoice.hosted_invoice_url ?? null,
-			invoice_pdf: invoice.invoice_pdf ?? null,
-		}));
+		return invoices
+			.sort((a, b) => b.created - a.created)
+			.map((invoice) => ({
+				id: invoice.id,
+				amount_cents: invoice.amount_paid,
+				currency: invoice.currency,
+				status: invoice.status,
+				created_at: new Date(invoice.created * 1000),
+				invoice_url: invoice.hosted_invoice_url ?? null,
+				invoice_pdf: invoice.invoice_pdf ?? null,
+			}));
 	}
 
 }
