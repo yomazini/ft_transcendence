@@ -150,32 +150,6 @@ async def analyze_sentiment(payload: SentimentRequest):
     }
 
 
-@app.post("/analyze/{job_id}")
-async def trigger_analysis(job_id: str):
-    job = await get_job(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
-
-    try:
-        # Fake BullMQ job for the manual route.
-        result = await process_job(
-            SimpleNamespace(
-                data={"id": job_id},  # Minimal job payload.
-                attemptsMade=0,  # No attempt on the HTTP route.
-                opts={"attempts": 1},  # One final attempt, no retry.
-            ),
-            None,  # BullMQ token is unused by process_job.
-        )
-    except LLMError as exc:
-        logger.error("Manual analysis failed for job %s: %s", job_id, exc)
-        raise HTTPException(status_code=exc.status_code, detail=str(exc))
-    except Exception:
-        logger.exception("Manual analysis failed for job %s", job_id)
-        raise HTTPException(status_code=500, detail="Analysis failed")
-
-    return {"status": "Done", **result}
-
-
 @app.get("/jobs/{job_id}")
 async def get_job_status(job_id: str):
     job = await get_job(job_id)
