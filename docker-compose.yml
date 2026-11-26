@@ -88,13 +88,25 @@ services:
     expose: ["3002"]
     ports: ["127.0.0.1:3002:3002"]
     environment:
-      NODE_ENV: ${NODE_ENV:-prod}
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_mock}
-      STRIPE_MOCK_HOST: ${STRIPE_MOCK_HOST:-stripe-mock}
-      FRONTEND_URL: ${FRONTEND_URL:-https://localhost:8080}
+      # NODE_ENV: ${NODE_ENV:-prod}
+      # STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_mock}
+      # STRIPE_MOCK_HOST: ${STRIPE_MOCK_HOST:-stripe-mock}
+      # FRONTEND_URL: ${FRONTEND_URL:-https://localhost:8080}
+      # MAIL_HOST: ${MAIL_HOST}
+      # MAIL_PORT: ${MAIL_PORT}
+      # MAIL_FROM: ${MAIL_FROM}
+      # FORTYTWO_CALLBACK_URL: ${FORTYTWO_CALLBACK_URL}
+      STRIPE_MONTLY_PREMIUM: ${STRIPE_MONTLY_PREMIUM}
+      STRIPE_MONTLY_EXTRA: ${STRIPE_MONTLY_EXTRA}
+      STRIPE_PREMIUM_PRICE_ID: ${STRIPE_PREMIUM_PRICE_ID}
+      STRIPE_EXTRA_PRICE_ID: ${STRIPE_EXTRA_PRICE_ID}
+      # SECRET_KEY: ${SECRET_KEY}
+      # SECRET_STRIP_WEBHOOKS: ${SECRET_STRIP_WEBHOOKS}
       MAIL_HOST: ${MAIL_HOST}
       MAIL_PORT: ${MAIL_PORT}
       MAIL_FROM: ${MAIL_FROM}
+      NODE_ENV: ${NODE_ENV}
+      FRONTEND_URL: ${FRONTEND_URL}
       FORTYTWO_CALLBACK_URL: ${FORTYTWO_CALLBACK_URL}
     depends_on:
       postgres: { condition: service_healthy }
@@ -338,12 +350,19 @@ services:
     networks: [ft_network]
     restart: unless-stopped
 
-  stripe-mock:
-    container_name: stripe-mock
-    image: stripe/stripe-mock:v0.206.0
-    ports: ["12111:12111", "12112:12112"]
-    networks: [ft_network]
-    restart: unless-stopped
+  stripe-cli:
+    container_name: stripe-cli
+    image: stripe/stripe-cli:latest
+    environment:
+      STRIPE_API_KEY: ${SECRET_KEY}
+    command:
+      - listen
+      - --events
+      - checkout.session.completed,customer.subscription.updated,customer.subscription.deleted
+      - --forward-to
+      - http://auth-svc:3002/orgs/billing/webhook
+    networks:
+      - ft_network
 
   pgadmin:
     image: dpage/pgadmin4:9
@@ -356,6 +375,7 @@ services:
       postgres: { condition: service_healthy }
     networks: [ft_network]
     restart: unless-stopped
+ 
   restore-svc:
     profiles: ["recovery"]
     container_name: restore-svc

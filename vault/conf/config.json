@@ -59,8 +59,12 @@
 					"env": "MAIL_PASS"
 				},
 				{
-					"name": "stripe_secret_key",
-					"env": "STRIPE_SECRET_KEY"
+					"name": "secret_key",
+					"env": "SECRET_KEY"
+				},
+				{
+					"name": "secret_strip_webhooks",
+					"env": "SECRET_STRIP_WEBHOOKS"
 				}
 			]
 		},

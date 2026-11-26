@@ -1,24 +1,23 @@
 "use client";
 
-
-import {
-  ChevronDown,
-  LogOut,
-} from "lucide-react"
+import { ChevronDown, LogOut, Menu } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./dashboard/layout/theme-toggle";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Avatar,
   AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
+} from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { logout } from "@/lib/auth";
-
 
 const links = [
   {
@@ -33,41 +32,36 @@ const links = [
     title: "Dashboard",
     href: "/login",
   },
-
 ];
 
 export function Navbar() {
-
-  const { user, name, initials } = useCurrentUser()
-  const router = useRouter()
-  const queryClient = useQueryClient()
+  const { user, name, initials } = useCurrentUser();
+  const router = useRouter();
+  const queryClient = useQueryClient();
 
   async function handleLogout() {
-    await logout()
-    queryClient.clear() // drop the cached user and reports of this account
-    router.replace("/login")
+    await logout();
+    queryClient.clear();
+    router.replace("/login");
   }
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-3 sm:px-6">
 
         {/* Logo */}
 
-        <Link
-          href="/"
-          className="flex items-center gap-2"
-        >
+        <Link href="/" className="flex shrink-0 items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">
             I
           </div>
 
-          <span className="text-lg font-bold">
+          <span className="text-base font-bold sm:text-lg">
             InsightFlow
           </span>
         </Link>
 
-        {/* Navigation */}
+        {/* Desktop Navigation */}
 
         <nav className="hidden items-center gap-8 md:flex">
           {links.map((link) => (
@@ -83,22 +77,22 @@ export function Navbar() {
 
         {/* Actions */}
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 sm:gap-3">
           <ThemeToggle />
 
-          {
-            user ? <DropdownMenu>
+          {/* User Menu */}
+
+          {user ? (
+            <DropdownMenu>
               <DropdownMenuTrigger
                 render={
                   <button
                     type="button"
-                    className="ml-2 flex items-center gap-2 rounded-lg px-1 py-1 text-left hover:bg-muted"
+                    className="flex items-center gap-2 rounded-lg px-1 py-1 text-left hover:bg-muted"
                   />
                 }
               >
                 <Avatar className="size-9">
-                  {/* <AvatarImage src="/avatar.jpg" /> */}
-
                   <AvatarFallback>
                     {initials}
                   </AvatarFallback>
@@ -110,7 +104,7 @@ export function Navbar() {
                   </span>
 
                   <span className="text-xs text-muted-foreground">
-                    {user?.role}
+                    {user.role}
                   </span>
                 </div>
 
@@ -123,28 +117,74 @@ export function Navbar() {
                   Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu> :
-              <>
+            </DropdownMenu>
+          ) : (
+            <>
+              {/* Desktop Authentication Buttons */}
+
+              <Button
+                className="hidden md:inline-flex"
+                variant="ghost"
+                nativeButton={false}
+                render={<Link href="/login" />}
+              >
+                Login
+              </Button>
+
+              <Button
+                className="hidden md:inline-flex"
+                nativeButton={false}
+                render={<Link href="/register" />}
+              >
+                Get Started
+              </Button>
+            </>
+          )}
+
+          {/* Mobile Navigation */}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
                 <Button
                   variant="ghost"
-                  nativeButton={false}
-                  render={<Link href="/login" />}
+                  size="icon"
+                  className="md:hidden"
+                  aria-label="Open navigation menu"
+                />
+              }
+            >
+              <Menu className="size-5" />
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent align="end" className="w-48">
+              {links.map((link) => (
+                <DropdownMenuItem
+                  key={link.title}
+                  render={<Link href={link.href} />}
                 >
-                  Login
-                </Button>
+                  {link.title}
+                </DropdownMenuItem>
+              ))}
 
-                <Button
-                  nativeButton={false}
-                  render={<Link href="/register" />}
-                >
-                  Get Started
-                </Button>
+              {!user && (
+                <>
+                  <DropdownMenuItem
+                    render={<Link href="/login" />}
+                  >
+                    Login
+                  </DropdownMenuItem>
 
-              </>
-          }
-
+                  <DropdownMenuItem
+                    render={<Link href="/register" />}
+                  >
+                    Get Started
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-
       </div>
     </header>
   );

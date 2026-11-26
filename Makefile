@@ -11,13 +11,15 @@ s ?=
 
 up: $(CERT)
 	$(COMPOSE) up -d --build
+	./stripe-webhook.sh
+	$(COMPOSE) up -d --build vault auth-svc 
 
 down:
 	$(COMPOSE) down
 
 clean:
 	$(COMPOSE) down -v
-	rm -rf vault/creds vault/secret vault/audit
+	sudo rm -rf vault/creds vault/secret vault/audit
 
 cleardb:
 	$(COMPOSE) rm -sf postgres
