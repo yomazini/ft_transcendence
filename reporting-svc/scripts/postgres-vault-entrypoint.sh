@@ -1,5 +1,5 @@
-#!/bin/bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 echo "Fetching PostgreSQL credentials from Vault..."
 
@@ -7,11 +7,15 @@ TOKEN=$(curl -fsS -X POST -H "Content-Type: application/json" --data-binary @/ru
 
 JSON=$(curl -fsS -H "X-Vault-Token: $TOKEN" http://vault:8200/v1/secret/data/database)
 
+echo "Extracting PostgreSQL credentials..."
+
 POSTGRES_USER=$(echo "$JSON" | jq -er '.data.data.user')
 POSTGRES_PASSWORD=$(echo "$JSON" | jq -er '.data.data.password')
 POSTGRES_DB=$(echo "$JSON" | jq -er '.data.data.database')
 
 unset TOKEN JSON
+
+echo "Exporting environment variables..."
 
 export POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB
 
