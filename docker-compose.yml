@@ -88,20 +88,10 @@ services:
     expose: ["3002"]
     ports: ["127.0.0.1:3002:3002"]
     environment:
-      # NODE_ENV: ${NODE_ENV:-prod}
-      # STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_mock}
-      # STRIPE_MOCK_HOST: ${STRIPE_MOCK_HOST:-stripe-mock}
-      # FRONTEND_URL: ${FRONTEND_URL:-https://localhost:8080}
-      # MAIL_HOST: ${MAIL_HOST}
-      # MAIL_PORT: ${MAIL_PORT}
-      # MAIL_FROM: ${MAIL_FROM}
-      # FORTYTWO_CALLBACK_URL: ${FORTYTWO_CALLBACK_URL}
       STRIPE_MONTLY_PREMIUM: ${STRIPE_MONTLY_PREMIUM}
       STRIPE_MONTLY_EXTRA: ${STRIPE_MONTLY_EXTRA}
       STRIPE_PREMIUM_PRICE_ID: ${STRIPE_PREMIUM_PRICE_ID}
       STRIPE_EXTRA_PRICE_ID: ${STRIPE_EXTRA_PRICE_ID}
-      # SECRET_KEY: ${SECRET_KEY}
-      # SECRET_STRIP_WEBHOOKS: ${SECRET_STRIP_WEBHOOKS}
       MAIL_HOST: ${MAIL_HOST}
       MAIL_PORT: ${MAIL_PORT}
       MAIL_FROM: ${MAIL_FROM}
@@ -112,6 +102,7 @@ services:
       postgres: { condition: service_healthy }
       vault: { condition: service_healthy }
       redis: { condition: service_healthy }
+      stripe-cli: { condition: service_healthy }
     volumes:
       - "./vault/creds/auth-svc:/run/vault:ro"
     networks: [ft_network]
@@ -352,17 +343,24 @@ services:
 
   stripe-cli:
     container_name: stripe-cli
-    image: stripe/stripe-cli:latest
-    environment:
-      STRIPE_API_KEY: ${SECRET_KEY}
-    command:
-      - listen
-      - --events
-      - checkout.session.completed,customer.subscription.updated,customer.subscription.deleted
-      - --forward-to
-      - http://auth-svc:3002/orgs/billing/webhook
-    networks:
-      - ft_network
+    image: stripe-cli
+    build: ./stripe-cli
+
+    volumes:
+      - "./vault/creds/auth-svc:/run/vault:ro"
+
+    depends_on:
+      vault:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/stripe-ready"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+    networks: [ft_network]
+    restart: unless-stopped
 
   pgadmin:
     image: dpage/pgadmin4:9

@@ -18,9 +18,12 @@ export default function BillingPage() {
   async function loadBilling() {
     try {
       const getbilling = await getBilling();
+      console.log("Updated billing:", getbilling);
       setBillingInformation(getbilling);
 
       const getpayments = await getPayments();
+      console.log("Updated getpayments:", getpayments);
+
       setPayments(getpayments);
     } catch (err) {
       console.error("Unable to load billing:", err);
@@ -46,7 +49,7 @@ export default function BillingPage() {
         <CurrentPlanCard billinginfo={billingInformation} onCancelledPlan={loadBilling} />
         <TeamUsageCard billinginfo={billingInformation} />
       </div>
-      <AvailablePlans billinginfo={billingInformation} />
+      <AvailablePlans billinginfo={billingInformation} onPlanChanged={loadBilling}/>
       <PaymentHistory payments={payments} />
     </div>
   )

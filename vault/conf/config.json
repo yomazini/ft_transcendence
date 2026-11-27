@@ -139,7 +139,8 @@
 			"name": "auth-svc",
 			"paths": {
 				"auth-svc": [
-					"read"
+					"read",
+					"patch"
 				],
 				"gateway-svc": [
 					"read"
