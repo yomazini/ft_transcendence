@@ -6,6 +6,16 @@
 				{
 					"name": "session",
 					"env": "REDDIT_SESSION"
+				},
+				{
+					"name": "client_id",
+					"env": "REDDIT_CLIENT_ID",
+					"default": ""
+				},
+				{
+					"name": "client_secret",
+					"env": "REDDIT_CLIENT_SECRET",
+					"default": ""
 				}
 			]
 		},

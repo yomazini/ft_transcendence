@@ -1,6 +1,7 @@
 import os, hvac, json
 import scraper_svc.globals as g
 from sqlalchemy import URL
+from typing import cast
 
 DB_DRIVER=os.getenv('DB_DRIVER', "postgresql+psycopg") 
 DB_DNS=os.getenv('DB_DNS', "postgres")
@@ -12,7 +13,9 @@ VAULT_URL=f"http://{VAULT_DNS}:8200"
 class Settings:
 	_client: hvac.Client
 	_url: URL | None
-	_session: str
+	_client_id: str | None
+	_client_secret: str | None
+	_session: str | None
 	_role_id: str
 	_secret_id: str
 
@@ -24,7 +27,9 @@ class Settings:
 		self._role_id = ""
 		self._secret_id = ""
 		self._url = None
-		self._sessions = ""
+		self._session = None
+		self._client_id = None
+		self._client_secret = None
 
 	def _load(self) -> None:
 		self._log("Loading Vault AppRole credentials")
@@ -48,15 +53,19 @@ class Settings:
 			self._error(f"failed to authenticate with vault")
 
 
-	def _init_sessions(self) -> None:
+	def _init_session(self) -> None:
 		secret = self._client.secrets.kv.v2.read_secret_version(
 			path='scraper-svc',
 			mount_point='secret',
 			raise_on_deleted_version=True
 		) 
 
-		data = secret["data"]["data"]["session"]
-		self._sessions = str(data)
+		data: dict[str,str] = cast(dict[str,str], secret["data"]["data"])
+
+		self._session = data.get("session", None)
+		self._client_id = data.get("client_id", None)
+		self._client_secret = data.get("client_secret", None)
+
 
 	def _init_database(self) -> None:
 		secret = self._client.secrets.kv.v2.read_secret_version(
@@ -78,7 +87,7 @@ class Settings:
 		self._log("Getting application secrets")
 
 		try:
-			self._init_sessions()
+			self._init_session()
 			self._init_database()
 		except Exception:
 			self._error(f"failed to get secrets")
@@ -107,7 +116,12 @@ class Settings:
 		raise self.SettingError(f"Settings: {msg}")
 
 	def get_session(self) -> str:
-		return (self._sessions)
+		if self._session is None:
+			raise RuntimeError("No fall back has been provided")
+		return (self._session)
+
+	def get_api_creds(self) -> tuple[str | None, str | None]:
+		return self._client_id, self._client_secret
 
 	def get_database_url(self) -> URL:
 		if self._url is None:

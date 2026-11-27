@@ -44,9 +44,10 @@ class Setting(StrictModel):
 class SecretKeyValue(StrictModel):
 	name: str
 	env: str
+	default: str | None = None
 
 	def get_env_value(self) -> str:
-		return (os.getenv(self.env, ""))
+		return (os.getenv(self.env, self.default))
 
 class Secret(StrictModel):
 	name:str
@@ -56,7 +57,7 @@ class Secret(StrictModel):
 		d:dict[str, str] = {}
 		for secret in self.values:
 			val = secret.get_env_value()
-			if val == "":
+			if val is None:
 				raise RuntimeError(f"Empty envirement variable ({secret.env})")
 			d[secret.name] = val
 		return d

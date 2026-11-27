@@ -1,6 +1,7 @@
-import { authHeaders } from "@/lib/auth";
-import { notifyUser } from "./submitJob";
 import { useMutation } from "@tanstack/react-query";
+
+import { authHeaders } from "@/lib/auth";
+import { notifyUser } from "../lib/new-job-utilities";
 
 async function updateJob(id: string)
 {
@@ -25,11 +26,6 @@ export function useUpdateJobById()
 	return (
 		useMutation({
 			mutationFn: (id : string) => updateJob(id),
-			// onSuccess: () => {
-			// 	queryClient.setQueryData(["jobs"],(oldjobs: JobItem[])=> {
-			// 		return oldjobs ? oldjobs.filter(job => job.id !== id) : oldjobs
-			// 	})
-			// },
 			onError: () => {
 				notifyUser("Something went wrong", false)
 			}

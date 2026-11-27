@@ -1,14 +1,16 @@
 
 "use client";
-import { type JobMode } from "@/lib/api/createJob";
+
 import { TabsList, Tabs, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoaderCircle, Send } from "lucide-react";
 import { FormEvent, useState } from "react";
-import { notifyUser } from "./submitJob";
-import { useCreateJob } from "./useCreateJob";
-import { useUserRole } from "./useUserRole";
+
+import { type JobMode } from "@/lib/api/createJob";
+import { useCreateJob } from "@/hooks/useCreateJob";
+import { useUserRole } from "@/hooks/useUserRole";
+import { checkInput, notifyUser } from "@/lib/new-job-utilities";
 
 const MODES: { value: JobMode; label: string; placeholder: string }[] = [
 	{ value: "post", label: "Post URL", placeholder: "https://www.reddit.com/r/.../comments/..." },
@@ -16,93 +18,6 @@ const MODES: { value: JobMode; label: string; placeholder: string }[] = [
 	{ value: "keyword", label: "Keyword", placeholder: "invoicing app" },
 	{ value: "user", label: "User", placeholder: "user/spez" },
 ];
-
-const DOMAINS=["www.reddit.com", "reddit.com"]
-const SEARCHMODE=["top", "new", "rising", "best", "hot"]
-
-function checkInputUrl(target:string): string | null
-{
-	let path: string | null = null
-	try {
-		const url = new URL(target)
-		const urlpath = url.pathname.split("/").filter(Boolean)
-		if (url.protocol !== 'https:'
-			|| !DOMAINS.includes(url.hostname)
-			|| url.pathname[0] !== "/"
-			|| urlpath.length !== 5
-			|| urlpath[0] !== "r"
-			|| urlpath[2] !== "comments")
-		{
-			notifyUser("Malformed post url", false)
-			return null
-		}
-		path = urlpath.join("/")
-	} catch {
-		notifyUser("Invalid URL", false)
-		return null
-	}
-	return path
-}
-
-function checkSubreddit(target: string): string | null
-{
-	let path: string | null = null
-	try {
-		const urlpath = target.split("/").filter(Boolean)
-		if ((urlpath.length !== 2 && urlpath.length !== 3)
-			|| urlpath[0] !== "r"
-			|| (urlpath.length === 3 && !SEARCHMODE.includes(urlpath[2]))
-		)
-		{
-			notifyUser("Malformed Subreddit", false)
-			return null
-		}
-		if (urlpath.length === 2)
-			urlpath.push("new")
-		path = urlpath.join("/")
-	} catch {
-		notifyUser("Invalid URL", false)
-		return null
-	}
-	return path
-}
-
-function checkUser(target: string): string | null
-{
-	let path: string | null = null
-	try {
-		const urlpath = target.split("/").filter(Boolean)
-		if ((urlpath.length !== 2)
-			|| urlpath[0] !== "user"
-		)
-		{
-			notifyUser("Malformed User", false)
-			return null
-		}
-		path = urlpath.join("/")
-	} catch {
-		notifyUser("Invalid URL", false)
-		return null
-	}
-	return path
-}
-
-function checkInput(target: string, mode: JobMode): string | null
-{
-	if (target === "")
-	{
-		notifyUser("Empty string", false)
-		return null;
-	}
-	else if (mode === "post")
-		return checkInputUrl(target)
-	else if (mode === "subreddit")
-		return checkSubreddit(target)
-	else if (mode === "user")
-		return checkUser(target)
-	else
-		return (target)
-}
 
 export default function NewJobCard()
 {

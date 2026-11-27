@@ -1,5 +1,5 @@
-import NewJobCard from "./NewJobCard"
-import JobsList from "./JobsList"
+import NewJobCard from "@/components/new-job/NewJobCard"
+import JobsList from "@/components/new-job/JobsList"
 
 export default function NewJob()
 {

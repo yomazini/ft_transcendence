@@ -2,11 +2,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useParams } from "next/navigation";
+
 import { JobCard } from "./JobCard";
 import { listJobs } from "@/lib/api/jobs";
-import { useUserRole } from "./useUserRole";
-import { useParams } from "next/navigation";
-import { notifyUser } from "./submitJob";
+import { useUserRole } from "@/hooks/useUserRole";
+import { notifyUser } from "@/lib/new-job-utilities";
 
 export default function JobsList() {
 	const {data: jobs = [], isLoading, error} = useQuery({queryKey: ["jobs"], queryFn: listJobs, retry: false})
