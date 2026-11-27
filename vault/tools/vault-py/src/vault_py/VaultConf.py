@@ -13,6 +13,7 @@ class Capability(StrEnum):
 	LIST = "list"
 	SUDO = "sudo"
 	DENY = "deny"
+	PATCH = "patch"
 
 class StrictModel(BaseModel):
 	model_config = ConfigDict(extra="forbid")
