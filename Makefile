@@ -5,14 +5,10 @@ KEY := $(CERT_DIR)/server.key
 CERT := $(CERT_DIR)/server.pem
 s ?=
 
-
-
 .PHONY: up down clean cleardb exec logs ps re
 
 up: $(CERT)
-	$(COMPOSE) up -d --build
-	./stripe-webhook.sh
-	$(COMPOSE) up -d --build vault auth-svc 
+	$(COMPOSE) up -d --build --wait
 
 down:
 	$(COMPOSE) down

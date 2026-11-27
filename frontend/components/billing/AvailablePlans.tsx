@@ -11,7 +11,7 @@ import { PLANS } from "@/lib/billing/plans";
 import { PlanCard } from "./PlanCard";
 import { toast } from "sonner";
 
-export default function AvailablePlans({ billinginfo }: { billinginfo: Billing | null }) {
+export default function AvailablePlans({ billinginfo, onPlanChanged }: { billinginfo: Billing | null; onPlanChanged: () => Promise<void> }) {
 
     const [processingPlan, setProcessingPlan] = useState<PaidPlan | null>(null);
 
@@ -25,8 +25,8 @@ export default function AvailablePlans({ billinginfo }: { billinginfo: Billing |
         try {
             if (billinginfo?.status === "Active") {
                 const result = await updateSubscription(plan);
+                await onPlanChanged();
                 toast.success(result.message);
-                window.location.reload();
             } else {
                 const checkout = await createCheckout(plan);
 

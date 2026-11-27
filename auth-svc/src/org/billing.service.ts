@@ -490,7 +490,7 @@ export class BillingService {
 			throw new BadRequestException('Subscription item missing');
 		}
 
-		await this.stripe.subscriptions.update(
+		const updatedSubscription = await this.stripe.subscriptions.update(
 			subscription.stripeSubscriptionId,
 			{
 				items: [
@@ -504,12 +504,20 @@ export class BillingService {
 			},
 		);
 
+		if (updatedSubscription.pending_update) {
+			throw new BadRequestException(
+				'Payment is incomplete. Subscription has not changed.',
+			);
+		}
+
+		await this.syncSubscription(updatedSubscription);
+
 		return {
-			message: 'Subscription update requested',
+			message: 'Subscription updated successfully',
 		};
 	}
 
-	async getPaymentsHistory(identity: BillingIdentity) : Promise<PaymentHistory[]>  {
+	async getPaymentsHistory(identity: BillingIdentity): Promise<PaymentHistory[]> {
 		const org = await this.getOrganization(identity);
 
 		const subscriptionIds = new Set<string>();
