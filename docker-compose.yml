@@ -382,8 +382,8 @@ services:
       dockerfile: Dockerfile
     environment:
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
-      BACKUP_PATH: ${BACKUP_PATH:-postgres}
-      POSTGRES_HOST: ${POSTGRES_HOST:-/tmp/backups}
+      BACKUP_PATH: ${BACKUP_PATH:-/tmp/backups}
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
       VAULT_ADDR: ${VAULT_ADDR:-http://vault:8200}
       MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio}
       MINIO_PORT: ${MINIO_PORT:-9000}
