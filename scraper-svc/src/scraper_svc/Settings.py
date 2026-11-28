@@ -13,9 +13,8 @@ VAULT_URL=f"http://{VAULT_DNS}:8200"
 class Settings:
 	_client: hvac.Client
 	_url: URL | None
-	_client_id: str | None
-	_client_secret: str | None
-	_session: str | None
+	_api_creds: list[tuple[str | None, str | None]]
+	_sessions: list[str | None]
 	_role_id: str
 	_secret_id: str
 
@@ -27,9 +26,8 @@ class Settings:
 		self._role_id = ""
 		self._secret_id = ""
 		self._url = None
-		self._session = None
-		self._client_id = None
-		self._client_secret = None
+		self._sessions = []
+		self._api_creds = []
 
 	def _load(self) -> None:
 		self._log("Loading Vault AppRole credentials")
@@ -62,9 +60,10 @@ class Settings:
 
 		data: dict[str,str] = cast(dict[str,str], secret["data"]["data"])
 
-		self._session = data.get("session", None)
-		self._client_id = data.get("client_id", None)
-		self._client_secret = data.get("client_secret", None)
+		count = int(data.get("session_count"))
+		for i in range(1, count + 1):
+			self._sessions.append(data.get(f"session_{i}"))
+			self._api_creds.append((data.get(f"client_id_{i}"), data.get(f"client_secret_{i}")))
 
 
 	def _init_database(self) -> None:
@@ -115,13 +114,11 @@ class Settings:
 	def _error(self, msg:str):
 		raise self.SettingError(f"Settings: {msg}")
 
-	def get_session(self) -> str:
-		if self._session is None:
-			raise RuntimeError("No fall back has been provided")
-		return (self._session)
+	def get_sessions(self) -> list[str | None]:
+		return (self._sessions)
 
-	def get_api_creds(self) -> tuple[str | None, str | None]:
-		return self._client_id, self._client_secret
+	def get_api_creds(self) -> list[tuple[str | None, str | None]]:
+		return self._api_creds
 
 	def get_database_url(self) -> URL:
 		if self._url is None:

@@ -28,7 +28,7 @@ def clean_split(string:str, sep:str) -> list[str]:
 	return list(filter(None, string.split(sep)))
 
 def valid_keyword_url(path: str) -> tuple[str, dict]:
-	return f"{BASE_URL}/search.json", {'q': path, 'limit': g.LIMIT}
+	return f"{BASE_URL}/search.json", {'q': path, 'limit': int(g.LIMIT)}
 
 def valid_user_url(path: str) -> tuple[str, dict]:
 	path_list: list[str] = clean_split(path, "/")
@@ -36,7 +36,7 @@ def valid_user_url(path: str) -> tuple[str, dict]:
 	if (len(path_list) != 2
 		or path_list[0] != 'user'):
 		raise RuntimeError("Invalid user")
-	return f"{BASE_URL}/{"/".join(path_list)}/submitted.json", {'limit': g.LIMIT}
+	return f"{BASE_URL}/{"/".join(path_list)}/submitted.json", {'limit': int(g.LIMIT)}
 
 def valid_subreddit_url(path: str) -> tuple[str, dict]:
 	path_list: list[str] = clean_split(path, "/")
@@ -44,7 +44,7 @@ def valid_subreddit_url(path: str) -> tuple[str, dict]:
 		or path_list[0] != 'r'
 		or path_list[2] not in ["top", "new", "rising", "best", "hot"]):
 		raise RuntimeError("Invalid subreddit")
-	return f"{BASE_URL}/{"/".join(path_list)}.json", {'limit': g.LIMIT}
+	return f"{BASE_URL}/{"/".join(path_list)}.json", {'limit': int(g.LIMIT)}
 
 def valid_post_url(path: str) -> str:
 	path_list: list[str] = clean_split(path, "/")
@@ -68,12 +68,12 @@ def get_scrape_target(target: str, mode: Jobmodes) -> tuple[str, dict]:
 # Scraper
 
 async def scrape(target: str, query:dict) -> list[dict[str, Any]] | dict[str, Any]:
-	await g.session.reserve()
+	bucket = await g.session.reserve()
 	response: Response | None = None
 	try:
-		response = await g.session.send_request(target, query)
+		response = await g.session.send_request(bucket, target, query)
 	finally:
-		await g.session.release()
+		await g.session.release(bucket)
 	g.scraper_reddit_requests_total.labels(str(response.status_code)).inc()
 	if (response.status_code >= 400 and response.status_code < 500):
 		raise BadJobError(f"{response.reason} {response.status_code}")
@@ -124,17 +124,6 @@ def normalize_posts(data:dict):
 		post_content = item["data"]
 		l.append(post_content["permalink"])
 	return l
-
-# def normalize_data(data: list | dict, mode: Jobmodes) ->  dict | list:
-# 	match mode:
-# 		case Jobmodes.POST:
-# 			if (not isinstance(data, list)):
-# 				raise RuntimeError("Impossible action error")
-# 			return (normalize_post(data))
-# 		case _:
-# 			if (not isinstance(data, dict)):
-# 				raise RuntimeError("Impossible action error")
-# 			return (normalize_posts(data))
 
 # Database Insertion
 
