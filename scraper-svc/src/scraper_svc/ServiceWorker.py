@@ -24,7 +24,7 @@ from scraper_svc.helpers import (
 
 SCRAPE_QUEUE=os.getenv('SCRAPE_QUEUE','scrape-job')
 ANALYSIS_QUEUE=os.getenv("ANALYSIS_QUEUE", 'analyze-job')
-COMMENTS_LIMIT=int(os.getenv('COMMENTS_LIMIT', 1000))
+COMMENTS_LIMIT=os.getenv('COMMENTS_LIMIT', "0")
 
 class WorkerData:
 	session: Session | None
@@ -56,7 +56,7 @@ class ServiceWorker:
 			SCRAPE_QUEUE,
 			cast(Any, self.run_pipeline),
 			{
-				'concurrency': max(1, g.MAX_WORKER),
+				'concurrency': max(1, min(g.session.get_workers(), int(g.MAX_WORKER))),
 				'connection': g.REDIS_URL,
 				'autorun': False
 			}
@@ -178,7 +178,7 @@ class ServiceWorker:
 		self.log(f"Scrape SubJob {subjob_id}")
 		job = get_subjob(data.session, subjob_id)
 		url = valid_post_url(job.url)
-		result = await scrape(url, {'limit': COMMENTS_LIMIT})
+		result = await scrape(url, {'limit': int(COMMENTS_LIMIT)})
 		data.data["data"] = normalize_post(result)
 		return WorkerState.SAVE_NORM_DATA
 

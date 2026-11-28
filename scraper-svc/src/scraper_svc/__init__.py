@@ -16,6 +16,7 @@ async def lifespan(app: FastAPI):
 		g.settings.init_settings()
 		g.db.init_database(g.settings.get_database_url())
 		g.session.init_session_manager()
+		g.logger.info("Max posts is: %d", int(g.LIMIT))
 		scraper = ServiceWorker()
 		workers = [
 			asyncio.create_task(scraper.start()),
