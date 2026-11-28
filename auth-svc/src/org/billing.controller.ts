@@ -63,8 +63,8 @@ export class BillingController {
 		@Req() req: RawBodyRequest<Request>,
 		@Headers('stripe-signature') signature: string,
 	) {
-		console.log('Signature exists:', !!signature);
-		console.log('Raw body exists:', !!req.rawBody);
+		// console.log('Signature exists:', !!signature);
+		// console.log('Raw body exists:', !!req.rawBody);
 		if (!req.rawBody || !signature) {
 			throw new BadRequestException(
 				'Missing body or signature',

@@ -18,11 +18,11 @@ export default function BillingPage() {
   async function loadBilling() {
     try {
       const getbilling = await getBilling();
-      console.log("Updated billing:", getbilling);
+      // console.log("Updated billing:", getbilling);
       setBillingInformation(getbilling);
 
       const getpayments = await getPayments();
-      console.log("Updated getpayments:", getpayments);
+      // console.log("Updated getpayments:", getpayments);
 
       setPayments(getpayments);
     } catch (err) {

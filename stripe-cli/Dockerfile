@@ -1,12 +1,6 @@
-FROM stripe/stripe-cli:latest AS stripe-source
-
-RUN cp "$(command -v stripe)" /tmp/stripe
-
-FROM alpine:3.22
+FROM stripe/stripe-cli:latest
 
 RUN apk add --no-cache curl jq ca-certificates
-
-COPY --from=stripe-source /tmp/stripe /usr/local/bin/stripe
 
 COPY entrypoint.sh /entrypoint.sh
 

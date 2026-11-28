@@ -1,7 +1,6 @@
 #!/bin/sh
 
 set -eu
-umask 077
 
 rm -f /tmp/stripe-ready
 
@@ -37,14 +36,6 @@ stripe listen \
   > /tmp/stripe.log 2>&1 &
 
 STRIPE_PID=$!
-
-cleanup() {
-  rm -f /tmp/stripe-ready /tmp/stripe.log
-  kill "$STRIPE_PID" 2>/dev/null || true
-}
-
-trap cleanup EXIT
-trap 'exit 0' INT TERM
 
 echo "Waiting for webhook secret..."
 
