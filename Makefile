@@ -8,7 +8,7 @@ s ?=
 .PHONY: up down clean cleardb exec logs ps re
 
 up: $(CERT)
-	$(COMPOSE) up -d --build --wait
+	$(COMPOSE) up -d --build
 
 down:
 	$(COMPOSE) down
