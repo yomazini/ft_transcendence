@@ -4,17 +4,36 @@
 			"name": "scraper-svc",
 			"values": [
 				{
-					"name": "session",
-					"env": "REDDIT_SESSION"
+					"name": "session_count",
+					"env": "SESSION_COUNT",
+					"default": "1"
 				},
 				{
-					"name": "client_id",
-					"env": "REDDIT_CLIENT_ID",
+					"name": "session_1",
+					"env": "REDDIT_SESSION_1"
+				},
+				{
+					"name": "client_id_1",
+					"env": "REDDIT_CLIENT_ID_1",
 					"default": ""
 				},
 				{
-					"name": "client_secret",
-					"env": "REDDIT_CLIENT_SECRET",
+					"name": "client_secret_1",
+					"env": "REDDIT_CLIENT_SECRET_1",
+					"default": ""
+				},
+				{
+					"name": "session_2",
+					"env": "REDDIT_SESSION_2"
+				},
+				{
+					"name": "client_id_2",
+					"env": "REDDIT_CLIENT_ID_2",
+					"default": ""
+				},
+				{
+					"name": "client_secret_2",
+					"env": "REDDIT_CLIENT_SECRET_2",
 					"default": ""
 				}
 			]
