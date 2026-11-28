@@ -64,8 +64,7 @@ export interface PaymentHistory {
 export class BillingService {
 	private readonly stripe: Stripe;
 
-	// private readonly frontendUrl =
-	// 	process.env.FRONTEND_URL ?? 'http://localhost:3000';
+	private readonly frontendUrl = process.env.FRONTEND_URL ?? 'https://localhost:8080';
 
 	constructor(private readonly prisma: PrismaService) {
 		const secretKey = process.env.SECRET_KEY;
@@ -205,7 +204,7 @@ export class BillingService {
 		// console.log('[6] Organization found:', !!org);
 
 		if (!org) {
-			console.log('[ERROR] Organization not found');
+			// console.log('[ERROR] Organization not found');
 			throw new NotFoundException('Organization not found');
 		}
 
@@ -326,16 +325,9 @@ export class BillingService {
 					throw new NotFoundException('Organization not found');
 				}
 
-				const oldSubscription = await this.prisma.subscription.findUnique({
-					where: {
-						organizationId,
-					},
-				});
-
 				if (
 					org.stripeCustomerId &&
-					org.stripeCustomerId !== customerId &&
-					oldSubscription?.status !== 'canceled'
+					org.stripeCustomerId !== customerId
 				) {
 					throw new ConflictException(
 						'Organization already has a different Stripe customer',
@@ -375,7 +367,7 @@ export class BillingService {
 			case 'customer.subscription.deleted': {
 				const subscription = event.data.object;
 
-				await this.prisma.subscription.updateMany({
+				await this.prisma.subscription.update({
 					where: {
 						stripeSubscriptionId: subscription.id,
 					},
@@ -399,22 +391,43 @@ export class BillingService {
 	) {
 		const org = await this.getOrganization(identity, true);
 
-		const url =
-			dto.plan === p.premium
-				? process.env.STRIPE_MONTLY_PREMIUM
-				: process.env.STRIPE_MONTLY_EXTRA;
+		const organization = await this.prisma.organization.findUnique({
+			where: { id: org.id },
+		});
 
-		if (!url) {
+		if (!organization) {
+			throw new NotFoundException('Organization not found');
+		}
+
+		const priceId =
+			dto.plan === p.premium
+				? process.env.STRIPE_PREMIUM_PRICE_ID
+				: process.env.STRIPE_EXTRA_PRICE_ID;
+
+		if (!priceId) {
 			throw new ServiceUnavailableException(
-				'Stripe payment link not configured',
+				'Stripe price not configured',
 			);
 		}
 
-		const paymentUrl = new URL(url);
+		const billingUrl =
+			`${this.frontendUrl}/${identity.userId}/billing`;
 
-		paymentUrl.searchParams.set('client_reference_id', org.id);
+		const session = await this.stripe.checkout.sessions.create({
+			mode: 'subscription',
+			customer: organization.stripeCustomerId ?? undefined,
+			client_reference_id: org.id,
+			line_items: [
+				{
+					price: priceId,
+					quantity: 1,
+				},
+			],
+			success_url: billingUrl,
+			cancel_url: billingUrl,
+		});
 
-		return { url: paymentUrl.toString() };
+		return { url: session.url };
 	}
 
 	async deleteSubscription(identity: BillingIdentity) {
@@ -517,44 +530,35 @@ export class BillingService {
 		};
 	}
 
-	async getPaymentsHistory(identity: BillingIdentity): Promise<PaymentHistory[]> {
-		const org = await this.getOrganization(identity);
+	async getPaymentsHistory(
+		identity: BillingIdentity,
+	): Promise<PaymentHistory[]> {
+		const org = await this.getOrganization(identity, true);
 
-		const subscriptionIds = new Set<string>();
-		const invoices: Stripe.Invoice[] = [];
+		const organization = await this.prisma.organization.findUnique({
+			where: {
+				id: org.id,
+			},
+		});
 
-		for await (const session of this.stripe.checkout.sessions.list({
-			status: 'complete',
+		if (!organization?.stripeCustomerId) {
+			return [];
+		}
+
+		const invoices = await this.stripe.invoices.list({
+			customer: organization.stripeCustomerId,
 			limit: 100,
-		})) {
-			if (
-				session.client_reference_id === org.id &&
-				typeof session.subscription === 'string'
-			) {
-				subscriptionIds.add(session.subscription);
-			}
-		}
+		});
 
-		for (const subscriptionId of subscriptionIds) {
-			for await (const invoice of this.stripe.invoices.list({
-				subscription: subscriptionId,
-				limit: 100,
-			})) {
-				invoices.push(invoice);
-			}
-		}
-
-		return invoices
-			.sort((a, b) => b.created - a.created)
-			.map((invoice) => ({
-				id: invoice.id,
-				amount_cents: invoice.amount_paid,
-				currency: invoice.currency,
-				status: invoice.status,
-				created_at: new Date(invoice.created * 1000),
-				invoice_url: invoice.hosted_invoice_url ?? null,
-				invoice_pdf: invoice.invoice_pdf ?? null,
-			}));
+		return invoices.data.map((invoice) => ({
+			id: invoice.id,
+			amount_cents: invoice.amount_paid,
+			currency: invoice.currency,
+			status: invoice.status,
+			created_at: new Date(invoice.created * 1000),
+			invoice_url: invoice.hosted_invoice_url ?? null,
+			invoice_pdf: invoice.invoice_pdf ?? null,
+		}));
 	}
 
 }
