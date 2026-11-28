@@ -5,17 +5,19 @@ KEY := $(CERT_DIR)/server.key
 CERT := $(CERT_DIR)/server.pem
 s ?=
 
+
+
 .PHONY: up down clean cleardb exec logs ps re
 
 up: $(CERT)
-	$(COMPOSE) up -d --build --wait
+	$(COMPOSE) up -d --build
 
 down:
 	$(COMPOSE) down
 
 clean:
 	$(COMPOSE) down -v
-	sudo rm -rf vault/creds vault/secret vault/audit
+	rm -rf vault/creds vault/secret vault/audit
 
 cleardb:
 	$(COMPOSE) rm -sf postgres
@@ -42,14 +44,14 @@ KEY := $(CERT_DIR)/server.key
 CERT := $(CERT_DIR)/server.pem
 
 $(KEY):
-	sudo mkdir -p $(CERT_DIR)
-	sudo openssl genrsa -out $@ 2048
-	sudo chmod 644 $@
+	mkdir -p $(CERT_DIR)
+	openssl genrsa -out $@ 2048
+	chmod 644 $@
 
 $(CERT): $(KEY)
-	sudo openssl req -x509 -new -nodes -key $< \
+	openssl req -x509 -new -nodes -key $< \
 		-sha256 -days 365 \
 		-out $@ \
 		-subj "/CN=localhost" \
 		-addext "subjectAltName=DNS:localhost,DNS:*.localhost,DNS:nginx"
-	sudo chmod 644 $@
+	chmod 644 $@
