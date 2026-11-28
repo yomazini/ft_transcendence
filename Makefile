@@ -5,17 +5,19 @@ KEY := $(CERT_DIR)/server.key
 CERT := $(CERT_DIR)/server.pem
 s ?=
 
+
+
 .PHONY: up down clean cleardb exec logs ps re
 
 up: $(CERT)
-	$(COMPOSE) up -d --build --wait
+	$(COMPOSE) up -d --build
 
 down:
 	$(COMPOSE) down
 
 clean:
 	$(COMPOSE) down -v
-	sudo rm -rf vault/creds vault/secret vault/audit
+	rm -rf vault/creds vault/secret vault/audit
 
 cleardb:
 	$(COMPOSE) rm -sf postgres
@@ -35,7 +37,7 @@ ps:
 re: clean up
 
 recover:
-	sudo sh ./recover.sh
+	sh ./recover.sh
 
 CERT_DIR := nginx/cert
 KEY := $(CERT_DIR)/server.key

@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/sh
+set -eu
 
 TOKEN=$(curl -fsS -X POST -H "Content-Type: application/json" --data-binary @/run/vault/login.json http://vault:8200/v1/auth/approle/login | jq -er '.auth.client_token')
 
