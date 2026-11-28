@@ -54,8 +54,8 @@ export default function AvailablePlans({ billinginfo, onPlanChanged }: { billing
 
             <div className="mt-5 grid gap-4 md:grid-cols-3">
                 {PLANS.map((plan) => {
-                    console.log("plan is : ", billinginfo.plan);
-                    console.log("plan id : ", plan.id);
+                    // console.log("plan is : ", billinginfo.plan);
+                    // console.log("plan id : ", plan.id);
                     const current = billinginfo.plan === plan.id;
                     const paid = plan.id !== "Free";
                     const canCheckout = paid && !current;
