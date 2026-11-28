@@ -5,12 +5,10 @@ KEY := $(CERT_DIR)/server.key
 CERT := $(CERT_DIR)/server.pem
 s ?=
 
-
-
 .PHONY: up down clean cleardb exec logs ps re
 
 up: $(CERT)
-	$(COMPOSE) up -d --build
+	$(COMPOSE) up -d --build --wait
 
 down:
 	$(COMPOSE) down

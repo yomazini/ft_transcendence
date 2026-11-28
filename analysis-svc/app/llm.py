@@ -97,7 +97,6 @@ async def _post_completion(
     if not choices:
         raise EmptyCompletionError("Empty choices from OpenRouter")
     message = choices[0].get("message", {})
-    # Some reasoning models put the answer in `reasoning`, not `content`.
     content = (
         message.get("content")
         or message.get("reasoning")
@@ -168,8 +167,7 @@ async def call_openrouter_json(
                     if attempt + 1 >= attempts:
                         break
                 except (json.JSONDecodeError, ValueError) as e:
-                    # Malformed JSON is deterministic; retrying the same model
-                    # only burns tokens and time.
+                    # Invalid JSON is deterministic; retrying the same model only wastes tokens and time.
                     _record_llm(model, "error", started)
                     logger.warning(
                         "OpenRouter invalid JSON on %s (attempt %d): %s",

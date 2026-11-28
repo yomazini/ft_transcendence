@@ -9,10 +9,7 @@ import {
 import Stripe from 'stripe';
 import {
 	PlanTier,
-	PaymentStatus,
-	SubscriptionStatus,
 	Prisma,
-	Payment,
 	Roles
 } from '../../generated/prisma/client';
 
@@ -29,63 +26,96 @@ export interface BillingIdentity {
 	role: string;
 }
 
-type ApiPlan = 'free' | 'premium' | 'extra';
-type PaidPlan = 'premium' | 'extra';
+type ApiPlan = 'Free' | 'Premium' | 'Extra';
+type PaidPlan = 'Premium' | 'Extra';
 
 const PLANS: Record<
 	ApiPlan,
 	{ price: number; maxUsers: number; }
 > = {
-	free: { price: 0, maxUsers: 1 },
-	premium: { price: 2900, maxUsers: 5 },
-	extra: { price: 5900, maxUsers: 20 },
+	Free: { price: 0, maxUsers: 1 },
+	Premium: { price: 2900, maxUsers: 5 },
+	Extra: { price: 5900, maxUsers: 20 },
 };
-
-const PENDING_CHECKOUT_MS = 30 * 60 * 1000;
-
-function toPrismaPlan(plan: PaidPlan): PlanTier {
-	return plan === 'premium' ? PlanTier.Premium : PlanTier.Extra;
-}
 
 function toApiPlan(plan: PlanTier): ApiPlan {
 	switch (plan) {
 		case PlanTier.Premium:
-			return 'premium';
+			return 'Premium';
 		case PlanTier.Extra:
-			return 'extra';
+			return 'Extra';
 		default:
-			return 'free';
+			return 'Free';
 	}
 }
 
-function toApiPaymentStatus(
-	status: PaymentStatus,
-): 'pending' | 'succeeded' | 'failed' {
-	switch (status) {
-		case PaymentStatus.Succeeded:
-			return 'succeeded';
-		case PaymentStatus.Failed:
-			return 'failed';
-		default:
-			return 'pending';
-	}
+export interface PaymentHistory {
+	id: string;
+	amount_cents: number;
+	currency: string;
+	status: string | null;
+	created_at: Date;
+	invoice_url: string | null;
+	invoice_pdf: string | null;
 }
+
 
 @Injectable()
 export class BillingService {
 	private readonly stripe: Stripe;
 
-	private readonly frontendUrl =
-		process.env.FRONTEND_URL ?? 'https://localhost:8080';
+	// private readonly frontendUrl =
+	// 	process.env.FRONTEND_URL ?? 'http://localhost:3000';
 
 	constructor(private readonly prisma: PrismaService) {
-		this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? 'sk_test_mock', {
-			host: process.env.STRIPE_MOCK_HOST ?? 'stripe-mock',
-			port: 12111,
-			protocol: 'http',
-			maxNetworkRetries: 1,
-			timeout: 10000,
+		const secretKey = process.env.SECRET_KEY;
+
+		if (!secretKey) {
+			throw new Error('SECRET_KEY is missing');
+		}
+
+		this.stripe = new Stripe(secretKey);
+	}
+
+
+	async assertCanAddMember(
+		orgId: string,
+		db: Prisma.TransactionClient = this.prisma,
+	): Promise<void> {
+		const organization = await db.organization.findUnique({
+			where: { id: orgId },
+			select: { id: true },
 		});
+
+		if (!organization) {
+			throw new NotFoundException('Organization not found');
+		}
+
+		const subscription = await db.subscription.findUnique({
+			where: {
+				organizationId: orgId,
+			},
+		});
+
+		const isActive =
+			subscription?.status === 'Active' &&
+			subscription.endDate > new Date();
+
+		const plan = toApiPlan(
+			isActive ? subscription.plan : PlanTier.Free,
+		);
+
+		const memberCount = await db.role_and_organization.count({
+			where: { org_id: orgId },
+		});
+
+		const maxUsers = PLANS[plan].maxUsers;
+
+		if (memberCount >= maxUsers) {
+			throw new ForbiddenException(
+				`Your ${plan} plan allows a maximum of ${maxUsers} users. Upgrade your plan.`,
+			);
+		}
 	}
 
 	private async getOrganization(identity: BillingIdentity, admin = false) {
@@ -116,40 +146,6 @@ export class BillingService {
 		return { id: membership.org_id };
 	}
 
-	async assertCanAddMember(orgId: string, db: Prisma.TransactionClient = this.prisma): Promise<void> {
-		const organization = await db.organization.findUnique({
-			where: { id: orgId },
-			select: { id: true },
-		});
-
-		if (!organization) {
-			throw new NotFoundException('Organization not found');
-		}
-
-		const subscription = await db.subscription.findFirst({
-			where: {
-				org_id: orgId,
-				status: SubscriptionStatus.Active,
-				ends_at: { gt: new Date() },
-			},
-			orderBy: { ends_at: 'desc' },
-		});
-
-		const plan = toApiPlan(subscription?.plan ?? PlanTier.Free);
-
-		const memberCount = await db.role_and_organization.count({
-			where: { org_id: orgId },
-		});
-
-		const maxUsers = PLANS[plan].maxUsers;
-
-		if (memberCount >= maxUsers) {
-			throw new ForbiddenException(
-				`Your ${plan} plan allows a maximum of ${maxUsers} users. Upgrade your plan.`,
-			);
-		}
-	}
-
 	async getBilling(identity: BillingIdentity) {
 		const org = await this.getOrganization(identity);
 
@@ -158,391 +154,410 @@ export class BillingService {
 				where: { org_id: org.id },
 			}),
 
-			this.prisma.subscription.findFirst({
+			this.prisma.subscription.findUnique({
 				where: {
-					org_id: org.id,
-					status: SubscriptionStatus.Active,
-					ends_at: { gt: new Date() },
+					organizationId: org.id,
 				},
-				orderBy: { ends_at: 'desc' },
 			}),
 		]);
 
-		const plan = toApiPlan(subscription?.plan ?? PlanTier.Free);
+		const isActive =
+			subscription?.status === 'Active' &&
+			subscription.endDate > new Date();
+
+		const plan = toApiPlan(
+			isActive ? subscription.plan : PlanTier.Free,
+		);
 
 		return {
 			organization_id: org.id,
 			plan,
-			status: subscription ? 'active' : 'free',
+			status: isActive ? 'Active' : 'Free',
 			member_count: memberCount,
 			max_users: PLANS[plan].maxUsers,
 			price_cents: PLANS[plan].price,
-			subscription_end: subscription?.ends_at ?? null,
-			cancel_at_period_end: subscription?.cancel_at_period_end ?? false,
+			subscription_end: isActive ? subscription.endDate : null,
 		};
 	}
 
-	async checkout(identity: BillingIdentity, dto: CheckoutDto) {
+	private async syncSubscription(
+		subscription: Stripe.Subscription,
+	) {
+		// console.log('[1] Starting syncSubscription');
+		// console.log('[2] Subscription ID:', subscription.id);
+		// console.log('[3] Subscription status:', subscription.status);
+
+		const customerId =
+			typeof subscription.customer === 'string'
+				? subscription.customer
+				: subscription.customer.id;
+
+		// console.log('[4] Stripe customer ID:', customerId);
+
+		// console.log('[5] Searching for organization...');
+
+		const org = await this.prisma.organization.findUnique({
+			where: {
+				stripeCustomerId: customerId,
+			},
+		});
+
+		// console.log('[6] Organization found:', !!org);
+
+		if (!org) {
+			console.log('[ERROR] Organization not found');
+			throw new NotFoundException('Organization not found');
+		}
+
+		// console.log('[7] Organization ID:', org.id);
+
+		const item = subscription.items.data[0];
+
+		// console.log('[8] Subscription item exists:', !!item);
+
+		if (!item) {
+			// console.log('[ERROR] Subscription item missing');
+			throw new BadRequestException('Subscription item missing');
+		}
+
+		const priceId = item.price.id;
+
+		// console.log('[9] Stripe price ID:', priceId);
+		// console.log('[10] Premium price ID:', process.env.STRIPE_PREMIUM_PRICE_ID);
+		// console.log('[11] Extra price ID:', process.env.STRIPE_EXTRA_PRICE_ID);
+
+		let plan: PlanTier;
+
+		if (priceId === process.env.STRIPE_PREMIUM_PRICE_ID) {
+			plan = PlanTier.Premium;
+			// console.log('[12] Premium plan selected');
+		} else if (priceId === process.env.STRIPE_EXTRA_PRICE_ID) {
+			plan = PlanTier.Extra;
+			// console.log('[12] Extra plan selected');
+		} else {
+			// console.log('[ERROR] Invalid Stripe price');
+			throw new BadRequestException('Invalid Stripe price');
+		}
+
+		// console.log('[13] Period start:', item.current_period_start);
+		// console.log('[14] Period end:', item.current_period_end);
+
+		const data = {
+			stripeSubscriptionId: subscription.id,
+			stripePriceId: priceId,
+			plan,
+			// status: subscription.status,
+			status: subscription.status === 'active'
+				? 'Active'
+				: subscription.status,
+			startDate: new Date(
+				item.current_period_start * 1000,
+			),
+			endDate: new Date(
+				item.current_period_end * 1000,
+			),
+		};
+
+		// console.log('[15] Subscription data:', data);
+
+		// console.log('[16] Saving subscription to PostgreSQL...');
+
+		await this.prisma.subscription.upsert({
+			where: {
+				organizationId: org.id,
+			},
+			create: {
+				organizationId: org.id,
+				...data,
+			},
+			update: data,
+		});
+
+		// console.log('[17] Subscription saved successfully');
+		// console.log('[18] syncSubscription completed');
+	}
+
+	async stripeWebhooks(body: Buffer, signature: string) {
+		const webhookSecret = process.env.SECRET_STRIP_WEBHOOKS;
+
+		if (!webhookSecret) {
+			throw new Error('SECRET_STRIP_WEBHOOKS is missing');
+		}
+
+		let event: Stripe.Event;
+
+		try {
+			event = this.stripe.webhooks.constructEvent(
+				body,
+				signature,
+				webhookSecret,
+			);
+		} catch {
+			throw new BadRequestException('Invalid Stripe signature');
+		}
+
+		switch (event.type) {
+			case 'checkout.session.completed': {
+				const session = event.data.object;
+
+				if (
+					session.mode !== 'subscription' ||
+					typeof session.subscription !== 'string'
+				) {
+					break;
+				}
+
+				const organizationId = session.client_reference_id;
+				const customerId = session.customer;
+
+				if (!organizationId || typeof customerId !== 'string') {
+					throw new BadRequestException(
+						'Missing organization or customer ID',
+					);
+				}
+
+				const org = await this.prisma.organization.findUnique({
+					where: {
+						id: organizationId,
+					},
+				});
+
+				if (!org) {
+					throw new NotFoundException('Organization not found');
+				}
+
+				const oldSubscription = await this.prisma.subscription.findUnique({
+					where: {
+						organizationId,
+					},
+				});
+
+				if (
+					org.stripeCustomerId &&
+					org.stripeCustomerId !== customerId &&
+					oldSubscription?.status !== 'canceled'
+				) {
+					throw new ConflictException(
+						'Organization already has a different Stripe customer',
+					);
+				}
+
+				await this.prisma.organization.update({
+					where: {
+						id: organizationId,
+					},
+					data: {
+						stripeCustomerId: customerId,
+					},
+				});
+
+				const subscription =
+					await this.stripe.subscriptions.retrieve(
+						session.subscription,
+					);
+
+				await this.syncSubscription(subscription);
+
+				break;
+			}
+
+			case 'customer.subscription.updated': {
+				const subscription =
+					await this.stripe.subscriptions.retrieve(
+						event.data.object.id,
+					);
+
+				await this.syncSubscription(subscription);
+
+				break;
+			}
+
+			case 'customer.subscription.deleted': {
+				const subscription = event.data.object;
+
+				await this.prisma.subscription.updateMany({
+					where: {
+						stripeSubscriptionId: subscription.id,
+					},
+					data: {
+						status: 'canceled',
+					},
+				});
+				break;
+			}
+
+			default:
+				console.log(`Unhandled event: ${event.type}`);
+		}
+
+		return { received: true };
+	}
+
+	async createCheckout(
+		identity: BillingIdentity,
+		dto: CheckoutDto,
+	) {
 		const org = await this.getOrganization(identity, true);
 
-		// if (dto.plan !== 'premium' && dto.plan !== 'extra') {
-		// 	throw new BadRequestException('Invalid paid plan');
-		// }
+		const url =
+			dto.plan === p.premium
+				? process.env.STRIPE_MONTLY_PREMIUM
+				: process.env.STRIPE_MONTLY_EXTRA;
 
-		if (dto.plan !== p.premium && dto.plan !== p.extra) {
-			throw new BadRequestException('Invalid paid plan');
-		}
-		const plan: PaidPlan = dto.plan;
-		const prismaPlan = toPrismaPlan(plan);
-
-		const amountCents = PLANS[plan].price;
-
-		let payment: Payment;
-		try {
-			payment = await this.prisma.$transaction(async (tx) => {
-				await this.prisma.lock_organization(tx, org.id);
-
-				const existing = await tx.payment.findUnique({
-					where: {
-						idempotency_key: dto.idempotency_key,
-					},
-				});
-
-				if (existing) {
-					if (existing.org_id !== org.id || existing.plan !== prismaPlan) {
-						throw new ConflictException('Idempotency key already used');
-					}
-
-					throw new ConflictException('Checkout already exists for this request');
-				}
-
-				const active = await tx.subscription.findFirst({
-					where: {
-						org_id: org.id,
-						status: SubscriptionStatus.Active,
-						ends_at: { gt: new Date() },
-					},
-				});
-
-				if (active) {
-					throw new ConflictException('An active subscription already exists');
-				}
-
-				const pending = await tx.payment.findFirst({
-					where: {
-						org_id: org.id,
-						status: PaymentStatus.Pending,
-						created_at: { gt: new Date(Date.now() - PENDING_CHECKOUT_MS) },
-					},
-				});
-
-				if (pending) {
-					throw new ConflictException('A checkout is already in progress');
-				}
-
-				return tx.payment.create({
-					data: {
-						org_id: org.id,
-						plan: prismaPlan,
-						amount_cents: amountCents,
-						currency: 'USD',
-						status: PaymentStatus.Pending,
-						idempotency_key: dto.idempotency_key,
-					},
-				});
-			});
-		} catch (error: any) {
-			if (error?.code === 'P2002') {
-				throw new ConflictException('Checkout already exists for this request');
-			}
-			throw error;
+		if (!url) {
+			throw new ServiceUnavailableException(
+				'Stripe payment link not configured',
+			);
 		}
 
-		const checkoutUrl = new URL(
-			`${identity.userId}/billing/checkout`,
-			this.frontendUrl.endsWith('/')
-				? this.frontendUrl
-				: `${this.frontendUrl}/`,
+		const paymentUrl = new URL(url);
+
+		paymentUrl.searchParams.set('client_reference_id', org.id);
+
+		return { url: paymentUrl.toString() };
+	}
+
+	async deleteSubscription(identity: BillingIdentity) {
+		const org = await this.getOrganization(identity, true);
+
+		const subscription = await this.prisma.subscription.findUnique({
+			where: {
+				organizationId: org.id,
+			},
+		});
+
+		if (!subscription || subscription.status === 'canceled') {
+			throw new NotFoundException('No subscription to cancel');
+		}
+
+		await this.stripe.subscriptions.cancel(
+			subscription.stripeSubscriptionId,
 		);
 
-		checkoutUrl.searchParams.set('payment_id', payment.id);
-
-		try {
-			const session = await this.stripe.checkout.sessions.create(
-				{
-					mode: 'payment',
-					line_items: [
-						{
-							price_data: {
-								currency: 'usd',
-								unit_amount: amountCents,
-								product_data: {
-									name: `InsightFlow ${plan}`,
-								},
-							},
-							quantity: 1,
-						},
-					],
-					success_url: `${this.frontendUrl}/${identity.userId}/billing?payment_id=${payment.id}`,
-					cancel_url: `${this.frontendUrl}/${identity.userId}/billing`,
-					client_reference_id: payment.id,
-					metadata: {
-						payment_id: payment.id,
-						organization_id: org.id,
-						plan,
-					},
-				},
-				{
-					idempotencyKey: dto.idempotency_key,
-				},
-			);
-
-			if (!session.id) {
-				throw new Error('Stripe Mock returned no session ID');
-			}
-
-			await this.prisma.payment.update({
-				where: { id: payment.id },
-				data: {
-					provider_reference: session.id,
-				},
-			});
-
-			return {
-				payment_id: payment.id,
-				url: checkoutUrl.toString(),
-			};
-		} catch {
-			await this.prisma.payment.updateMany({
-				where: {
-					id: payment.id,
-					status: PaymentStatus.Pending,
-				},
-				data: {
-					status: PaymentStatus.Failed,
-					failure_reason: 'Unable to create Stripe Mock session',
-				},
-			});
-
-			throw new ServiceUnavailableException(
-				'Unable to create Stripe Mock checkout',
-			);
-		}
-	}
-
-	async verify(identity: BillingIdentity, paymentId: string) {
-		const org = await this.getOrganization(identity, true);
-
-		const payment = await this.prisma.payment.findFirst({
+		await this.prisma.subscription.update({
 			where: {
-				id: paymentId,
-				org_id: org.id,
+				id: subscription.id,
+			},
+			data: {
+				status: 'canceled',
 			},
 		});
 
-		if (!payment) {
-			throw new NotFoundException('Payment not found');
-		}
-
-		const status = toApiPaymentStatus(payment.status);
-
 		return {
-			payment_id: payment.id,
-			status,
-			message:
-				status === 'succeeded'
-					? 'Payment successful'
-					: status === 'failed'
-						? (payment.failure_reason ?? 'Payment failed')
-						: 'Waiting for simulated payment confirmation',
-			...(status === 'succeeded' ? { plan: toApiPlan(payment.plan) } : {}),
+			message: 'Subscription canceled successfully',
 		};
 	}
 
-	async simulatePayment(
+	async updateSubscription(
 		identity: BillingIdentity,
-		paymentId: string,
-		outcome: string,
+		dto: CheckoutDto,
 	) {
-
-		if (outcome !== 'succeeded' && outcome !== 'failed') {
-			throw new BadRequestException('Invalid simulated outcome');
-		}
-
 		const org = await this.getOrganization(identity, true);
 
-		const payment = await this.prisma.payment.findFirst({
+		const subscription = await this.prisma.subscription.findUnique({
 			where: {
-				id: paymentId,
-				org_id: org.id,
+				organizationId: org.id,
 			},
 		});
 
-		if (!payment) {
-			throw new NotFoundException('Payment not found');
-		}
-
-		if (!payment.provider_reference) {
-			throw new ConflictException('Stripe Mock session is missing');
-		}
-
-		if (payment.status === PaymentStatus.Succeeded) {
-			return {
-				payment_id: payment.id,
-				status: 'succeeded',
-				message: 'Payment already completed',
-				plan: toApiPlan(payment.plan),
-			};
-		}
-
-		if (payment.status === PaymentStatus.Failed) {
-			throw new ConflictException('Payment has already failed');
-		}
-
-		if (outcome === 'failed') {
-			const updated = await this.prisma.payment.updateMany({
-				where: {
-					id: payment.id,
-					status: PaymentStatus.Pending,
-				},
-				data: {
-					status: PaymentStatus.Failed,
-					failure_reason: 'Simulated payment declined',
-				},
-			});
-
-			if (updated.count === 0) {
-				throw new ConflictException('Payment status has changed');
-			}
-
-			return {
-				payment_id: payment.id,
-				status: 'failed',
-				message: 'Simulated payment failed',
-			};
-		}
-
-		await this.prisma.$transaction(async (tx) => {
-			await this.prisma.lock_organization(tx, org.id);
-
-			const claimed = await tx.payment.updateMany({
-				where: {
-					id: payment.id,
-					status: PaymentStatus.Pending,
-				},
-				data: {
-					status: PaymentStatus.Succeeded,
-				},
-			});
-
-			if (claimed.count === 0) {
-				throw new ConflictException('Payment status has changed');
-			}
-
-			const active = await tx.subscription.findFirst({
-				where: {
-					org_id: org.id,
-					status: SubscriptionStatus.Active,
-					ends_at: { gt: new Date() },
-				},
-			});
-
-			if (active) {
-				throw new ConflictException(
-					'Organization already has an active subscription',
-				);
-			}
-
-			const startedAt = new Date();
-			const endsAt = new Date(startedAt);
-
-			endsAt.setUTCDate(endsAt.getUTCDate() + 30);
-
-			const subscription = await tx.subscription.create({
-				data: {
-					org_id: org.id,
-					plan: payment.plan,
-					status: SubscriptionStatus.Active,
-					started_at: startedAt,
-					ends_at: endsAt,
-				},
-			});
-
-			await tx.payment.update({
-				where: { id: payment.id },
-				data: {
-					subscription_id: subscription.id,
-				},
-			});
-		});
-
-		return {
-			payment_id: payment.id,
-			status: 'succeeded',
-			message: 'Simulated payment successful',
-			plan: toApiPlan(payment.plan),
-		};
-	}
-
-	async getPayments(identity: BillingIdentity) {
-		const org = await this.getOrganization(identity, true);
-
-		const payments = await this.prisma.payment.findMany({
-			where: { org_id: org.id },
-			orderBy: { created_at: 'desc' },
-			take: 50,
-			select: {
-				id: true,
-				plan: true,
-				amount_cents: true,
-				currency: true,
-				status: true,
-				failure_reason: true,
-				created_at: true,
-			},
-		});
-
-		return payments.map((payment) => ({
-			...payment,
-			plan: toApiPlan(payment.plan),
-			status: toApiPaymentStatus(payment.status),
-		}));
-	}
-
-	async cancel(identity: BillingIdentity) {
-		const org = await this.getOrganization(identity, true);
-
-		const subscription = await this.prisma.subscription.findFirst({
-			where: {
-				org_id: org.id,
-				status: SubscriptionStatus.Active,
-				ends_at: { gt: new Date() },
-			},
-			orderBy: { created_at: 'desc' },
-		});
-
-		if (!subscription) {
+		if (!subscription || subscription.status !== 'Active') {
 			throw new NotFoundException('No active subscription');
 		}
 
-		if (subscription.cancel_at_period_end) {
-			return {
-				message: 'Subscription already scheduled for cancellation',
-				ends_at: subscription.ends_at,
-			};
+		const priceId =
+			dto.plan === p.premium
+				? process.env.STRIPE_PREMIUM_PRICE_ID
+				: process.env.STRIPE_EXTRA_PRICE_ID;
+
+		if (!priceId) {
+			throw new ServiceUnavailableException(
+				'Stripe price not configured',
+			);
 		}
 
-		await this.prisma.subscription.update({
-			where: { id: subscription.id },
-			data: {
-				cancel_at_period_end: true,
+		if (subscription.stripePriceId === priceId) {
+			throw new ConflictException('You already have this plan');
+		}
+
+		const stripeSubscription =
+			await this.stripe.subscriptions.retrieve(
+				subscription.stripeSubscriptionId,
+			);
+
+		const item = stripeSubscription.items.data[0];
+
+		if (!item) {
+			throw new BadRequestException('Subscription item missing');
+		}
+
+		const updatedSubscription = await this.stripe.subscriptions.update(
+			subscription.stripeSubscriptionId,
+			{
+				items: [
+					{
+						id: item.id,
+						price: priceId,
+					},
+				],
+				proration_behavior: 'always_invoice',
+				payment_behavior: 'pending_if_incomplete',
 			},
-		});
+		);
+
+		if (updatedSubscription.pending_update) {
+			throw new BadRequestException(
+				'Payment is incomplete. Subscription has not changed.',
+			);
+		}
+
+		await this.syncSubscription(updatedSubscription);
 
 		return {
-			message: 'Subscription will expire at the end of the paid period',
-			ends_at: subscription.ends_at,
+			message: 'Subscription updated successfully',
 		};
 	}
 
+	async getPaymentsHistory(identity: BillingIdentity): Promise<PaymentHistory[]> {
+		const org = await this.getOrganization(identity);
+
+		const subscriptionIds = new Set<string>();
+		const invoices: Stripe.Invoice[] = [];
+
+		for await (const session of this.stripe.checkout.sessions.list({
+			status: 'complete',
+			limit: 100,
+		})) {
+			if (
+				session.client_reference_id === org.id &&
+				typeof session.subscription === 'string'
+			) {
+				subscriptionIds.add(session.subscription);
+			}
+		}
+
+		for (const subscriptionId of subscriptionIds) {
+			for await (const invoice of this.stripe.invoices.list({
+				subscription: subscriptionId,
+				limit: 100,
+			})) {
+				invoices.push(invoice);
+			}
+		}
+
+		return invoices
+			.sort((a, b) => b.created - a.created)
+			.map((invoice) => ({
+				id: invoice.id,
+				amount_cents: invoice.amount_paid,
+				currency: invoice.currency,
+				status: invoice.status,
+				created_at: new Date(invoice.created * 1000),
+				invoice_url: invoice.hosted_invoice_url ?? null,
+				invoice_pdf: invoice.invoice_pdf ?? null,
+			}));
+	}
+
 }
+
+
+

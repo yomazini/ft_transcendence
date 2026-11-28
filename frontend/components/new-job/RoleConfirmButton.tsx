@@ -1,7 +1,18 @@
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Role } from "@/lib/auth";
+import {
+	Dialog,
+	DialogTrigger,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogDescription,
+	DialogFooter,
+	DialogClose
+} from "@/components/ui/dialog";
+
 import { TriangleAlert } from "lucide-react";
-import { ReactElement, ReactNode, useState } from "react";
+import { ReactElement, ReactNode } from "react";
+
+import { Role } from "@/lib/auth";
 
 interface RoleConfirmButtonProps {
 	trigger: ReactElement;

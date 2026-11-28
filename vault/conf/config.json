@@ -6,6 +6,16 @@
 				{
 					"name": "session",
 					"env": "REDDIT_SESSION"
+				},
+				{
+					"name": "client_id",
+					"env": "REDDIT_CLIENT_ID",
+					"default": ""
+				},
+				{
+					"name": "client_secret",
+					"env": "REDDIT_CLIENT_SECRET",
+					"default": ""
 				}
 			]
 		},
@@ -59,8 +69,12 @@
 					"env": "MAIL_PASS"
 				},
 				{
-					"name": "stripe_secret_key",
-					"env": "STRIPE_SECRET_KEY"
+					"name": "secret_key",
+					"env": "SECRET_KEY"
+				},
+				{
+					"name": "secret_strip_webhooks",
+					"env": "SECRET_STRIP_WEBHOOKS"
 				}
 			]
 		},
@@ -135,7 +149,8 @@
 			"name": "auth-svc",
 			"paths": {
 				"auth-svc": [
-					"read"
+					"read",
+					"patch"
 				],
 				"gateway-svc": [
 					"read"

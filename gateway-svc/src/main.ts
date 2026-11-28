@@ -11,7 +11,6 @@ async function bootstrap() {
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // nginx sets X-Forwarded-For
   app.set('trust proxy', 1);
 
   app.enableCors({
@@ -22,11 +21,11 @@ async function bootstrap() {
 
   app.useGlobalPipes(
     new ValidationPipe({
-      // Convert plain JSON to DTO instances and apply type conversions.
+      // JSON => DTO instances n apply type conversions
       transform: true,
-      // Remove properties that have no validation decorator in the DTO.
+      // Remove properties that have no  decorator in the DTO
       whitelist: true,
-      // Ignore unknown properties. Set to true to reject them with 400.
+      //  reject with badreq  400
       forbidNonWhitelisted: false,
     }),
   );

@@ -23,7 +23,6 @@ import { AuthenticatedUser } from '../auth/jwt-auth.guard';
 import { jobCreated } from '../metrics/metrics';
 import { UpdateJobDto } from './dto/update-job.dto';
 
-/** Values of the JobModes enum in the shared database (owned by reporting-svc). */
 const JOB_MODES: Record<string, string> = {
   keyword: 'Keyword',
   subreddit: 'Subreddit',
@@ -101,7 +100,6 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     await this.databaseService.saveJob(jobRecord);
     jobCreated.inc();
 
-    // 2. Push task to Redis BullMQ queue (consumed by Madani's scraper-svc)
     if (!this.scrapeQueue) {
       await this.databaseService.updateJobStatus(jobId, 'failed');
       throw new ServiceUnavailableException('scrape queue unavailable');
@@ -145,16 +143,13 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       if (queueTimer) clearTimeout(queueTimer);
     }
 
-    // 3. Broadcast real-time WebSocket event (to Next.js frontend)
+    // Broadcast real-time WebSocket event
     void this.eventsGateway.broadcastJobStatus(jobId, 'queued');
-
     return jobRecord;
   }
 
-  /** Ask analysis-svc a question about one job's comments (semantic search + answer).
-   *  The job must belong to the caller's organization: analysis-svc has no auth of its own. */
   async ragQuery(jobId: string, query: string, user: AuthenticatedUser) {
-    await this.getJobById(jobId, user); // 404 for a job of another organization
+    await this.getJobById(jobId, user);
     const base = process.env.ANALYSIS_SVC_URL || 'http://analysis-svc:8001';
 
     let response: Response;
@@ -264,7 +259,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       const removed = await this.scrapeQueue.remove(jobId);
       if (removed) return;
 
-      // Legacy jobs were enqueued before we set a deterministic jobId.
+      // Legacy jobs were enqueued ; https://docs.bullmq.io/guide/jobs/delayed#delayed
       const jobs = await this.scrapeQueue.getJobs([
         'waiting',
         'delayed',
@@ -288,7 +283,6 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
 
   async getJobById(id: string, user: AuthenticatedUser): Promise<JobRecord> {
     const job = await this.databaseService.findJobById(id);
-    // A job of another organization answers like a missing one (no BOLA leak).
     if (!job || job.org_id !== user.org_id) {
       throw new NotFoundException(`No job found with ID ${id}`);
     }
@@ -299,7 +293,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     id: string,
     user: AuthenticatedUser,
   ): Promise<ReportRecord> {
-    await this.getJobById(id, user); // 404 unless the job belongs to the caller's org
+    await this.getJobById(id, user);
     const report = await this.databaseService.findReportByJobId(id);
     if (!report) {
       throw new NotFoundException(`No report found for job ID ${id}`);
